@@ -20,10 +20,11 @@
             <span class="label">Montant à encaisser</span>
             <span class="value">{{ Money::format($kpis['to_collect']) }}</span>
         </div>
-        <div class="card kpi kpi-accent">
+        <a class="card kpi kpi-accent kpi-link" href="{{ route('quotes.index', ['status' => 'sent']) }}">
             <span class="label">Devis en attente de réponse</span>
             <span class="value">{{ $kpis['pending_quotes'] }}</span>
-        </div>
+            @if ($kpis['pending_amount'])<span class="muted small">{{ Money::format($kpis['pending_amount']) }} au total</span>@endif
+        </a>
         <div class="card kpi kpi-accent">
             <span class="label">CA facturé du mois</span>
             <span class="value">{{ Money::format($kpis['month_revenue']) }}</span>
@@ -34,8 +35,8 @@
         <div class="card">
             <div class="card-head"><h2>Activité</h2></div>
             <ul class="stat-list">
-                <li><span>Devis acceptés</span><strong>{{ $stats['accepted_quotes'] }}</strong></li>
-                <li><span>Devis refusés</span><strong>{{ $stats['refused_quotes'] }}</strong></li>
+                <li><span>Devis acceptés cette année</span><strong>{{ $stats['accepted_quotes'] }}</strong></li>
+                <li><span>Devis refusés cette année</span><strong>{{ $stats['refused_quotes'] }}</strong></li>
                 <li><span>Factures payées</span><strong>{{ $stats['paid_invoices'] }}</strong></li>
                 <li><span>Factures impayées</span><strong>{{ $stats['unpaid_invoices'] }}</strong></li>
                 <li><span>CA de l'année</span><strong>{{ Money::format($stats['year_revenue']) }}</strong></li>

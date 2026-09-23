@@ -22,8 +22,8 @@ class DashboardTest extends TestCase
     public function test_upcoming_modules_show_their_phase(): void
     {
         $this->actingAs($this->admin())
-            ->get(route('module', 'devis'))
+            ->get(route('module', 'factures'))
             ->assertOk()
-            ->assertSee('phase 6');
+            ->assertSee('phase 7');
     }
 }

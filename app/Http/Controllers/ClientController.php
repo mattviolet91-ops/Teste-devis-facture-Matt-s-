@@ -74,7 +74,7 @@ class ClientController extends Controller
 
     public function show(Client $client): View
     {
-        $client->load('worksites');
+        $client->load(['worksites', 'quotes']);
 
         $history = ActivityLog::query()
             ->with('user')
@@ -110,6 +110,11 @@ class ClientController extends Controller
 
     public function destroy(Client $client): RedirectResponse
     {
+        // Les devis (et plus tard les factures) doivent rester rattachés à leur client.
+        if ($client->quotes()->exists()) {
+            return back()->withErrors(['client' => 'Ce client a des devis : il ne peut pas être mis à la corbeille. Supprimez d\'abord ses brouillons ; un devis envoyé est conservé.']);
+        }
+
         $client->delete();
         ActivityLogger::log('client.deleted', "Client mis à la corbeille : {$client->displayName()}", $client);
 

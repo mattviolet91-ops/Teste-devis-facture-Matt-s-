@@ -28,7 +28,7 @@
         @if ($client->email)
             <a class="quick-action" href="mailto:{{ $client->email }}"><x-icon name="mail" /> Email</a>
         @endif
-        <span class="quick-action is-disabled" title="Disponible à la phase 6"><x-icon name="file" /> Nouveau devis</span>
+        <a class="quick-action" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Nouveau devis</a>
     </div>
 
     <div class="grid grid-2">
@@ -91,9 +91,27 @@
     </div>
 
     <div class="card">
+        <div class="card-head">
+            <h2>Devis</h2>
+            <a class="btn btn-secondary btn-sm" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="plus" /> Nouveau</a>
+        </div>
+        @if ($client->quotes->isEmpty())
+            <p class="muted" style="margin:0">Aucun devis pour ce client.</p>
+        @else
+            <ul class="stat-list">
+                @foreach ($client->quotes as $quote)
+                    <li>
+                        <a href="{{ route('quotes.show', $quote) }}">{{ $quote->displayNumber() }} — {{ $quote->title ?: 'Sans objet' }}</a>
+                        <span>@include('quotes._status') <strong>{{ \App\Support\Money::format($quote->total_ttc) }}</strong></span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
+    <div class="card">
         <div class="card-head"><h2>Documents</h2></div>
         <ul class="stat-list">
-            <li><span>Devis</span><span class="muted small">phase 6</span></li>
             <li><span>Factures</span><span class="muted small">phase 7</span></li>
             <li><span>Paiements</span><span class="muted small">phase 10</span></li>
             <li><span>Photos</span><span class="muted small">phase 9</span></li>

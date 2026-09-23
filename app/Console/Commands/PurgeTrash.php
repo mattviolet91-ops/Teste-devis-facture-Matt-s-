@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\TrashController;
 use App\Models\Client;
+use App\Models\Quote;
 use App\Models\Worksite;
 use Illuminate\Console\Command;
 
@@ -17,10 +18,12 @@ class PurgeTrash extends Command
     {
         $limit = now()->subDays(TrashController::RETENTION_DAYS);
 
+        $quotes = Quote::onlyTrashed()->where('deleted_at', '<', $limit)->get()
+            ->each(fn (Quote $quote) => $quote->lines()->delete())->each->forceDelete()->count();
         $worksites = Worksite::onlyTrashed()->where('deleted_at', '<', $limit)->get()->each->forceDelete()->count();
         $clients = Client::onlyTrashed()->where('deleted_at', '<', $limit)->get()->each->forceDelete()->count();
 
-        $this->info("Corbeille vidée : {$clients} client(s), {$worksites} chantier(s).");
+        $this->info("Corbeille vidée : {$clients} client(s), {$worksites} chantier(s), {$quotes} brouillon(s) de devis.");
 
         return self::SUCCESS;
     }

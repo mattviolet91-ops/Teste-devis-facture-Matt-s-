@@ -17,6 +17,7 @@
     <form method="POST" action="{{ route('clients.destroy', $client) }}" data-confirm="Mettre ce client et ses chantiers à la corbeille ? Vous pourrez les restaurer pendant 30 jours.">
         @csrf
         @method('DELETE')
+        @error('client')<div class="alert alert-warning" role="alert">{{ $message }}</div>@enderror
         <div class="form-actions">
             <button class="btn btn-danger-outline" type="submit">Mettre à la corbeille</button>
         </div>

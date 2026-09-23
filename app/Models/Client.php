@@ -57,6 +57,11 @@ class Client extends Model
         return $this->hasMany(Worksite::class)->orderBy('id');
     }
 
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class)->latest('id');
+    }
+
     /**
      * Recherche sur la fiche et sur ses chantiers : chaque mot doit se trouver
      * dans l'un ou l'autre (« dupont massy » trouve Mme Dupont dont le chantier est à Massy).

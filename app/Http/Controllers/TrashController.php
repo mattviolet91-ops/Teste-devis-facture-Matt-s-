@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Quote;
 use App\Models\Worksite;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,7 @@ class TrashController extends Controller
             'clients' => Client::onlyTrashed()->latest('deleted_at')->get(),
             // Chantiers supprimés seuls (ceux d'un client supprimé reviennent avec lui).
             'worksites' => Worksite::onlyTrashed()->with('client')->whereHas('client')->latest('deleted_at')->get(),
+            'quotes' => Quote::onlyTrashed()->with('client')->latest('deleted_at')->get(),
             'retention' => self::RETENTION_DAYS,
         ]);
     }
@@ -33,6 +35,16 @@ class TrashController extends Controller
         ActivityLogger::log('client.restored', "Client restauré : {$client->displayName()}", $client);
 
         return redirect()->route('clients.show', $client)->with('status', 'Client restauré.');
+    }
+
+    public function restoreQuote(int $id): RedirectResponse
+    {
+        $quote = Quote::onlyTrashed()->findOrFail($id);
+        abort_unless($quote->client()->whereNull('deleted_at')->exists(), 409, 'Restaurez d\'abord le client.');
+        $quote->restore();
+        ActivityLogger::log('quote.restored', 'Brouillon de devis restauré', $quote);
+
+        return redirect()->route('quotes.show', $quote)->with('status', 'Brouillon restauré.');
     }
 
     public function restoreWorksite(int $id): RedirectResponse

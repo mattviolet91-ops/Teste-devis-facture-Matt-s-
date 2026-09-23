@@ -3,9 +3,11 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BrandingAssetController;
+use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\TrashController;
@@ -45,7 +47,28 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::put('/chantiers/{worksite}', [WorksiteController::class, 'update'])->name('worksites.update');
     Route::delete('/chantiers/{worksite}', [WorksiteController::class, 'destroy'])->name('worksites.destroy');
 
+    Route::resource('devis', QuoteController::class)
+        ->parameters(['devis' => 'quote'])
+        ->names('quotes')
+        ->whereNumber('quote');
+    Route::prefix('devis/{quote}')->whereNumber('quote')->name('quotes.')->group(function () {
+        Route::post('/envoye', [QuoteController::class, 'send'])->name('send');
+        Route::post('/accepte', [QuoteController::class, 'accept'])->name('accept');
+        Route::post('/refuse', [QuoteController::class, 'refuse'])->name('refuse');
+        Route::post('/nouvelle-version', [QuoteController::class, 'revise'])->name('revise');
+        Route::post('/dupliquer', [QuoteController::class, 'duplicate'])->name('duplicate');
+    });
+
+    Route::resource('prestations', CatalogController::class)
+        ->except('show')
+        ->parameters(['prestations' => 'item'])
+        ->names('catalog')
+        ->whereNumber('item');
+    Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
+    Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
+
     Route::get('/corbeille', [TrashController::class, 'index'])->name('trash.index');
+    Route::post('/corbeille/devis/{id}', [TrashController::class, 'restoreQuote'])->whereNumber('id')->name('trash.quotes.restore');
     Route::post('/corbeille/clients/{id}', [TrashController::class, 'restoreClient'])->whereNumber('id')->name('trash.clients.restore');
     Route::post('/corbeille/chantiers/{id}', [TrashController::class, 'restoreWorksite'])->whereNumber('id')->name('trash.worksites.restore');
 
@@ -68,6 +91,11 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::get('/numerotation', [Settings\NumberingController::class, 'edit'])->name('numbering');
         Route::put('/numerotation', [Settings\NumberingController::class, 'update']);
+
+        Route::get('/textes', [Settings\TextTemplateController::class, 'edit'])->name('texts');
+        Route::post('/textes', [Settings\TextTemplateController::class, 'store'])->name('texts.store');
+        Route::put('/textes/{template}', [Settings\TextTemplateController::class, 'update'])->name('texts.update');
+        Route::delete('/textes/{template}', [Settings\TextTemplateController::class, 'destroy'])->name('texts.destroy');
 
         Route::get('/compte', [Settings\AccountController::class, 'edit'])->name('account');
         Route::put('/compte/profil', [Settings\AccountController::class, 'updateProfile'])->name('account.profile');

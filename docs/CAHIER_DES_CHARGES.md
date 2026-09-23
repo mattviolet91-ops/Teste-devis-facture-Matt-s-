@@ -63,7 +63,8 @@ les réglages.
 
 ### TVA
 - Régime modifiable dans les réglages : franchise en base (art. 293 B du CGI)
-  ou assujetti.
+  ou assujetti. **Régime actuel : franchise** (mention présente sur les devis
+  Wix) ; le régime est figé sur chaque devis à l'envoi.
 - Taux configurables ; 10 % par défaut, 20 % et 5,5 % disponibles ; plusieurs
   taux par document ; TVA sur les encaissements.
 - Mention d'attestation client ajoutée automatiquement sur les lignes à 10 % /
@@ -88,9 +89,13 @@ Code postal à 5 chiffres, suggestions d'adresses, alerte de doublon
 peut pas être mis à la corbeille (actif à partir de la phase 7).
 
 ### Bibliothèque
-Prestations (nom, description, prix, unité, TVA, catégorie, photo) et
-ouvrages composés. Pas de prix d'achat / marge. Pas de distinction
-main-d'œuvre / fournitures.
+Prestations (nom, détail des étapes, prix, unité, TVA, catégorie). Pas de
+prix d'achat / marge. Pas de distinction main-d'œuvre / fournitures.
+Bibliothèque de départ construite à partir de 50 devis Wix réels (n° 0002287
+à 0002338) : 39 prestations, prix habituels constatés. Étapes types
+(échelles, sécurité, nettoyage, déchets…) ajoutables en un clic.
+Ouvrages composés : non retenus pour l'instant (les devis Wix utilisent une
+ligne par prestation avec le détail des étapes) — à rediscuter si besoin.
 
 ### Photos
 2 à 8 par chantier en moyenne. Prise hors ligne possible, compression

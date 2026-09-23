@@ -8,11 +8,9 @@ use Illuminate\View\View;
 class ComingSoonController extends Controller
 {
     public const MODULES = [
-        'devis' => ['Devis', 6],
         'factures' => ['Factures', 7],
         'paiements' => ['Paiements', 10],
         'photos' => ['Photos', 9],
-        'prestations' => ['Bibliothèque de prestations', 6],
     ];
 
     public function __invoke(string $module): View

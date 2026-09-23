@@ -8,7 +8,7 @@
         </div>
     </div>
 
-    @if ($clients->isEmpty() && $worksites->isEmpty())
+    @if ($clients->isEmpty() && $worksites->isEmpty() && $quotes->isEmpty())
         <div class="card empty"><x-icon name="trash" /><h2>La corbeille est vide</h2></div>
     @endif
 
@@ -23,6 +23,26 @@
                             <span class="muted small">Supprimé le {{ $client->deleted_at->format('d/m/Y') }} — effacement le {{ $client->deleted_at->addDays($retention)->format('d/m/Y') }}</span>
                         </span>
                         <form method="POST" action="{{ route('trash.clients.restore', $client->id) }}">
+                            @csrf
+                            <button class="btn btn-secondary btn-sm" type="submit">Restaurer</button>
+                        </form>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if ($quotes->isNotEmpty())
+        <div class="card">
+            <h2>Brouillons de devis</h2>
+            <ul class="stat-list">
+                @foreach ($quotes as $quote)
+                    <li>
+                        <span>
+                            <strong>{{ $quote->title ?: 'Devis sans objet' }}</strong><br>
+                            <span class="muted small">{{ $quote->client?->displayName() }} — supprimé le {{ $quote->deleted_at->format('d/m/Y') }}</span>
+                        </span>
+                        <form method="POST" action="{{ route('trash.quotes.restore', $quote->id) }}">
                             @csrf
                             <button class="btn btn-secondary btn-sm" type="submit">Restaurer</button>
                         </form>

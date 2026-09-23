@@ -23,7 +23,7 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 1–3 | Cahier des charges, architecture, base de données | ✅ |
 | 4 | Connexion, interface mobile, réglages de l'entreprise | ✅ |
 | 5 | Clients et chantiers, recherche, corbeille | ✅ |
-| 6 | Bibliothèque de prestations et devis | à venir |
+| 6 | Bibliothèque de prestations, textes types et devis | ✅ |
 | 7 | Factures, acomptes, situations, avoirs | à venir |
 | 8 | PDF | à venir |
 | 9 | Photos, documents, assurance | à venir |

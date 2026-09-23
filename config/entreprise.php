@@ -37,7 +37,7 @@ return [
 
     'vat' => [
         // 'assujetti' ou 'franchise'
-        'regime' => 'assujetti',
+        'regime' => 'franchise',
         'franchise_mention' => 'TVA non applicable, art. 293 B du CGI',
         'reduced_rate_mention_enabled' => true,
     ],
