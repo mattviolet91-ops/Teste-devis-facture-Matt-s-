@@ -196,4 +196,21 @@ class ClientPortalTest extends TestCase
         $this->get(route('portal.invoice.pdf', $token))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertNotNull($invoice->fresh()->viewed_at);
     }
+
+    public function test_client_address_only_serves_client_pages(): void
+    {
+        config(['entreprise.client_url' => 'https://devis.matts-couverture.fr', 'app.url' => 'https://test.matts-couverture.fr']);
+        $quote = $this->sentQuote();
+
+        $this->assertStringStartsWith('https://devis.matts-couverture.fr/d/', $quote->publicUrl());
+        $this->get('https://devis.matts-couverture.fr/d/'.$quote->public_token)->assertOk()->assertSee('Devis DEV-2026-0001');
+        $this->get('https://devis.matts-couverture.fr/d/'.$quote->public_token.'/pdf')->assertOk();
+
+        $this->get('https://devis.matts-couverture.fr/connexion')->assertNotFound();
+        $this->get('https://devis.matts-couverture.fr/devis')->assertNotFound();
+        $this->get('https://devis.matts-couverture.fr/')->assertRedirect('https://matts-couverture.fr');
+
+        // L'espace de gestion reste sur son adresse.
+        $this->get('https://test.matts-couverture.fr/connexion')->assertOk();
+    }
 }
