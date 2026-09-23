@@ -36,7 +36,7 @@ class DashboardController extends Controller
                 'pending_quotes' => Quote::query()->pending()->count(),
                 'pending_amount' => (int) Quote::query()->pending()->sum('total_ttc'),
                 'revenue' => $this->revenue($from, $to),
-                'collected' => (int) Payment::query()->whereDate('paid_at', '>=', $from)->whereDate('paid_at', '<=', $to)->sum('amount'),
+                'collected' => (int) Payment::query()->counted()->whereDate('paid_at', '>=', $from)->whereDate('paid_at', '<=', $to)->sum('amount'),
             ],
             'stats' => [
                 'sent_quotes' => Quote::query()->whereNotNull('sent_at')->whereBetween('sent_at', [$from, $to->copy()->endOfDay()])->count(),
@@ -50,7 +50,7 @@ class DashboardController extends Controller
             ],
             'overdue' => Invoice::query()->overdue()->with('client')->orderBy('due_date')->limit(5)->get(),
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
-            'lastPayments' => Payment::query()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
+            'lastPayments' => Payment::query()->counted()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
         ]);
     }
 

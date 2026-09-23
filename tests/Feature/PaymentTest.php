@@ -159,7 +159,11 @@ class PaymentTest extends TestCase
         $this->post(route('invoices.cancel', $invoice))->assertRedirect(route('invoices.index'));
 
         $this->assertSame('cancelled', $invoice->fresh()->status);
-        $this->get(route('dashboard', ['periode' => 'annee']))->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false);
+        $this->get(route('dashboard', ['periode' => 'annee']))
+            ->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false)
+            ->assertSeeInOrder(['Encaissé', "0,00\u{00A0}€"], false)
+            ->assertSeeInOrder(['Montant à encaisser', "0,00\u{00A0}€"], false);
+        $this->get(route('payments.index', ['du' => '2026-10-01', 'au' => '2026-11-05']))->assertSee('Aucun paiement sur cette période');
         $this->get(route('dashboard', ['periode' => 'mois']))->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false);
     }
 }

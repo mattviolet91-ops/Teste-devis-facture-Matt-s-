@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,6 +32,12 @@ class Payment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class)->withTrashed();
+    }
+
+    /** Paiements des factures en vigueur (une facture supprimée ne compte plus dans l'encaissé). */
+    public function scopeCounted(Builder $query): Builder
+    {
+        return $query->whereHas('invoice', fn (Builder $q) => $q->where('status', '!=', 'cancelled'));
     }
 
     public function methodLabel(): string
