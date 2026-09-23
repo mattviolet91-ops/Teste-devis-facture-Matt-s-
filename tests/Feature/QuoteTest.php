@@ -104,7 +104,7 @@ class QuoteTest extends TestCase
         $this->assertSame('assujetti', $quote->vat_regime);
         $this->assertSame(20000, $quote->total_vat);
         $this->assertSame(220000, $quote->total_ttc);
-        $this->get(route('quotes.show', $quote))->assertSee('Le client atteste', false);
+        $this->get(route('quotes.show', $quote))->assertDontSee('Le client atteste', false);
     }
 
     public function test_line_order_follows_the_submitted_order(): void

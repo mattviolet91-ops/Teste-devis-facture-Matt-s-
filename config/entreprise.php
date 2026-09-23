@@ -40,7 +40,7 @@ return [
         // 'assujetti' ou 'franchise'
         'regime' => 'franchise',
         'franchise_mention' => 'TVA non applicable, art. 293 B du CGI',
-        'reduced_rate_mention_enabled' => true,
+        'reduced_rate_mention_enabled' => false,
     ],
 
     // Assurance décennale (attestation 2026). L'attestation PDF et les alertes
