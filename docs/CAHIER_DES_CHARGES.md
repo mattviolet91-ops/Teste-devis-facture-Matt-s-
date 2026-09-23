@@ -113,6 +113,9 @@ IP), refus ou demande de modification avec commentaire. Notification à
 l'ouverture et à l'acceptation.
 
 ### Emails
+Livré en avance (23/09/2026) : Réglages → Emails (Gmail + mot de passe
+d'application chiffré), modèles avec variables, bouton « Envoyer par email »
+sur les devis, factures et fiches clients, PDF joint, historique.
 Envoi depuis l'application via Gmail (mv.entreprise91@gmail.com, mot de passe
 d'application) **ou** ouverture de la messagerie / WhatsApp / SMS avec texte
 prérempli. Modèles : devis, facture, acompte, relance, paiement reçu. Copie
@@ -125,7 +128,8 @@ optionnelle, alertes 15 jours puis 5 jours avant l'expiration, historique.
 Pas d'alerte « prestation hors garantie ».
 
 ### PDF
-Un modèle unique, aux couleurs du site. Page de présentation de l'entreprise
+Un modèle unique, aux couleurs du site. Page de couverture stylisée (devis
+par défaut, factures en option) avec encadré « Assurance décennale ». Page de présentation de l'entreprise
 optionnelle, CGV, annexe photos. Seul le nom commercial « Matt's Couverture »
 apparaît sur les documents, jamais le nom de l'entrepreneur.
 

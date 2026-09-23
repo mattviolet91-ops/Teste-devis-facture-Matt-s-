@@ -64,7 +64,8 @@ class EmailComposer
         ];
 
         if ($document) {
-            $values['numero'] = $document->number ?? '(numéro attribué à l\'envoi)';
+            // Brouillon : {numero} reste tel quel et sera remplacé à l'envoi par le numéro définitif.
+            $values['numero'] = $document->number ?? '{numero}';
             $values['objet'] = $document->title ? mb_strtolower(mb_substr($document->title, 0, 1)).mb_substr($document->title, 1) : 'vos travaux';
             $values['montant'] = $this->money($document->total_ttc);
         }

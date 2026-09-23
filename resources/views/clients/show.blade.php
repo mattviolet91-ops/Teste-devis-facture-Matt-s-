@@ -26,7 +26,7 @@
             <a class="quick-action" href="sms:{{ preg_replace('/\s/', '', $client->phone) }}"><x-icon name="message" /> SMS</a>
         @endif
         @if ($client->email)
-            <a class="quick-action" href="mailto:{{ $client->email }}"><x-icon name="mail" /> Email</a>
+            <a class="quick-action" href="{{ route('emails.create', ['client' => $client->id]) }}"><x-icon name="mail" /> Email</a>
         @endif
         <a class="quick-action" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Nouveau devis</a>
     </div>

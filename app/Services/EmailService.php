@@ -32,6 +32,11 @@ class EmailService
             $document instanceof Quote ? $this->quotes->send($document) : $this->invoices->send($document);
         }
 
+        if ($document) {
+            $subject = str_replace('{numero}', (string) $document->number, $subject);
+            $body = str_replace('{numero}', (string) $document->number, $body);
+        }
+
         $attachment = $document && $attachPdf ? $this->pdf->filename($document) : null;
 
         $log = new SentEmail([

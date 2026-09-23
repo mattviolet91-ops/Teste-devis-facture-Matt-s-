@@ -9,6 +9,7 @@
         ['paiements', 'Paiements', 'wallet', route('module', 'paiements')],
         ['photos', 'Photos', 'camera', route('module', 'photos')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
+        ['emails', 'Emails', 'mail', route('emails.index')],
     ];
     $isActive = fn (string $key) => match ($key) {
         'dashboard' => request()->routeIs('dashboard'),
@@ -16,6 +17,7 @@
         'devis' => request()->routeIs('quotes.*'),
         'factures' => request()->routeIs('invoices.*'),
         'prestations' => request()->routeIs('catalog.*'),
+        'emails' => request()->routeIs('emails.*'),
         default => request()->route('module') === $key,
     };
 @endphp
@@ -106,6 +108,7 @@
             <a href="{{ route('module', 'paiements') }}"><x-icon name="wallet" /> Paiements</a>
             <a href="{{ route('module', 'photos') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>
+            <a href="{{ route('emails.index') }}"><x-icon name="mail" /> Emails</a>
             <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>
             <a href="{{ route('settings.company') }}"><x-icon name="settings" /> Réglages</a>
             <form method="POST" action="{{ route('logout') }}">

@@ -37,6 +37,9 @@
 
     {{-- Actions --}}
     <div class="action-bar">
+        @if ($quote->status !== 'replaced')
+            <a class="btn" href="{{ route('emails.create', ['devis' => $quote->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
+        @endif
         <a class="btn btn-secondary" href="{{ route('quotes.pdf', $quote) }}" target="_blank" rel="noopener"><x-icon name="file" /> PDF</a>
         @if ($quote->isDraft())
             <a class="btn" href="{{ route('quotes.edit', $quote) }}"><x-icon name="file" /> Modifier</a>
