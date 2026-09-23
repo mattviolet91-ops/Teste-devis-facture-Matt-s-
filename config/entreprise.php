@@ -80,6 +80,15 @@ CGV,
         'presentation_text' => '',
     ],
 
+    // Envoi des emails via Gmail (Réglages → Emails). Le mot de passe
+    // d'application est enregistré chiffré, jamais en clair.
+    'mail' => [
+        'username' => '',
+        'password' => '',
+        'from_name' => '',
+        'bcc_self' => true,
+    ],
+
     'branding' => [
         'color_accent' => '#3CBDE8',
         'color_primary' => '#494949',

@@ -7,6 +7,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\QuoteController;
@@ -82,6 +83,11 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
 
+    Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+    Route::get('/emails/nouveau', [EmailController::class, 'create'])->name('emails.create');
+    Route::post('/emails', [EmailController::class, 'store'])->middleware('throttle:30,1')->name('emails.store');
+    Route::get('/emails/{email}', [EmailController::class, 'show'])->whereNumber('email')->name('emails.show');
+
     Route::get('/corbeille', [TrashController::class, 'index'])->name('trash.index');
     Route::post('/corbeille/factures/{id}', [TrashController::class, 'restoreInvoice'])->whereNumber('id')->name('trash.invoices.restore');
     Route::post('/corbeille/devis/{id}', [TrashController::class, 'restoreQuote'])->whereNumber('id')->name('trash.quotes.restore');
@@ -107,6 +113,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::get('/documents', [Settings\DocumentsController::class, 'edit'])->name('documents');
         Route::put('/documents', [Settings\DocumentsController::class, 'update']);
+
+        Route::get('/emails', [Settings\EmailSettingsController::class, 'edit'])->name('emails');
+        Route::put('/emails', [Settings\EmailSettingsController::class, 'update']);
+        Route::post('/emails/test', [Settings\EmailSettingsController::class, 'test'])->middleware('throttle:5,1')->name('emails.test');
+        Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');
+        Route::put('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'updateTemplate'])->name('emails.templates.update');
+        Route::delete('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'destroyTemplate'])->name('emails.templates.destroy');
 
         Route::get('/numerotation', [Settings\NumberingController::class, 'edit'])->name('numbering');
         Route::put('/numerotation', [Settings\NumberingController::class, 'update']);

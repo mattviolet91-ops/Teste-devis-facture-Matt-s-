@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\MailSettings;
 use App\Services\Settings;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,5 +25,13 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $view->with('settings', app(Settings::class));
         });
+
+        // Gmail configuré dans Réglages → Emails : utilisé pour tous les envois
+        // (documents, mot de passe oublié…). Ignoré tant que la base n'existe pas.
+        try {
+            app(MailSettings::class)->apply();
+        } catch (\Throwable) {
+            // Base indisponible (installation en cours) : configuration du .env.
+        }
     }
 }
