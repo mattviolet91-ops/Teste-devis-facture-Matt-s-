@@ -10,7 +10,7 @@
                 @if ($photo->annotated_path)<span class="badge badge-info">Annotée</span>@endif
                 @if ($photo->caption)<span class="small">{{ $photo->caption }}</span>@endif
                 @unless ($manage ?? false)
-                    <span class="muted small">{{ $photo->worksite?->client?->displayName() }}</span>
+                    <span class="muted small">{{ $photo->client?->displayName() }}</span>
                 @endunless
             </figcaption>
             @if ($manage ?? false)

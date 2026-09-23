@@ -114,6 +114,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     });
     Route::post('/devis/{quote}/photos', [PhotoController::class, 'attachToQuote'])->whereNumber('quote')->name('quotes.photos');
     Route::post('/factures/{invoice}/photos', [PhotoController::class, 'attachToInvoice'])->whereNumber('invoice')->name('invoices.photos');
+    Route::post('/devis/{quote}/photos/ajout', [PhotoController::class, 'uploadToQuote'])->whereNumber('quote')->middleware('throttle:60,1')->name('quotes.photos.upload');
+    Route::post('/factures/{invoice}/photos/ajout', [PhotoController::class, 'uploadToInvoice'])->whereNumber('invoice')->middleware('throttle:60,1')->name('invoices.photos.upload');
 
     Route::post('/clients/{client}/documents', [AttachmentController::class, 'store'])->whereNumber('client')->name('attachments.store');
     Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');

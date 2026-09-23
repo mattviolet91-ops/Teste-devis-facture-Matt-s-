@@ -23,6 +23,11 @@ class Photo extends Model
         return ['taken_at' => 'datetime', 'width' => 'integer', 'height' => 'integer', 'size' => 'integer'];
     }
 
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class)->withTrashed();
+    }
+
     public function worksite(): BelongsTo
     {
         return $this->belongsTo(Worksite::class)->withTrashed();

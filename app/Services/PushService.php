@@ -17,6 +17,9 @@ use Throwable;
  */
 class PushService
 {
+    /** @var list<string> raisons des derniers échecs (affichées lors du test) */
+    public array $lastErrors = [];
+
     public function __construct(private readonly Settings $settings) {}
 
     /** Clé publique VAPID (créée au premier besoin, la clé privée est chiffrée). */
@@ -50,6 +53,7 @@ class PushService
     /** Envoie une notification à tous les appareils abonnés. Retourne le nombre d'envois réussis. */
     public function send(string $title, string $body, ?string $url = null): int
     {
+        $this->lastErrors = [];
         $subscriptions = PushSubscription::query()->get();
         if ($subscriptions->isEmpty()) {
             return 0;
@@ -90,14 +94,19 @@ class PushService
                 } elseif ($report->isSubscriptionExpired()) {
                     // Appareil désinstallé ou autorisation retirée : abonnement supprimé.
                     $this->unsubscribe($report->getEndpoint());
+                    $this->lastErrors[] = 'Abonnement expiré (réactivez les notifications sur ce téléphone).';
                 } else {
-                    Log::warning('Notification non délivrée', ['reason' => $report->getReason()]);
+                    $body = $report->getResponse()?->getBody()?->__toString();
+                    $reason = trim($report->getReason().($body ? ' — '.mb_substr($body, 0, 200) : ''));
+                    Log::warning('Notification non délivrée', ['reason' => $reason]);
+                    $this->lastErrors[] = $reason;
                 }
             }
 
             return $sent;
         } catch (Throwable $e) {
             Log::warning('Échec des notifications', ['error' => $e->getMessage()]);
+            $this->lastErrors[] = $e->getMessage();
 
             return 0;
         } finally {

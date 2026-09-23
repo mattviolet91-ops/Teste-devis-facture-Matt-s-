@@ -7,6 +7,7 @@ use App\Models\Photo;
 use App\Models\Quote;
 use App\Models\Worksite;
 use App\Services\ActivityLogger;
+use App\Services\PdfService;
 use App\Services\PhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,8 +27,8 @@ class PhotoController extends Controller
     {
         $category = $request->query('categorie');
         $photos = Photo::query()
-            ->whereHas('worksite', fn ($q) => $q->whereHas('client'))
-            ->with('worksite.client')
+            ->whereHas('client')
+            ->with(['client', 'worksite'])
             ->when(array_key_exists((string) $category, Photo::CATEGORIES), fn ($q) => $q->where('category', $category))
             ->latest('id')
             ->paginate(48)
@@ -65,7 +66,7 @@ class PhotoController extends Controller
         $saved = [];
         foreach ($data['photos'] as $file) {
             try {
-                $saved[] = $this->photos->store($file, $worksite, $data['category'], $data['caption'] ?? null);
+                $saved[] = $this->photos->store($file, $worksite->client, $worksite, $data['category'], $data['caption'] ?? null);
             } catch (RuntimeException $e) {
                 return $this->fail($request, $e->getMessage());
             }
@@ -106,9 +107,9 @@ class PhotoController extends Controller
 
     public function destroy(Photo $photo): RedirectResponse
     {
-        $worksite = $photo->worksite;
+        $subject = $photo->worksite ?? $photo->client;
         $this->photos->delete($photo);
-        ActivityLogger::log('photo.deleted', 'Photo supprimée : '.$worksite?->fullAddress(), $worksite);
+        ActivityLogger::log('photo.deleted', 'Photo supprimée', $subject);
 
         return back()->with('status', 'Photo supprimée.');
     }
@@ -126,7 +127,7 @@ class PhotoController extends Controller
         return Storage::disk('local')->response($path, null, ['Cache-Control' => 'private, max-age=604800']);
     }
 
-    /** Photos imprimées en annexe du PDF (brouillons uniquement : un document envoyé est figé). */
+    /** Choix des photos imprimées en annexe du PDF. */
     public function attachToQuote(Request $request, Quote $quote): RedirectResponse
     {
         return $this->attach($request, $quote);
@@ -137,18 +138,71 @@ class PhotoController extends Controller
         return $this->attach($request, $invoice);
     }
 
+    /** Nouvelles photos prises depuis un devis ou une facture : ajoutées directement au PDF. */
+    public function uploadToQuote(Request $request, Quote $quote): JsonResponse|RedirectResponse
+    {
+        return $this->upload($request, $quote);
+    }
+
+    public function uploadToInvoice(Request $request, Invoice $invoice): JsonResponse|RedirectResponse
+    {
+        return $this->upload($request, $invoice);
+    }
+
     private function attach(Request $request, Quote|Invoice $document): RedirectResponse
     {
-        abort_unless($document->isDraft(), 403, 'Le document est envoyé : son PDF ne change plus.');
+        abort_unless($document->photosEditable(), 403, 'Le document est envoyé : son PDF ne change plus.');
 
         $ids = collect($request->input('photos', []))->map(fn ($id) => (int) $id)->filter()->unique()->values();
-        $allowed = Photo::query()->whereIn('id', $ids)
-            ->whereHas('worksite', fn ($q) => $q->where('client_id', $document->client_id))
-            ->pluck('id');
+        $allowed = Photo::query()->whereIn('id', $ids)->where('client_id', $document->client_id)->pluck('id');
 
         $document->photos()->sync($ids->intersect($allowed)->values()->mapWithKeys(fn ($id, $i) => [$id => ['position' => $i + 1]])->all());
+        $this->refreeze($document);
 
-        return back()->with('status', $allowed->isEmpty() ? 'Aucune photo dans le PDF.' : $allowed->count().' photo(s) ajoutée(s) en annexe du PDF.');
+        return back()->with('status', $allowed->isEmpty() ? 'Aucune photo dans le PDF.' : $allowed->count().' photo(s) en annexe du PDF.');
+    }
+
+    private function upload(Request $request, Quote|Invoice $document): JsonResponse|RedirectResponse
+    {
+        abort_unless($document->photosEditable(), 403, 'Le document est envoyé : son PDF ne change plus.');
+
+        $data = $request->validate([
+            'photos' => ['required', 'array', 'max:20'],
+            'photos.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:20480'],
+            'category' => ['required', Rule::in(array_keys(Photo::CATEGORIES))],
+            'caption' => ['nullable', 'string', 'max:255'],
+        ], [
+            'photos.*.mimes' => 'Format non pris en charge : prenez la photo en JPEG (réglage « Le plus compatible » sur iPhone).',
+            'photos.*.max' => 'Photo trop lourde (20 Mo maximum).',
+        ]);
+
+        $position = (int) $document->photos()->max('position');
+        $saved = [];
+        foreach ($data['photos'] as $file) {
+            try {
+                $photo = $this->photos->store($file, $document->client, $document->worksite, $data['category'], $data['caption'] ?? null);
+            } catch (RuntimeException $e) {
+                return $this->fail($request, $e->getMessage());
+            }
+            $document->photos()->attach($photo->id, ['position' => ++$position]);
+            $saved[] = $photo;
+        }
+        $this->refreeze($document);
+        ActivityLogger::log('photo.added', count($saved).' photo(s) ajoutée(s) au PDF', $document);
+
+        if ($request->expectsJson()) {
+            return response()->json(['count' => count($saved)], 201);
+        }
+
+        return back()->with('status', count($saved).' photo(s) ajoutée(s) au PDF.');
+    }
+
+    /** Devis envoyé mais pas encore accepté : son PDF est refait avec les photos. */
+    private function refreeze(Quote|Invoice $document): void
+    {
+        if (! $document->isDraft()) {
+            app(PdfService::class)->freeze($document->fresh());
+        }
     }
 
     private function fail(Request $request, string $message): JsonResponse|RedirectResponse

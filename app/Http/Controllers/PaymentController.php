@@ -29,7 +29,8 @@ class PaymentController extends Controller
         $to = isset($data['au']) ? Carbon::parse($data['au']) : today();
 
         $query = Payment::query()
-            ->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('paid_at', '>=', $from->toDateString())
+            ->whereDate('paid_at', '<=', $to->toDateString())
             ->when($data['mode'] ?? null, fn ($q, $mode) => $q->where('method', $mode));
 
         return view('payments.index', [

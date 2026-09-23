@@ -121,6 +121,12 @@ class Quote extends Model
         return $this->status === 'sent' && ($this->valid_until === null || ! $this->valid_until->isPast() || $this->valid_until->isToday());
     }
 
+    /** Photos du PDF modifiables : brouillon, ou devis envoyé pas encore accepté. */
+    public function photosEditable(): bool
+    {
+        return $this->isDraft() || ($this instanceof Quote && in_array($this->status, ['sent', 'expired'], true) && ! $this->signed_at);
+    }
+
     public function isDraft(): bool
     {
         return $this->status === 'draft';

@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\InsuranceCertificate;
 use App\Models\Photo;
 use App\Models\Quote;
+use App\Models\Snapshot;
 use App\Models\Worksite;
 use App\Services\PdfService;
 use App\Services\Settings;
@@ -124,7 +125,7 @@ class PhotosDocumentsInsuranceTest extends TestCase
         $quote = Quote::query()->firstOrFail();
         $ids = Photo::query()->pluck('id')->all();
 
-        $this->get(route('quotes.show', $quote))->assertSee('Photos en annexe du PDF');
+        $this->get(route('quotes.show', $quote))->assertSee('Photos dans le PDF');
         $this->post(route('quotes.photos', $quote), ['photos' => $ids])->assertSessionHasNoErrors();
         $this->assertCount(2, $quote->fresh()->photos);
 
@@ -134,13 +135,42 @@ class PhotosDocumentsInsuranceTest extends TestCase
 
         // Photo d'un autre client : ignorée.
         $other = Photo::query()->first()->replicate();
-        $other->worksite_id = Worksite::factory()->for(Client::factory())->create()->id;
+        $otherSite = Worksite::factory()->for(Client::factory())->create();
+        $other->worksite_id = $otherSite->id;
+        $other->client_id = $otherSite->client_id;
         $other->save();
         $this->post(route('quotes.photos', $quote), ['photos' => [$other->id]]);
         $this->assertCount(0, $quote->fresh()->photos);
 
+        // Devis envoyé, pas encore accepté : les photos restent modifiables et le PDF est refait.
         $this->post(route('quotes.send', $quote));
-        $this->post(route('quotes.photos', $quote), ['photos' => $ids])->assertForbidden();
+        $this->post(route('quotes.photos', $quote), ['photos' => $ids])->assertSessionHasNoErrors();
+        $this->assertSame(2, Snapshot::query()->count());
+
+        $this->post(route('quotes.accept', $quote));
+        $quote->forceFill(['signed_at' => now()])->save();
+        $this->post(route('quotes.photos', $quote), ['photos' => []])->assertForbidden();
+    }
+
+    public function test_photos_can_be_taken_directly_from_a_quote_without_worksite(): void
+    {
+        $this->post(route('quotes.store'), [
+            'client_id' => $this->client->id, 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Réparation', 'quantity' => '1', 'unit_price' => '300']],
+        ]);
+        $quote = Quote::query()->firstOrFail();
+        $this->assertNull($quote->worksite_id);
+
+        $this->get(route('quotes.show', $quote))->assertSee('Prendre ou ajouter des photos');
+        $this->postJson(route('quotes.photos.upload', $quote), [
+            'photos' => [UploadedFile::fake()->image('fuite.jpg', 1600, 1200)], 'category' => 'probleme',
+        ])->assertCreated();
+
+        $photo = Photo::query()->sole();
+        $this->assertSame($this->client->id, $photo->client_id);
+        $this->assertNull($photo->worksite_id);
+        $this->assertCount(1, $quote->fresh()->photos, 'Ajoutée directement au PDF.');
+        $this->get(route('photos.index'))->assertSee(route('photos.file', [$photo, 'mini']));
     }
 
     public function test_client_documents_can_be_added_viewed_and_deleted(): void

@@ -27,7 +27,7 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 7 | Factures, acomptes, situations, avoirs | ✅ |
 | 8 | PDF | ✅ |
 | 9 | Photos, documents, assurance | ✅ |
-| 10 | Paiements, relances, tableau de bord, emails | à venir |
+| 10 | Paiements, relances, tableau de bord, emails | ✅ |
 | 11 | Lien client, signature | ✅ |
 | 12–15 | Sécurité, sauvegardes, recette, installation | à venir |
 

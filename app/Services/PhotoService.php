@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Client;
 use App\Models\Photo;
 use App\Models\Worksite;
 use GdImage;
@@ -21,20 +22,21 @@ class PhotoService
 
     public const THUMB_SIZE = 480;
 
-    public function store(UploadedFile $file, Worksite $worksite, string $category, ?string $caption = null): Photo
+    public function store(UploadedFile $file, Client $client, ?Worksite $worksite, string $category, ?string $caption = null): Photo
     {
         $image = $this->load($file->getRealPath());
         $image = $this->orient($image, $file->getRealPath());
         $full = $this->resize($image, self::MAX_SIZE);
         $thumb = $this->resize($image, self::THUMB_SIZE);
 
-        $base = 'photos/'.$worksite->id.'/'.now()->format('Ymd-His').'-'.Str::random(8);
+        $base = 'photos/'.($worksite ? $worksite->id : 'client-'.$client->id).'/'.now()->format('Ymd-His').'-'.Str::random(8);
         $path = $base.'.jpg';
         $thumbPath = $base.'-mini.jpg';
         $this->save($full, $path, 82);
         $this->save($thumb, $thumbPath, 75);
 
         $photo = new Photo(['category' => $category, 'caption' => $caption]);
+        $photo->client()->associate($client);
         $photo->worksite()->associate($worksite);
         $photo->forceFill([
             'path' => $path,

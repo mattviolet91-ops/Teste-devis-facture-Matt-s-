@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PushSubscription;
 use App\Services\PushService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,10 @@ class PushController extends Controller
     {
         $sent = $this->push->send('Notifications activées', 'Vous serez prévenu quand un client ouvre, accepte ou refuse un devis.', route('dashboard'));
 
-        return response()->json(['sent' => $sent]);
+        return response()->json([
+            'sent' => $sent,
+            'devices' => PushSubscription::query()->count(),
+            'errors' => array_values(array_unique($this->push->lastErrors)),
+        ]);
     }
 }

@@ -142,6 +142,12 @@ class Invoice extends Model
         return rtrim((string) config('entreprise.client_url'), '/').'/f/'.$this->public_token;
     }
 
+    /** Photos du PDF modifiables tant que la facture est en brouillon. */
+    public function photosEditable(): bool
+    {
+        return $this->isDraft();
+    }
+
     public function isDraft(): bool
     {
         return $this->status === 'draft';

@@ -18,7 +18,18 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
       body: JSON.stringify(data || {})
-    }).then(function (r) { if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.json(); });
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) { throw new Error('Erreur ' + r.status + (r.status === 419 ? ' (page expirée : rechargez la page)' : '') + ' ' + t.slice(0, 120)); });
+      }
+      return r.json();
+    });
+  }
+
+  function report(r) {
+    if (r.sent) { status.textContent = 'Notification de test envoyée à ' + r.sent + ' appareil(s). Elle doit apparaître dans quelques secondes.'; }
+    else if (!r.devices) { status.textContent = 'Aucun appareil abonné : appuyez sur « Désactiver » puis « Activer » de nouveau.'; }
+    else { status.textContent = 'La notification n\'est pas partie : ' + (r.errors || []).join(' / '); }
   }
 
   function urlBase64ToUint8Array(base64) {
@@ -60,8 +71,8 @@
           if (permission !== 'granted') { show('off', 'Autorisation refusée. Vous pourrez l\'activer plus tard.'); return; }
           return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) })
             .then(function (sub) { return post(box.getAttribute('data-subscribe'), sub.toJSON()); })
-            .then(function () { show('on', 'Notifications activées sur cet appareil.'); return post(box.getAttribute('data-test')); });
-        }).catch(function () { show('off', 'L\'activation a échoué. Réessayez.'); });
+            .then(function () { show('on', 'Notifications activées sur cet appareil.'); return post(box.getAttribute('data-test')).then(report); });
+        }).catch(function (e) { show('off', 'L\'activation a échoué : ' + (e && e.message ? e.message : 'erreur inconnue') + '. Réessayez.'); });
       });
 
       disable.addEventListener('click', function () {
@@ -72,10 +83,8 @@
       });
 
       test.addEventListener('click', function () {
-        post(box.getAttribute('data-test')).then(function (r) {
-          status.textContent = r.sent ? 'Notification de test envoyée.' : 'Aucun appareil n\'a reçu la notification.';
-        });
+        post(box.getAttribute('data-test')).then(report, function (e) { status.textContent = e.message; });
       });
     });
-  }).catch(function () { show('none', 'Impossible d\'activer les notifications sur ce navigateur.'); });
+  }).catch(function (e) { show('none', 'Impossible d\'activer les notifications : ' + (e && e.message ? e.message : 'navigateur non compatible') + '.'); });
 })();

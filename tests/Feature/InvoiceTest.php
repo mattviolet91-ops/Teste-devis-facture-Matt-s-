@@ -337,7 +337,7 @@ class InvoiceTest extends TestCase
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSeeInOrder(['Montant à encaisser', "200,00\u{00A0}€"], false)
-            ->assertSeeInOrder(['CA facturé du mois (HT)', "200,00\u{00A0}€"], false);
+            ->assertSeeInOrder(['CA facturé (HT)', "200,00\u{00A0}€"], false);
     }
 
     public function test_invoice_list_filters_and_search(): void
