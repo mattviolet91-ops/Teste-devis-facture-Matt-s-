@@ -11,7 +11,10 @@ sans toucher au site WordPress.
 - [Architecture technique](docs/ARCHITECTURE.md)
 - [Base de données](docs/BASE_DE_DONNEES.md)
 
-La procédure d'installation pas à pas sera rédigée à la phase 15.
+- [Installation de test sur o2switch](docs/INSTALLATION_TEST.md)
+
+La procédure d'installation définitive sera rédigée à la phase 15. L'archive
+à envoyer sur le serveur se fabrique avec `scripts/build-release.sh`.
 
 ## Avancement
 
