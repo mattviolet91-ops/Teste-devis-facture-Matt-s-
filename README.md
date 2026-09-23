@@ -31,7 +31,8 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 11 | Lien client, signature | ✅ |
 | 12 | Sécurité | ✅ |
 | 13 | Sauvegardes | ✅ |
-| 14–15 | Recette, installation définitive | à venir |
+| 14 | Recette (docs/RECETTE.md) | ✅ |
+| 15 | Mise en service (docs/MISE_EN_SERVICE.md) | prête, à lancer |
 
 ## Développement
 
