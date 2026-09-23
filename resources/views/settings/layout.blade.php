@@ -11,6 +11,7 @@
         'settings.emails' => 'Emails',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
+        'settings.journal' => 'Journal',
     ];
 @endphp
 

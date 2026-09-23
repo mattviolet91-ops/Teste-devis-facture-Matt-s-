@@ -52,4 +52,22 @@
         @endif
     </p>
 </div>
+
+<form method="POST" action="{{ route('settings.account.logout-others') }}" class="card">
+    @csrf
+    <h2>Sécurité</h2>
+    <p class="muted small">Téléphone perdu, ordinateur partagé ? Déconnectez tous vos autres appareils. Vous restez connecté sur celui-ci.
+        Une alerte vous est envoyée à chaque connexion depuis un nouvel appareil.</p>
+    <div class="form-grid cols-2">
+        <div class="field @error('current_password') has-error @enderror">
+            <label for="logout-password">Votre mot de passe</label>
+            <input id="logout-password" type="password" name="current_password" autocomplete="current-password" required>
+            @error('current_password')<span class="error">{{ $message }}</span>@enderror
+        </div>
+    </div>
+    <div class="form-actions">
+        <button class="btn btn-secondary" type="submit">Déconnecter mes autres appareils</button>
+        <a class="btn btn-secondary" href="{{ route('settings.journal', ['connexions' => 1]) }}">Voir les connexions</a>
+    </div>
+</form>
 @endsection

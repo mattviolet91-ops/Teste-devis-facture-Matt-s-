@@ -180,6 +180,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::get('/compte', [Settings\AccountController::class, 'edit'])->name('account');
         Route::put('/compte/profil', [Settings\AccountController::class, 'updateProfile'])->name('account.profile');
         Route::put('/compte/mot-de-passe', [Settings\AccountController::class, 'updatePassword'])->name('account.password');
+        Route::post('/compte/deconnecter-appareils', [Settings\AccountController::class, 'logoutOthers'])->middleware('throttle:5,1')->name('account.logout-others');
+        Route::get('/journal', [Settings\AccountController::class, 'journal'])->name('journal');
     });
 
 });

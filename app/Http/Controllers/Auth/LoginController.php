@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Services\ActivityLogger;
+use App\Services\SecurityAlerts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +53,15 @@ class LoginController extends Controller
 
         $user = $request->user();
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
-        ActivityLogger::log('auth.login', 'Connexion', $user);
+
+        // Appareil jamais vu : alerte sur le téléphone et par email.
+        $device = hash('sha256', (string) $request->userAgent());
+        $known = ActivityLog::query()->where('action', 'auth.login')->where('user_id', $user->id)
+            ->where('properties->device', $device)->exists();
+        ActivityLogger::log('auth.login', 'Connexion', $user, ['device' => $device]);
+        if (! $known && ActivityLog::query()->where('action', 'auth.login')->where('user_id', $user->id)->count() > 1) {
+            app(SecurityAlerts::class)->newDevice($user, $request);
+        }
 
         return redirect()->intended(route('dashboard'));
     }
