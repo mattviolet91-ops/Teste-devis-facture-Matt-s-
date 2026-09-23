@@ -9,7 +9,6 @@ class ComingSoonController extends Controller
 {
     public const MODULES = [
         'paiements' => ['Paiements', 10],
-        'photos' => ['Photos', 9],
     ];
 
     public function __invoke(string $module): View

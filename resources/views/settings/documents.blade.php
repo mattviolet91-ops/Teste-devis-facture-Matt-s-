@@ -13,27 +13,12 @@
 
     <div class="card">
         <h2>Page de couverture</h2>
-        <p class="muted small">Une première page à vos couleurs : logo, type de document, client, encadré d'assurance décennale et coordonnées.</p>
+        <p class="muted small">Une première page à vos couleurs : logo, type de document, client, encadré d'assurance décennale et coordonnées. Les données d'assurance se modifient dans <a href="{{ route('settings.insurance') }}">Réglages → Assurance</a>.</p>
         <label class="check"><input type="checkbox" name="pdf[cover_quotes]" value="1" @checked(old('pdf.cover_quotes', $pdf['cover_quotes']))> <span>Sur les devis</span></label>
         <label class="check" style="margin-top:.5rem"><input type="checkbox" name="pdf[cover_invoices]" value="1" @checked(old('pdf.cover_invoices', $pdf['cover_invoices']))> <span>Sur les factures et avoirs</span></label>
         <div class="form-grid" style="margin-top:.75rem">
             <x-field name="pdf.presentation_text" label="Texte de présentation (facultatif)" type="textarea" rows="4" :value="$pdf['presentation_text']"
                 placeholder="ex. Couvreur dans l'Essonne, nous intervenons pour l'entretien, la réparation et la rénovation de toitures…" hint="Imprimé sur la page de couverture." />
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Assurance décennale</h2>
-        <p class="muted small">Mention obligatoire sur les devis et les factures. L'attestation PDF et les rappels d'échéance arriveront avec la phase 9.</p>
-        <div class="form-grid cols-2">
-            <x-field name="insurance.insurer" label="Assureur" :value="$insurance['insurer']" required />
-            <x-field name="insurance.broker" label="Courtier" :value="$insurance['broker']" />
-            <x-field name="insurance.insurer_address" label="Adresse de l'assureur" :value="$insurance['insurer_address']" class="span-2" />
-            <x-field name="insurance.policy_number" label="N° de contrat" :value="$insurance['policy_number']" required />
-            <x-field name="insurance.coverage_area" label="Couverture géographique" :value="$insurance['coverage_area']" required />
-            <x-field name="insurance.valid_from" label="Valable du" type="date" :value="$insurance['valid_from']" required />
-            <x-field name="insurance.valid_until" label="Au" type="date" :value="$insurance['valid_until']" required />
-            <x-field name="insurance.activities" label="Activités couvertes" :value="$insurance['activities']" class="span-2" required />
         </div>
     </div>
 

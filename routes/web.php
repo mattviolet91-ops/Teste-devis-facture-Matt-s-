@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
@@ -83,6 +85,22 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
 
+    Route::get('/photos', [PhotoController::class, 'index'])->name('photos.index');
+    Route::get('/chantiers/{worksite}/photos', [PhotoController::class, 'worksite'])->whereNumber('worksite')->name('photos.worksite');
+    Route::post('/chantiers/{worksite}/photos', [PhotoController::class, 'store'])->whereNumber('worksite')->middleware('throttle:60,1')->name('photos.store');
+    Route::prefix('photos/{photo}')->whereNumber('photo')->name('photos.')->group(function () {
+        Route::put('/', [PhotoController::class, 'update'])->name('update');
+        Route::delete('/', [PhotoController::class, 'destroy'])->name('destroy');
+        Route::post('/annotation', [PhotoController::class, 'annotate'])->name('annotate');
+        Route::get('/{variant}', [PhotoController::class, 'file'])->whereIn('variant', ['mini', 'photo', 'original'])->name('file');
+    });
+    Route::post('/devis/{quote}/photos', [PhotoController::class, 'attachToQuote'])->whereNumber('quote')->name('quotes.photos');
+    Route::post('/factures/{invoice}/photos', [PhotoController::class, 'attachToInvoice'])->whereNumber('invoice')->name('invoices.photos');
+
+    Route::post('/clients/{client}/documents', [AttachmentController::class, 'store'])->whereNumber('client')->name('attachments.store');
+    Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');
+    Route::delete('/documents/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
+
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
     Route::get('/emails/nouveau', [EmailController::class, 'create'])->name('emails.create');
     Route::post('/emails', [EmailController::class, 'store'])->middleware('throttle:30,1')->name('emails.store');
@@ -113,6 +131,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::get('/documents', [Settings\DocumentsController::class, 'edit'])->name('documents');
         Route::put('/documents', [Settings\DocumentsController::class, 'update']);
+
+        Route::get('/assurance', [Settings\InsuranceController::class, 'edit'])->name('insurance');
+        Route::put('/assurance', [Settings\InsuranceController::class, 'update']);
+        Route::get('/assurance/attestations/{certificate}', [Settings\InsuranceController::class, 'download'])->name('insurance.certificate');
 
         Route::get('/emails', [Settings\EmailSettingsController::class, 'edit'])->name('emails');
         Route::put('/emails', [Settings\EmailSettingsController::class, 'update']);

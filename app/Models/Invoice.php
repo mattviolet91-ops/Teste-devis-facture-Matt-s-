@@ -6,6 +6,7 @@ use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -99,6 +100,12 @@ class Invoice extends Model
     public function correction(): HasOne
     {
         return $this->hasOne(self::class, 'corrects_id')->latest('id');
+    }
+
+    /** Photos imprimées en annexe du PDF. */
+    public function photos(): MorphToMany
+    {
+        return $this->morphToMany(Photo::class, 'document', 'document_photo')->withPivot('position')->orderByPivot('position');
     }
 
     /** PDF figé au moment de l'envoi. */

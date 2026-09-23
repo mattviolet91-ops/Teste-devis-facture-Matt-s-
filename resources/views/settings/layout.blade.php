@@ -7,6 +7,7 @@
         'settings.vat' => 'TVA & unités',
         'settings.numbering' => 'Numérotation',
         'settings.documents' => 'Documents PDF',
+        'settings.insurance' => 'Assurance',
         'settings.emails' => 'Emails',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',

@@ -7,7 +7,7 @@
         ['devis', 'Devis', 'file', route('quotes.index')],
         ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('module', 'paiements')],
-        ['photos', 'Photos', 'camera', route('module', 'photos')],
+        ['photos', 'Photos', 'camera', route('photos.index')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
         ['emails', 'Emails', 'mail', route('emails.index')],
     ];
@@ -18,6 +18,7 @@
         'factures' => request()->routeIs('invoices.*'),
         'prestations' => request()->routeIs('catalog.*'),
         'emails' => request()->routeIs('emails.*'),
+        'photos' => request()->routeIs('photos.*'),
         default => request()->route('module') === $key,
     };
 @endphp
@@ -93,7 +94,7 @@
             <a class="sheet-item" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
             <a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
-            <a class="sheet-item" href="{{ route('module', 'photos') }}"><x-icon name="camera" /> Photo</a>
+            <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>
             <a class="sheet-item" href="{{ route('module', 'paiements') }}"><x-icon name="wallet" /> Paiement</a>
         </div>
     </dialog>
@@ -106,7 +107,7 @@
         <div class="sheet-list">
             <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('module', 'paiements') }}"><x-icon name="wallet" /> Paiements</a>
-            <a href="{{ route('module', 'photos') }}"><x-icon name="camera" /> Photos</a>
+            <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>
             <a href="{{ route('emails.index') }}"><x-icon name="mail" /> Emails</a>
             <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>

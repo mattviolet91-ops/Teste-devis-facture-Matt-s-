@@ -6,6 +6,7 @@ use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -81,6 +82,12 @@ class Quote extends Model
     public function isInvoiceable(): bool
     {
         return $this->status === 'accepted';
+    }
+
+    /** Photos imprimées en annexe du PDF. */
+    public function photos(): MorphToMany
+    {
+        return $this->morphToMany(Photo::class, 'document', 'document_photo')->withPivot('position')->orderByPivot('position');
     }
 
     /** PDF figé au moment de l'envoi. */
