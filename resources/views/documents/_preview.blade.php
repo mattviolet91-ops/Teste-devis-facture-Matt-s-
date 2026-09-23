@@ -62,7 +62,7 @@
             @foreach ($document->lines as $index => $line)
                 @if ($line->isSection())
                     @php $hidePrices = $line->hide_prices; @endphp
-                    <tr class="doc-section"><td colspan="{{ $columns - 1 }}">{{ $line->title }}</td><td class="num">{{ Money::format($totals['sections'][$index] ?? 0) }}</td></tr>
+                    <tr class="doc-section"><td colspan="{{ $columns - 1 }}">{{ $line->title }}</td><td class="num" data-label="Sous-total">{{ Money::format($totals['sections'][$index] ?? 0) }}</td></tr>
                 @elseif ($line->type === 'text')
                     <tr class="doc-text"><td colspan="{{ $columns }}">{!! nl2br(e($line->description)) !!}</td></tr>
                 @else
@@ -73,10 +73,10 @@
                                 <ul class="doc-steps">@foreach ($line->steps() as $step)<li>{{ $step }}</li>@endforeach</ul>
                             @endif
                         </td>
-                        <td class="num">{{ Quantity::format($line->quantity) }} {{ $line->unit }}</td>
-                        <td class="num">{{ $hidePrices ? '' : Money::format($line->unit_price) }}</td>
-                        @unless ($franchise)<td class="num">{{ Percent::format($line->vat_rate) }}</td>@endunless
-                        <td class="num">
+                        <td class="num" data-label="Qté">{{ Quantity::format($line->quantity) }} {{ $line->unit }}</td>
+                        <td class="num" data-label="Prix unit. HT">{{ $hidePrices ? '' : Money::format($line->unit_price) }}</td>
+                        @unless ($franchise)<td class="num" data-label="TVA">{{ Percent::format($line->vat_rate) }}</td>@endunless
+                        <td class="num" data-label="Total HT">
                             @if ($line->is_offered) <span class="badge badge-success">Offert</span>
                             @elseif (! $hidePrices) {{ Money::format($line->total_ht) }}
                             @endif

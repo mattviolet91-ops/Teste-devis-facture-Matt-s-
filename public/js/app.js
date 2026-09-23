@@ -66,6 +66,16 @@
     });
   });
 
+  // Copier un lien dans le presse-papiers.
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var source = button.parentElement.querySelector('[data-copy-source]');
+      var done = function () { button.textContent = 'Copié ✓'; setTimeout(function () { button.textContent = 'Copier'; }, 2000); };
+      if (navigator.clipboard) { navigator.clipboard.writeText(source.value).then(done, function () { source.select(); }); }
+      else { source.select(); document.execCommand('copy'); done(); }
+    });
+  });
+
   // Envoi immédiat d'un fichier choisi (documents du client).
   document.querySelectorAll('[data-autosubmit]').forEach(function (input) {
     input.addEventListener('change', function () { if (input.files.length) { input.form.submit(); } });

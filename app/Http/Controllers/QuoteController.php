@@ -13,8 +13,10 @@ use App\Services\QuoteService;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class QuoteController extends Controller
 {
@@ -135,6 +137,14 @@ class QuoteController extends Controller
         $this->quotes->send($quote);
 
         return redirect()->route('quotes.show', $quote)->with('status', "Devis {$quote->number} marqué comme envoyé.");
+    }
+
+    /** Image de la signature du client (espace de gestion uniquement). */
+    public function signature(Quote $quote): Response
+    {
+        abort_unless($quote->signature_path && Storage::disk('local')->exists($quote->signature_path), 404);
+
+        return Storage::disk('local')->response($quote->signature_path, null, ['Cache-Control' => 'private, max-age=86400']);
     }
 
     public function accept(Quote $quote): RedirectResponse

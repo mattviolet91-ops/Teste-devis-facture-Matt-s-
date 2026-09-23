@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
@@ -24,6 +25,17 @@ Route::resourceVerbs(['create' => 'nouveau', 'edit' => 'modifier']);
 Route::get('/marque/{kind}', [BrandingAssetController::class, 'show'])
     ->whereIn('kind', array_keys(BrandingAssetController::KINDS))
     ->name('branding.image');
+
+// Espace client (lien secret, sans compte).
+Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->group(function () {
+    Route::get('/d/{token}', [ClientPortalController::class, 'quote'])->name('portal.quote');
+    Route::get('/d/{token}/pdf', [ClientPortalController::class, 'quotePdf'])->name('portal.quote.pdf');
+    Route::post('/d/{token}/accepter', [ClientPortalController::class, 'sign'])->middleware('throttle:10,1')->name('portal.quote.sign');
+    Route::post('/d/{token}/refuser', [ClientPortalController::class, 'refuse'])->middleware('throttle:10,1')->name('portal.quote.refuse');
+    Route::post('/d/{token}/modification', [ClientPortalController::class, 'requestChange'])->middleware('throttle:10,1')->name('portal.quote.change');
+    Route::get('/f/{token}', [ClientPortalController::class, 'invoice'])->name('portal.invoice');
+    Route::get('/f/{token}/pdf', [ClientPortalController::class, 'invoicePdf'])->name('portal.invoice.pdf');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [LoginController::class, 'create'])->name('login');
@@ -64,6 +76,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/dupliquer', [QuoteController::class, 'duplicate'])->name('duplicate');
         Route::post('/facturer', [InvoiceController::class, 'fromQuote'])->name('invoice');
         Route::get('/pdf', [PdfController::class, 'quote'])->name('pdf');
+        Route::get('/signature', [QuoteController::class, 'signature'])->name('signature');
     });
 
     Route::resource('factures', InvoiceController::class)

@@ -34,8 +34,9 @@ class EmailService
         }
 
         if ($document) {
-            $subject = str_replace('{numero}', (string) $document->number, $subject);
-            $body = str_replace('{numero}', (string) $document->number, $body);
+            $replace = ['{numero}' => (string) $document->number, '{lien}' => $document->publicUrl()];
+            $subject = strtr($subject, $replace);
+            $body = strtr($body, $replace);
         }
 
         $attachment = $document && $attachPdf ? $this->pdf->filename($document) : null;

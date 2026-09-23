@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 /**
  * Facture ou avoir. Un avoir (kind = credit) annule une facture envoyée : il
@@ -47,6 +48,7 @@ class Invoice extends Model
             'due_date' => 'date',
             'sent_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'viewed_at' => 'datetime',
             'due_days' => 'integer',
             'show_bank' => 'boolean',
             'percent' => 'integer',
@@ -112,6 +114,16 @@ class Invoice extends Model
     public function snapshot(): MorphOne
     {
         return $this->morphOne(Snapshot::class, 'document')->latestOfMany();
+    }
+
+    /** Lien client (créé au premier besoin). */
+    public function publicUrl(): string
+    {
+        if (! $this->public_token) {
+            $this->forceFill(['public_token' => Str::random(48)])->saveQuietly();
+        }
+
+        return rtrim((string) config('entreprise.client_url'), '/').'/f/'.$this->public_token;
     }
 
     public function isDraft(): bool

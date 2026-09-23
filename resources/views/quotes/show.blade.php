@@ -103,6 +103,10 @@
         </div>
     </article>
 
+    @unless ($quote->isDraft())
+        @include('documents._client-link', ['document' => $quote])
+    @endunless
+
     @include('documents._photos', ['document' => $quote, 'route' => 'quotes.photos'])
 
     @if ($quote->internal_notes)

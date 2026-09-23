@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Services\Concerns\HandlesDocumentLines;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Cycle de vie d'un devis : enregistrement du brouillon, envoi (numérotation),
@@ -45,6 +46,8 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote) {
             $quote->number ??= $this->numbers->next('quote');
+            // Lien client secret, créé à l'envoi.
+            $quote->public_token ??= Str::random(48);
             $quote->status = 'sent';
             $quote->sent_at = now();
             $quote->issue_date = today();

@@ -31,6 +31,7 @@ class EmailComposer
         'telephone' => 'Votre téléphone',
         'email_entreprise' => 'Votre email',
         'site' => 'Votre site internet',
+        'lien' => 'Lien pour consulter (et accepter) en ligne',
     ];
 
     public function __construct(private readonly Settings $settings) {}
@@ -59,13 +60,14 @@ class EmailComposer
             'email_entreprise' => (string) $company['email'],
             'site' => (string) ($company['website'] ?? ''),
             'adresse_chantier' => (string) ($document?->worksite?->fullAddress() ?? $client->fullAddress() ?? ''),
-            'numero' => '', 'document' => '', 'document_titre' => '', 'objet' => 'vos travaux',
+            'lien' => '', 'numero' => '', 'document' => '', 'document_titre' => '', 'objet' => 'vos travaux',
             'montant' => '', 'reste_a_payer' => '', 'date_validite' => '', 'echeance' => '', 'date_echeance' => '',
         ];
 
         if ($document) {
             // Brouillon : {numero} reste tel quel et sera remplacé à l'envoi par le numéro définitif.
             $values['numero'] = $document->number ?? '{numero}';
+            $values['lien'] = $document->number ? $document->publicUrl() : '{lien}';
             $values['objet'] = $document->title ? mb_strtolower(mb_substr($document->title, 0, 1)).mb_substr($document->title, 1) : 'vos travaux';
             $values['montant'] = $this->money($document->total_ttc);
         }

@@ -273,7 +273,13 @@
             </td>
             <td>
                 <div class="label">Bon pour accord du client</div>
-                <span class="small muted">Devis reçu avant l'exécution des travaux. Date, signature précédée de la mention manuscrite « Bon pour accord ».</span>
+                @if ($document->signed_at && $document->signature_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($document->signature_path))
+                    <div class="small"><b>Bon pour accord</b> — {{ $document->signed_name }}</div>
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($document->signature_path) }}" style="height: 16mm;" />
+                    <div class="small muted">Signé électroniquement le {{ $document->signed_at->format('d/m/Y à H:i') }} — IP {{ $document->signed_ip }}</div>
+                @else
+                    <span class="small muted">Devis reçu avant l'exécution des travaux. Date, signature précédée de la mention manuscrite « Bon pour accord ».</span>
+                @endif
             </td>
         </tr>
     </table>

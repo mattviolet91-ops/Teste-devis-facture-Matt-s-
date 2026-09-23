@@ -32,7 +32,7 @@
     @endunless
 
     @if ($document && $document->isDraft())
-        <div class="alert alert-info">Ce document est un brouillon : en l'envoyant, il sera marqué comme envoyé et recevra son numéro définitif, qui remplacera <code>{numero}</code> dans le message.</div>
+        <div class="alert alert-info">Ce document est un brouillon : en l'envoyant, il sera marqué comme envoyé et recevra son numéro définitif, qui remplacera <code>{numero}</code> dans le message, ainsi que le lien client <code>{lien}</code>.</div>
     @endif
 
     <form method="POST" action="{{ route('emails.store', array_filter([

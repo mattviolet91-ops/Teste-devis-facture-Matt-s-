@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Quote extends Model
 {
@@ -38,6 +39,9 @@ class Quote extends Model
             'sent_at' => 'datetime',
             'accepted_at' => 'datetime',
             'refused_at' => 'datetime',
+            'viewed_at' => 'datetime',
+            'signed_at' => 'datetime',
+            'change_requested_at' => 'datetime',
             'validity_days' => 'integer',
             'show_bank' => 'boolean',
             'discount_value' => 'integer',
@@ -94,6 +98,27 @@ class Quote extends Model
     public function snapshot(): MorphOne
     {
         return $this->morphOne(Snapshot::class, 'document')->latestOfMany();
+    }
+
+    /** Lien client (créé au premier besoin). */
+    public function publicUrl(): string
+    {
+        if (! $this->public_token) {
+            $this->forceFill(['public_token' => Str::random(48)])->saveQuietly();
+        }
+
+        return rtrim((string) config('entreprise.client_url'), '/').'/d/'.$this->public_token;
+    }
+
+    public function isSigned(): bool
+    {
+        return $this->signed_at !== null;
+    }
+
+    /** Le client peut encore accepter en ligne. */
+    public function canBeSignedOnline(): bool
+    {
+        return $this->status === 'sent' && ($this->valid_until === null || ! $this->valid_until->isPast() || $this->valid_until->isToday());
     }
 
     public function isDraft(): bool

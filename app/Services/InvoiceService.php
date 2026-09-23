@@ -9,6 +9,7 @@ use App\Services\Concerns\HandlesDocumentLines;
 use App\Support\Money;
 use App\Support\Percent;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -112,6 +113,7 @@ class InvoiceService
     {
         return DB::transaction(function () use ($invoice) {
             $invoice->number ??= $this->numbers->next($invoice->isCredit() ? 'credit_note' : 'invoice');
+            $invoice->public_token ??= Str::random(48);
             $invoice->status = 'sent';
             $invoice->sent_at = now();
             $invoice->issue_date = today();

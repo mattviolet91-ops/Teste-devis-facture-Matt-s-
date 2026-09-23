@@ -98,6 +98,10 @@
         </div>
     </article>
 
+    @unless ($invoice->isDraft())
+        @include('documents._client-link', ['document' => $invoice])
+    @endunless
+
     @include('documents._photos', ['document' => $invoice, 'route' => 'invoices.photos'])
 
     @if ($invoice->internal_notes)
