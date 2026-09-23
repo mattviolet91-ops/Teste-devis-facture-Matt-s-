@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quote extends Model
@@ -25,7 +26,7 @@ class Quote extends Model
 
     protected $fillable = [
         'client_id', 'worksite_id', 'title', 'validity_days', 'discount_type', 'discount_value', 'vat_regime',
-        'work_start', 'work_duration', 'payment_terms', 'notes', 'internal_notes',
+        'work_start', 'work_duration', 'waste_estimate', 'show_bank', 'payment_terms', 'notes', 'internal_notes',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class Quote extends Model
             'accepted_at' => 'datetime',
             'refused_at' => 'datetime',
             'validity_days' => 'integer',
+            'show_bank' => 'boolean',
             'discount_value' => 'integer',
             'total_ht' => 'integer',
             'total_vat' => 'integer',
@@ -79,6 +81,12 @@ class Quote extends Model
     public function isInvoiceable(): bool
     {
         return $this->status === 'accepted';
+    }
+
+    /** PDF figé au moment de l'envoi. */
+    public function snapshot(): MorphOne
+    {
+        return $this->morphOne(Snapshot::class, 'document')->latestOfMany();
     }
 
     public function isDraft(): bool

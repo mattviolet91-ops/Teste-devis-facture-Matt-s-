@@ -38,6 +38,7 @@ class InvoiceService
         $invoice->kind = 'standard';
         $invoice->status = 'draft';
         $invoice->vat_regime = $this->settings->get('vat.regime');
+        $invoice->show_bank = (bool) $this->settings->get('bank.show_by_default');
 
         return $invoice;
     }
@@ -78,7 +79,7 @@ class InvoiceService
             $quote->loadMissing('lines');
 
             $invoice = $this->blank($quote->client_id, $quote->worksite_id);
-            $invoice->fill($quote->only(['title', 'vat_regime', 'notes', 'internal_notes']));
+            $invoice->fill($quote->only(['title', 'vat_regime', 'show_bank', 'notes', 'internal_notes']));
             $invoice->quote_id = $quote->id;
             $invoice->kind = $kind;
             $invoice->created_by = auth()->id();
@@ -118,6 +119,7 @@ class InvoiceService
             $invoice->save();
 
             ActivityLogger::log('invoice.sent', "{$invoice->fullTitle()} envoyée", $invoice);
+            app(PdfService::class)->freeze($invoice);
 
             return $invoice;
         });
@@ -166,7 +168,7 @@ class InvoiceService
             $this->cancel($invoice, 'facture corrigée');
 
             $copy = new Invoice($invoice->only([
-                'client_id', 'worksite_id', 'title', 'due_days', 'discount_type', 'discount_value', 'vat_regime',
+                'client_id', 'worksite_id', 'title', 'work_period', 'show_bank', 'due_days', 'discount_type', 'discount_value', 'vat_regime',
                 'payment_terms', 'notes', 'internal_notes',
             ]));
             $copy->kind = $invoice->kind;

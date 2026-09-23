@@ -45,6 +45,8 @@
                         </select>
                         <span class="hint">Date limite de paiement calculée à l'envoi.</span>
                     </div>
+                    <x-field name="work_period" label="Date des travaux" :value="$invoice->work_period" placeholder="ex. du 12 au 14 octobre 2026" hint="Mention obligatoire sur la facture." />
+                    @include('documents._bank', ['document' => $invoice])
                     @include('documents._texts', ['document' => $invoice])
                 </div>
             </fieldset>

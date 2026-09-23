@@ -11,6 +11,7 @@ class QuoteRequest extends DocumentRequest
             'validity_days' => ['required', 'integer', 'min:1', 'max:365'],
             'work_start' => ['nullable', 'string', 'max:120'],
             'work_duration' => ['nullable', 'string', 'max:120'],
+            'waste_estimate' => ['nullable', 'string', 'max:200'],
         ];
     }
 
@@ -22,6 +23,6 @@ class QuoteRequest extends DocumentRequest
     /** @return array<string, mixed> */
     public function quoteAttributes(): array
     {
-        return $this->headerAttributes(['validity_days', 'work_start', 'work_duration']);
+        return $this->headerAttributes(['validity_days', 'work_start', 'work_duration', 'waste_estimate']);
     }
 }

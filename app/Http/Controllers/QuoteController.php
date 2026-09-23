@@ -62,6 +62,7 @@ class QuoteController extends Controller
             'notes' => TextTemplate::query()->ofType('note')->where('is_default', true)->pluck('body')->implode("\n"),
         ]);
         $quote->vat_regime = $settings->get('vat.regime');
+        $quote->show_bank = (bool) $settings->get('bank.show_by_default');
 
         return view('quotes.edit', ['quote' => $quote] + $this->editorData($quote, $settings));
     }

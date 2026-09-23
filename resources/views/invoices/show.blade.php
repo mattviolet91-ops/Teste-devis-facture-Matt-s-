@@ -59,6 +59,7 @@
     @endforeach
 
     <div class="action-bar">
+        <a class="btn btn-secondary" href="{{ route('invoices.pdf', $invoice) }}" target="_blank" rel="noopener"><x-icon name="file" /> PDF</a>
         @if ($invoice->isDraft() && ! $invoice->isCredit())
             <a class="btn" href="{{ route('invoices.edit', $invoice) }}"><x-icon name="file" /> Modifier</a>
             <form method="POST" action="{{ route('invoices.send', $invoice) }}" data-confirm="Marquer cette facture comme envoyée ? Elle recevra son numéro définitif et ne sera plus modifiable directement.">

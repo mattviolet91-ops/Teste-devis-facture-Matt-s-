@@ -47,7 +47,7 @@ class Client extends Model
     ];
 
     protected $fillable = [
-        'type', 'status', 'civility', 'first_name', 'last_name', 'company_name',
+        'type', 'status', 'civility', 'first_name', 'last_name', 'company_name', 'siret',
         'email', 'phone', 'phone_2', 'address', 'postal_code', 'city',
         'source', 'source_detail', 'notes',
     ];

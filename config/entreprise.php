@@ -42,6 +42,42 @@ return [
         'reduced_rate_mention_enabled' => true,
     ],
 
+    // Assurance décennale (attestation 2026). L'attestation PDF et les alertes
+    // d'échéance arrivent à la phase 9.
+    'insurance' => [
+        'insurer' => 'QBE Europe SA/NV',
+        'insurer_address' => 'Tour CBX, 1 Passerelle des Reflets, 92913 Paris La Défense Cedex',
+        'broker' => '+Simple',
+        'policy_number' => '037 0010701-D1002575',
+        'valid_from' => '2026-01-01',
+        'valid_until' => '2026-12-31',
+        'activities' => 'Couverture, à l\'exclusion de la pose de capteurs solaires',
+        'coverage_area' => 'France métropolitaine et DOM',
+    ],
+
+    // Contenu des PDF (Réglages → Documents PDF).
+    'pdf' => [
+        // Installation où sont apportés les déchets du chantier (nom, adresse, type).
+        'waste_facility' => '',
+        'waste_mention' => 'Les déchets du chantier (tuiles, ardoises, bois, isolant, zinc, emballages…) sont triés, '
+            .'enlevés et évacués par nos soins vers une installation de collecte agréée. Le coût de leur gestion est '
+            .'compris dans le prix des travaux.',
+        'retraction_form' => true,
+        'cgv_enabled' => true,
+        'cgv' => <<<'CGV'
+1. Devis. Le devis est gratuit. Il est valable pendant la durée indiquée. Le contrat est formé par la signature du devis par le client, précédée de la mention « Bon pour accord ».
+2. Prix. Les prix sont fermes pendant la durée de validité du devis. Tout travail supplémentaire ou modification demandée par le client fera l'objet d'un avenant ou d'un nouveau devis accepté avant exécution.
+3. Délais. Les dates d'intervention sont données à titre indicatif et peuvent être décalées en cas d'intempéries, de force majeure ou de retard d'approvisionnement ; le client en est informé.
+4. Accès au chantier. Le client assure l'accès au chantier et le branchement à l'eau et à l'électricité si nécessaire. Il signale tout élément caché (réseaux, amiante, fragilité de la structure) dont il a connaissance.
+5. Paiement. Les paiements sont effectués selon les conditions indiquées sur le devis ou la facture. Les travaux restent la propriété de l'entreprise jusqu'au paiement complet du prix.
+6. Réception. Les travaux sont réceptionnés à leur achèvement, avec ou sans réserves. La réception fait courir les garanties légales (parfait achèvement, biennale, décennale).
+7. Rétractation. Pour un contrat conclu hors établissement (au domicile du client), le client particulier dispose d'un délai de rétractation de 14 jours à compter de la signature ; un formulaire de rétractation est joint au devis. Aucun paiement ne peut être exigé avant l'expiration d'un délai de 7 jours à compter de la signature. Si le client demande que les travaux commencent avant la fin du délai de rétractation, il le demande expressément par écrit.
+8. Litiges. En cas de litige, le client est invité à contacter l'entreprise pour rechercher une solution amiable. Le client consommateur peut recourir gratuitement au médiateur de la consommation indiqué sur le document.
+CGV,
+        'presentation_enabled' => false,
+        'presentation_text' => '',
+    ],
+
     'branding' => [
         'color_accent' => '#3CBDE8',
         'color_primary' => '#494949',

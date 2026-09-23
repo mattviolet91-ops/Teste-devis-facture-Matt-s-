@@ -13,6 +13,9 @@ class ClientRequest extends FormRequest
         if ($this->filled('postal_code')) {
             $this->merge(['postal_code' => preg_replace('/\s+/', '', (string) $this->input('postal_code'))]);
         }
+        if ($this->filled('siret')) {
+            $this->merge(['siret' => preg_replace('/\s+/', '', (string) $this->input('siret'))]);
+        }
     }
 
     public function authorize(): bool
@@ -32,6 +35,7 @@ class ClientRequest extends FormRequest
             'first_name' => ['nullable', 'string', 'max:80'],
             'last_name' => [$individual ? 'required' : 'nullable', 'string', 'max:80'],
             'company_name' => [$individual ? 'nullable' : 'required', 'string', 'max:160'],
+            'siret' => ['nullable', 'regex:/^\d{14}$/'],
             'email' => ['nullable', 'email', 'max:160'],
             'phone' => ['nullable', 'string', 'max:30', 'regex:/^[\d\s.+()\-]+$/'],
             'phone_2' => ['nullable', 'string', 'max:30', 'regex:/^[\d\s.+()\-]+$/'],
@@ -51,6 +55,7 @@ class ClientRequest extends FormRequest
         return [
             'last_name.required' => 'Le nom est obligatoire pour un particulier.',
             'company_name.required' => 'Le nom de la société est obligatoire.',
+            'siret.regex' => 'Le SIRET doit comporter 14 chiffres.',
             'phone.regex' => 'Le numéro de téléphone ne doit contenir que des chiffres.',
             'phone_2.regex' => 'Le numéro de téléphone ne doit contenir que des chiffres.',
             'postal_code.regex' => 'Le code postal doit comporter 5 chiffres.',

@@ -9,6 +9,7 @@ class InvoiceRequest extends DocumentRequest
     {
         return $this->documentRules() + [
             'due_days' => ['required', 'integer', 'min:0', 'max:120'],
+            'work_period' => ['nullable', 'string', 'max:160'],
         ];
     }
 
@@ -20,6 +21,6 @@ class InvoiceRequest extends DocumentRequest
     /** @return array<string, mixed> */
     public function invoiceAttributes(): array
     {
-        return $this->headerAttributes(['due_days']);
+        return $this->headerAttributes(['due_days', 'work_period']);
     }
 }

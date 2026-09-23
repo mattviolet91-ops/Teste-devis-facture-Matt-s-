@@ -18,7 +18,8 @@
     <fieldset>
         <legend>Identité</legend>
         <div class="form-grid cols-2">
-            <x-field name="company_name" label="Société / organisme" :value="$client->company_name" class="span-2" data-pro-only autocomplete="organization" />
+            <x-field name="company_name" label="Société / organisme" :value="$client->company_name" data-pro-only autocomplete="organization" />
+            <x-field name="siret" label="SIRET" :value="$client->siret" data-pro-only inputmode="numeric" hint="Imprimé sur les factures aux professionnels." />
             <x-select name="civility" label="Civilité" :options="array_combine(Client::CIVILITIES, Client::CIVILITIES)" :value="$client->civility" />
             <div data-pro-only class="hint-line"><span class="hint">Pour un professionnel : la personne à contacter.</span></div>
             <x-field name="first_name" label="Prénom" :value="$client->first_name" autocomplete="given-name" />

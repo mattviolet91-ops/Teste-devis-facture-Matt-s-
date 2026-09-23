@@ -6,6 +6,7 @@
         'settings.branding' => 'Apparence',
         'settings.vat' => 'TVA & unités',
         'settings.numbering' => 'Numérotation',
+        'settings.documents' => 'Documents PDF',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
     ];

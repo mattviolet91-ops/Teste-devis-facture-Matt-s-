@@ -111,6 +111,7 @@ abstract class DocumentRequest extends FormRequest
         if (empty($data['vat_regime'])) {
             unset($data['vat_regime']);
         }
+        $data['show_bank'] = $this->boolean('show_bank');
         $data['discount_type'] = $this->filled('discount_type') && $this->parsedDiscount() ? $this->input('discount_type') : null;
         $data['discount_value'] = $data['discount_type'] ? $this->parsedDiscount() : 0;
 

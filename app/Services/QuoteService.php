@@ -57,6 +57,7 @@ class QuoteService
             }
 
             ActivityLogger::log('quote.sent', "Devis {$quote->number} envoyé", $quote);
+            app(PdfService::class)->freeze($quote);
 
             return $quote;
         });
@@ -120,7 +121,7 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote, $clientId, $worksiteId) {
             $copy = new Quote($quote->only([
-                'title', 'validity_days', 'discount_type', 'discount_value', 'vat_regime', 'work_start', 'work_duration',
+                'title', 'validity_days', 'discount_type', 'discount_value', 'vat_regime', 'work_start', 'work_duration', 'waste_estimate', 'show_bank',
                 'payment_terms', 'notes', 'internal_notes',
             ]));
             $copy->client_id = $clientId;

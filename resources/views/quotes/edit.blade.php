@@ -30,7 +30,9 @@
                 <div class="form-grid cols-2">
                     <x-field name="validity_days" label="Validité (jours)" type="number" min="1" max="365" :value="$quote->validity_days" required />
                     <x-field name="work_start" label="Date prévue des travaux" :value="$quote->work_start" placeholder="ex. semaine 42, sous 10 à 15 jours" />
-                    <x-field name="work_duration" label="Durée estimée" :value="$quote->work_duration" placeholder="ex. 2 jours" class="span-2" />
+                    <x-field name="work_duration" label="Durée estimée" :value="$quote->work_duration" placeholder="ex. 2 jours" />
+                    <x-field name="waste_estimate" label="Déchets estimés" :value="$quote->waste_estimate" placeholder="ex. environ 2 m³ de tuiles et gravats" hint="Imprimé dans la mention sur les déchets." />
+                    @include('documents._bank', ['document' => $quote])
                     @include('documents._texts', ['document' => $quote])
                 </div>
             </fieldset>

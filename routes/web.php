@@ -8,6 +8,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PdfController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/nouvelle-version', [QuoteController::class, 'revise'])->name('revise');
         Route::post('/dupliquer', [QuoteController::class, 'duplicate'])->name('duplicate');
         Route::post('/facturer', [InvoiceController::class, 'fromQuote'])->name('invoice');
+        Route::get('/pdf', [PdfController::class, 'quote'])->name('pdf');
     });
 
     Route::resource('factures', InvoiceController::class)
@@ -69,6 +71,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/envoyee', [InvoiceController::class, 'send'])->name('send');
         Route::post('/corriger', [InvoiceController::class, 'correct'])->name('correct');
         Route::post('/annuler', [InvoiceController::class, 'cancel'])->name('cancel');
+        Route::get('/pdf', [PdfController::class, 'invoice'])->name('pdf');
     });
 
     Route::resource('prestations', CatalogController::class)
@@ -101,6 +104,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/tva/taux/{rate}', [Settings\VatController::class, 'updateRate'])->name('vat.rates.update');
         Route::post('/tva/unites', [Settings\VatController::class, 'storeUnit'])->name('units.store');
         Route::put('/tva/unites/{unit}', [Settings\VatController::class, 'updateUnit'])->name('units.update');
+
+        Route::get('/documents', [Settings\DocumentsController::class, 'edit'])->name('documents');
+        Route::put('/documents', [Settings\DocumentsController::class, 'update']);
 
         Route::get('/numerotation', [Settings\NumberingController::class, 'edit'])->name('numbering');
         Route::put('/numerotation', [Settings\NumberingController::class, 'update']);

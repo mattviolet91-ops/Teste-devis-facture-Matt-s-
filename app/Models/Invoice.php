@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -34,7 +35,7 @@ class Invoice extends Model
     ];
 
     protected $fillable = [
-        'client_id', 'worksite_id', 'title', 'due_days', 'discount_type', 'discount_value', 'vat_regime',
+        'client_id', 'worksite_id', 'title', 'work_period', 'show_bank', 'due_days', 'discount_type', 'discount_value', 'vat_regime',
         'payment_terms', 'notes', 'internal_notes',
     ];
 
@@ -46,6 +47,7 @@ class Invoice extends Model
             'sent_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'due_days' => 'integer',
+            'show_bank' => 'boolean',
             'percent' => 'integer',
             'discount_value' => 'integer',
             'total_ht' => 'integer',
@@ -97,6 +99,12 @@ class Invoice extends Model
     public function correction(): HasOne
     {
         return $this->hasOne(self::class, 'corrects_id')->latest('id');
+    }
+
+    /** PDF figé au moment de l'envoi. */
+    public function snapshot(): MorphOne
+    {
+        return $this->morphOne(Snapshot::class, 'document')->latestOfMany();
     }
 
     public function isDraft(): bool
