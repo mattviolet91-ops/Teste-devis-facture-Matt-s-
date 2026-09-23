@@ -20,7 +20,7 @@ class NumberGenerator
             $sequence = NumberSequence::query()->where('type', $type)->lockForUpdate()->firstOrFail();
 
             $number = $sequence->next_number;
-            $sequence->increment('next_number');
+            $sequence->update(['next_number' => $number + 1, 'last_issued_number' => $number]);
 
             return $sequence->format($number);
         });

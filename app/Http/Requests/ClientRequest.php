@@ -8,6 +8,13 @@ use Illuminate\Validation\Rule;
 
 class ClientRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('postal_code')) {
+            $this->merge(['postal_code' => preg_replace('/\s+/', '', (string) $this->input('postal_code'))]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -29,12 +36,13 @@ class ClientRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30', 'regex:/^[\d\s.+()\-]+$/'],
             'phone_2' => ['nullable', 'string', 'max:30', 'regex:/^[\d\s.+()\-]+$/'],
             'address' => ['nullable', 'string', 'max:160'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
+            'postal_code' => ['nullable', 'regex:/^\d{5}$/'],
             'city' => ['nullable', 'string', 'max:80'],
             'source' => ['nullable', Rule::in(array_keys(Client::SOURCES))],
             'source_detail' => ['nullable', 'string', 'max:160'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'create_worksite' => ['sometimes', 'boolean'],
+            'confirm_duplicate' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -45,6 +53,7 @@ class ClientRequest extends FormRequest
             'company_name.required' => 'Le nom de la société est obligatoire.',
             'phone.regex' => 'Le numéro de téléphone ne doit contenir que des chiffres.',
             'phone_2.regex' => 'Le numéro de téléphone ne doit contenir que des chiffres.',
+            'postal_code.regex' => 'Le code postal doit comporter 5 chiffres.',
         ];
     }
 

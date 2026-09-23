@@ -15,7 +15,8 @@
                 <h3 style="margin:0">{{ \App\Models\NumberSequence::LABELS[$sequence->type] ?? $sequence->type }}</h3>
                 <div class="form-grid cols-2">
                     <x-field :name="'sequences.'.$sequence->type.'.prefix'" label="Préfixe" :value="$sequence->prefix" maxlength="10" required />
-                    <x-field :name="'sequences.'.$sequence->type.'.next_number'" label="Prochain numéro" type="number" min="1" :value="$sequence->next_number" required />
+                    <x-field :name="'sequences.'.$sequence->type.'.next_number'" label="Prochain numéro" type="number" :min="$sequence->minimumNextNumber()" :value="$sequence->next_number"
+                        :hint="$sequence->last_issued_number ? 'Dernier numéro attribué : n° '.$sequence->last_issued_number.' — impossible de revenir en arrière.' : null" required />
                 </div>
                 <p class="small muted" style="margin:0">Prochain document : <strong>{{ $sequence->format($sequence->next_number) }}</strong></p>
             </div>

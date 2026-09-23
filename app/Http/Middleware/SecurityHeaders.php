@@ -23,7 +23,8 @@ class SecurityHeaders
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' data: blob:",
                 "font-src 'self'",
-                "connect-src 'self'",
+                // Suggestions d'adresses : Base Adresse Nationale (Géoplateforme de l'État).
+                "connect-src 'self' https://data.geopf.fr",
                 "form-action 'self'",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",

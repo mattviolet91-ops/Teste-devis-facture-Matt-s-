@@ -31,7 +31,7 @@
         <span class="spacer"></span>
         <a class="icon-btn search-mobile" href="{{ route('search') }}" title="Rechercher"><x-icon name="search" /><span class="visually-hidden">Rechercher</span></a>
         <button class="icon-btn" type="button" data-theme-toggle title="Mode clair / sombre">
-            <x-icon name="moon" /><span class="visually-hidden">Mode clair / sombre</span>
+            <x-icon name="moon" class="icon theme-moon" /><x-icon name="sun" class="icon theme-sun" /><span class="visually-hidden">Mode clair / sombre</span>
         </button>
     </header>
 

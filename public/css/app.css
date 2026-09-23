@@ -462,6 +462,31 @@ button.nav-link { width: 100%; border: 0; background: none; font: inherit; color
 .chip .icon { width: 16px; height: 16px; vertical-align: -3px; }
 
 .timeline { list-style: none; margin: 0; padding: 0; }
-.timeline li { display: grid; grid-template-columns: 8.5rem 1fr; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
-.timeline li:last-child { border-bottom: 0; }
-@media (max-width: 480px) { .timeline li { grid-template-columns: 1fr; gap: 0; } }
+.timeline > li { display: grid; grid-template-columns: 8.5rem 1fr; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.timeline > li:last-child { border-bottom: 0; }
+@media (max-width: 480px) { .timeline > li { grid-template-columns: 1fr; gap: 0; } }
+
+.changes { margin: .25rem 0 0; padding-left: 1.25rem; font-size: .875rem; color: var(--text-muted); }
+.changes del { color: var(--text-muted); opacity: .8; }
+
+/* Icône du bouton de thème : lune en mode clair, soleil en mode sombre. */
+.theme-sun { display: none; }
+:root[data-theme="dark"] .theme-sun { display: block; }
+:root[data-theme="dark"] .theme-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-moon { display: none; }
+}
+
+.duplicates { margin: .5rem 0 .75rem; padding-left: 1.25rem; }
+.duplicates a { font-weight: 600; }
+
+/* Suggestions d'adresses */
+.address-field { position: relative; }
+.suggestions {
+  position: absolute; z-index: 15; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px 0; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+}
+.suggestions li { padding: .625rem .75rem; cursor: pointer; }
+.suggestions li[aria-selected="true"], .suggestions li:hover { background: var(--accent-soft); }
+.suggestions .small { display: block; color: var(--text-muted); }

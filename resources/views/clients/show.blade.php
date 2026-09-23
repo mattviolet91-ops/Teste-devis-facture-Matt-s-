@@ -109,7 +109,16 @@
                 @foreach ($history as $event)
                     <li>
                         <span class="muted small">{{ $event->created_at->format('d/m/Y H:i') }}</span>
-                        <span>{{ $event->description }}</span>
+                        <span>
+                            {{ $event->description }}
+                            @if (! empty($event->properties['modifications']))
+                                <ul class="changes">
+                                    @foreach ($event->properties['modifications'] as $change)
+                                        <li><strong>{{ $change['champ'] }}</strong> : <del>{{ \Illuminate\Support\Str::limit($change['avant'], 80) }}</del> → {{ \Illuminate\Support\Str::limit($change['apres'], 80) }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </span>
                     </li>
                 @endforeach
             </ol>

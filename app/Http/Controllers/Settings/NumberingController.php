@@ -25,12 +25,16 @@ class NumberingController extends Controller
         $sequences = NumberSequence::query()->get()->keyBy('type');
 
         $rules = ['quote_validity_days' => ['required', 'integer', 'min:1', 'max:365']];
+        $messages = [];
         foreach ($sequences as $type => $sequence) {
             $rules["sequences.$type.prefix"] = ['required', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'];
-            $rules["sequences.$type.next_number"] = ['required', 'integer', 'min:1', 'max:999999'];
+            $rules["sequences.$type.next_number"] = ['required', 'integer', 'min:'.$sequence->minimumNextNumber(), 'max:999999'];
+            $messages["sequences.$type.next_number.min"] = $sequence->last_issued_number
+                ? "Le numéro {$sequence->last_issued_number} a déjà été attribué : le prochain numéro doit être au moins {$sequence->minimumNextNumber()} (pas de doublon possible)."
+                : 'Le prochain numéro doit être au moins 1.';
         }
 
-        $data = $request->validate($rules, [
+        $data = $request->validate($rules, $messages + [
             'regex' => 'Le préfixe ne peut contenir que des majuscules et des chiffres.',
         ]);
 

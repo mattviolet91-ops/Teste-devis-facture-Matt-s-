@@ -12,11 +12,17 @@ class NumberSequence extends Model
         'credit_note' => 'Avoirs',
     ];
 
-    protected $fillable = ['type', 'prefix', 'next_number', 'padding'];
+    protected $fillable = ['type', 'prefix', 'next_number', 'last_issued_number', 'padding'];
 
     protected function casts(): array
     {
-        return ['next_number' => 'integer', 'padding' => 'integer'];
+        return ['next_number' => 'integer', 'last_issued_number' => 'integer', 'padding' => 'integer'];
+    }
+
+    /** Plus petit « prochain numéro » autorisé : juste après le dernier numéro attribué. */
+    public function minimumNextNumber(): int
+    {
+        return ($this->last_issued_number ?? 0) + 1;
     }
 
     /** Numéro tel qu'il sera attribué : DEV-2026-0001. */

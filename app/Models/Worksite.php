@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DescribesChanges;
 use App\Models\Concerns\Searchable;
 use App\Support\Phone;
 use Database\Factories\WorksiteFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Worksite extends Model
 {
     /** @use HasFactory<WorksiteFactory> */
-    use HasFactory, Searchable, SoftDeletes;
+    use DescribesChanges, HasFactory, Searchable, SoftDeletes;
 
     public const ROOF_TYPES = [
         'tuile_mecanique' => 'Tuile mécanique',
@@ -76,6 +77,28 @@ class Worksite extends Model
     protected function contactPhone(): Attribute
     {
         return Attribute::set(fn (?string $value) => Phone::format($value));
+    }
+
+    protected function fieldLabels(): array
+    {
+        return [
+            'label' => 'Nom du chantier', 'address' => 'Adresse', 'postal_code' => 'Code postal', 'city' => 'Ville',
+            'contact_name' => 'Contact sur place', 'contact_phone' => 'Téléphone du contact', 'access_notes' => 'Accès',
+            'roof_type' => 'Couverture', 'roof_surface' => 'Surface (m²)', 'roof_pitch' => 'Pente', 'levels' => 'Niveaux',
+            'accessibility' => 'Accès toiture', 'notes' => 'Notes',
+        ];
+    }
+
+    protected function displayValue(string $field, mixed $value): string
+    {
+        $value = match ($field) {
+            'roof_type' => self::ROOF_TYPES[$value] ?? $value,
+            'accessibility' => self::ACCESSIBILITY[$value] ?? $value,
+            'roof_surface' => $value === null ? null : rtrim(rtrim(number_format((float) $value, 2, ',', ' '), '0'), ','),
+            default => $value,
+        };
+
+        return $value === null || $value === '' ? '—' : (string) $value;
     }
 
     protected function searchableValues(): array

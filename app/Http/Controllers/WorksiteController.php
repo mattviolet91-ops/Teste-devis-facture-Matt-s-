@@ -35,11 +35,11 @@ class WorksiteController extends Controller
     {
         $this->ensureClientExists($worksite);
         $worksite->fill($request->validated());
-        $changes = array_keys($worksite->getDirty());
+        $changes = $worksite->describeChanges();
         $worksite->save();
 
         if ($changes) {
-            ActivityLogger::log('worksite.updated', "Chantier modifié : {$worksite->fullAddress()}", $worksite, ['champs' => $changes]);
+            ActivityLogger::log('worksite.updated', "Chantier modifié : {$worksite->fullAddress()}", $worksite, ['modifications' => $changes]);
         }
 
         return redirect()->to(route('clients.show', $worksite->client_id).'#chantier-'.$worksite->id)->with('status', 'Chantier enregistré.');

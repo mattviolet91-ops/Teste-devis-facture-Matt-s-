@@ -19,18 +19,19 @@ devis.matts-couverture.fr  ──┘
 | Langage | PHP 8.2+ | Natif sur o2switch, aucun coût supplémentaire |
 | Framework | Laravel 12 | Sécurité intégrée (authentification, CSRF, chiffrement), très répandu, maintenable |
 | Base de données | MySQL / MariaDB (production), SQLite (tests) | Fournie par o2switch |
-| Interface | Blade (rendu serveur) + CSS maison + Alpine.js | Rapide sur mobile, **aucune compilation** (pas de Node.js sur le serveur) |
+| Interface | Blade (rendu serveur) + CSS et JavaScript maison | Rapide sur mobile, **aucune compilation** (pas de Node.js sur le serveur), aucune dépendance JavaScript |
 | PDF | mPDF (phase 8) | Fonctionne en hébergement mutualisé, gère en-têtes / pieds de page |
 | Photos | Intervention Image + GD (phase 9) | Compression, miniatures |
-| Réordonner les lignes | SortableJS (phase 6) | Glisser-déposer tactile |
+| Réordonner les lignes | SortableJS ou code maison (phase 6) | Glisser-déposer tactile |
 | Signature | signature_pad (phase 11) | Signature au doigt |
 | Emails | SMTP Gmail (mot de passe d'application) | Gratuit, envoi depuis l'adresse habituelle |
 | Tâches planifiées | Cron o2switch → `php artisan schedule:run` | Relances, alertes, sauvegardes, retards |
 | Hors ligne | Service worker + IndexedDB (phase 9) | Photos et brouillons sans réseau |
+| Adresses | Base Adresse Nationale (data.geopf.fr), appelée depuis le navigateur | Gratuit, service de l'État ; seule l'adresse tapée est envoyée |
 
-Les fichiers JavaScript tiers sont copiés dans `public/vendor/` et les polices
-dans `public/fonts/` : aucun appel à un service externe (confidentialité,
-fonctionnement même si un CDN tombe).
+Les polices sont copiées dans `public/fonts/` : aucun appel à Google ni à un
+CDN. Le seul service externe est la Base Adresse Nationale (suggestions
+d'adresses) ; sans réseau, la saisie reste manuelle.
 
 ## Organisation du code
 

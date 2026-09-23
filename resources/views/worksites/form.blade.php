@@ -23,7 +23,7 @@
                 @endif
                 <div class="form-grid cols-2">
                     <x-field name="label" label="Nom du chantier (facultatif)" :value="$worksite->label" class="span-2" placeholder="ex. Maison principale, Résidence Les Tilleuls bât. B" />
-                    <x-field name="address" label="Adresse" :value="$worksite->address" class="span-2" required />
+                    <x-field name="address" label="Adresse" :value="$worksite->address" class="span-2" autocomplete="off" data-address-autocomplete placeholder="Commencez à taper : 12 rue des…" required />
                     <x-field name="postal_code" label="Code postal" :value="$worksite->postal_code" inputmode="numeric" required />
                     <x-field name="city" label="Ville" :value="$worksite->city" required />
                 </div>

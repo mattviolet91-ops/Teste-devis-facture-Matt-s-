@@ -21,18 +21,16 @@ class ClientController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'type' => ['nullable', Rule::in(array_keys(Client::TYPES))],
             'status' => ['nullable', Rule::in(array_keys(Client::STATUSES))],
+            'sort' => ['nullable', Rule::in(['recent', 'az'])],
         ]);
+        $filters['sort'] ??= 'recent';
 
         $clients = Client::query()
             ->withCount('worksites')
-            ->when($filters['q'] ?? null, function ($query, $q) {
-                // Un client est trouvé par ses propres informations ou par l'adresse d'un de ses chantiers.
-                $query->where(fn ($sub) => $sub->search($q)
-                    ->orWhereHas('worksites', fn ($w) => $w->search($q)));
-            })
+            ->when($filters['q'] ?? null, fn ($query, $q) => $query->searchWithWorksites($q))
             ->when($filters['type'] ?? null, fn ($query, $type) => $query->where('type', $type))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->latest('updated_at')
+            ->when($filters['sort'] === 'az', fn ($query) => $query->alphabetical(), fn ($query) => $query->latest('updated_at'))
             ->paginate(25)
             ->withQueryString();
 
@@ -46,8 +44,20 @@ class ClientController extends Controller
 
     public function store(ClientRequest $request): RedirectResponse
     {
+        // Avertit si une fiche existe déjà avec ce téléphone ou cet email.
+        if (! $request->boolean('confirm_duplicate')) {
+            $duplicates = Client::findDuplicates($request->input('phone'), $request->input('email'));
+            if ($duplicates->isNotEmpty()) {
+                return back()->withInput()->with('duplicates', $duplicates->map(fn (Client $c) => [
+                    'name' => $c->displayName(),
+                    'detail' => collect([$c->phone, $c->email, $c->city])->filter()->implode(' · '),
+                    'url' => route('clients.show', $c),
+                ])->all());
+            }
+        }
+
         $client = DB::transaction(function () use ($request) {
-            $client = Client::query()->create($request->safe()->except('create_worksite'));
+            $client = Client::query()->create($request->safe()->except('create_worksite', 'confirm_duplicate'));
             ActivityLogger::log('client.created', "Client créé : {$client->displayName()}", $client);
 
             // Chantier à l'adresse du client (cas le plus fréquent chez un particulier).
@@ -87,12 +97,12 @@ class ClientController extends Controller
 
     public function update(ClientRequest $request, Client $client): RedirectResponse
     {
-        $client->fill($request->safe()->except('create_worksite'));
-        $changes = array_keys($client->getDirty());
+        $client->fill($request->safe()->except('create_worksite', 'confirm_duplicate'));
+        $changes = $client->describeChanges();
         $client->save();
 
         if ($changes) {
-            ActivityLogger::log('client.updated', 'Fiche client modifiée', $client, ['champs' => $changes]);
+            ActivityLogger::log('client.updated', 'Fiche client modifiée', $client, ['modifications' => $changes]);
         }
 
         return redirect()->route('clients.show', $client)->with('status', 'Client enregistré.');

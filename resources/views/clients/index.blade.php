@@ -27,6 +27,11 @@
             </select>
             <button class="btn btn-secondary" type="submit">Filtrer</button>
         </div>
+        <div class="chips" role="group" aria-label="Tri">
+            @foreach (['recent' => 'Récents', 'az' => 'A → Z'] as $key => $label)
+                <a class="chip {{ $filters['sort'] === $key ? 'is-active' : '' }}" href="{{ route('clients.index', array_filter(['sort' => $key] + $filters)) }}">{{ $label }}</a>
+            @endforeach
+        </div>
     </form>
 
     @if ($clients->isEmpty())

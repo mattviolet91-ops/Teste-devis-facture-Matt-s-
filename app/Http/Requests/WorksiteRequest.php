@@ -13,8 +13,17 @@ class WorksiteRequest extends FormRequest
         return true;
     }
 
+    public function messages(): array
+    {
+        return ['postal_code.regex' => 'Le code postal doit comporter 5 chiffres.'];
+    }
+
     protected function prepareForValidation(): void
     {
+        if ($this->filled('postal_code')) {
+            $this->merge(['postal_code' => preg_replace('/\s+/', '', (string) $this->input('postal_code'))]);
+        }
+
         // Surface saisie à la française : « 85,5 ».
         if ($this->filled('roof_surface')) {
             $this->merge(['roof_surface' => str_replace([',', ' '], ['.', ''], (string) $this->input('roof_surface'))]);
@@ -27,7 +36,7 @@ class WorksiteRequest extends FormRequest
         return [
             'label' => ['nullable', 'string', 'max:120'],
             'address' => ['required', 'string', 'max:160'],
-            'postal_code' => ['required', 'string', 'max:10'],
+            'postal_code' => ['required', 'regex:/^\d{5}$/'],
             'city' => ['required', 'string', 'max:80'],
             'contact_name' => ['nullable', 'string', 'max:120'],
             'contact_phone' => ['nullable', 'string', 'max:30', 'regex:/^[\d\s.+()\-]+$/'],

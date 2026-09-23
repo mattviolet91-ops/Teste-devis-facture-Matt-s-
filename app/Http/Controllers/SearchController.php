@@ -21,7 +21,7 @@ class SearchController extends Controller
         $results = ['clients' => collect(), 'worksites' => collect()];
 
         if (Search::terms($q) !== []) {
-            $results['clients'] = Client::query()->search($q)->orderBy('last_name')->orderBy('company_name')->limit(self::LIMIT)->get();
+            $results['clients'] = Client::query()->searchWithWorksites($q)->alphabetical()->limit(self::LIMIT)->get();
             $results['worksites'] = Worksite::query()->search($q)->whereHas('client')->with('client')->limit(self::LIMIT)->get();
         }
 

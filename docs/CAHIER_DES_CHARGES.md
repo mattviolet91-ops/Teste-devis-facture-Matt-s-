@@ -83,6 +83,9 @@ enregistré, affichage optionnel par document.
 Organisation **par client** ; un client peut avoir plusieurs adresses de
 chantier. Statut prospect → client au premier devis accepté. Provenance
 suivie. Types : particulier, entreprise, syndic, agence, collectivité, autre.
+Code postal à 5 chiffres, suggestions d'adresses, alerte de doublon
+(téléphone ou email), tri récents / A → Z. Un client qui a des factures ne
+peut pas être mis à la corbeille (actif à partir de la phase 7).
 
 ### Bibliothèque
 Prestations (nom, description, prix, unité, TVA, catégorie, photo) et

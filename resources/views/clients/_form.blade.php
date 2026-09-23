@@ -34,7 +34,7 @@
             <x-field name="phone" label="Téléphone" type="tel" :value="$client->phone" inputmode="tel" autocomplete="tel" />
             <x-field name="phone_2" label="Autre téléphone" type="tel" :value="$client->phone_2" inputmode="tel" />
             <x-field name="email" label="Email" type="email" :value="$client->email" class="span-2" autocomplete="email" />
-            <x-field name="address" label="Adresse" :value="$client->address" class="span-2" autocomplete="street-address" />
+            <x-field name="address" label="Adresse" :value="$client->address" class="span-2" autocomplete="off" data-address-autocomplete placeholder="Commencez à taper : 12 rue des…" />
             <x-field name="postal_code" label="Code postal" :value="$client->postal_code" inputmode="numeric" autocomplete="postal-code" />
             <x-field name="city" label="Ville" :value="$client->city" autocomplete="address-level2" />
             @if (! $client->exists)
