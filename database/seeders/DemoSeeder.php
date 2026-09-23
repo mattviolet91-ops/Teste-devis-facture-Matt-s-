@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Données fictives pour les tests et les démonstrations.
@@ -84,7 +85,7 @@ class DemoSeeder extends Seeder
                 'type' => 'particulier', 'status' => $i % 3 === 0 ? 'client' : 'prospect',
                 'civility' => $civility, 'first_name' => $firstName, 'last_name' => $lastName,
                 'phone' => sprintf('06 %02d %02d %02d %02d', 10 + $i, 20 + $i, 30 + $i, 40 + $i),
-                'email' => strtolower(\Illuminate\Support\Str::ascii($firstName.'.'.$lastName)).'@example.com',
+                'email' => strtolower(Str::ascii($firstName.'.'.$lastName)).'@example.com',
                 'address' => $address, 'postal_code' => $postalCodes[$city], 'city' => $city,
                 'source' => $sources[$i % count($sources)],
             ])->worksites()->create(['address' => $address, 'postal_code' => $postalCodes[$city], 'city' => $city]);
