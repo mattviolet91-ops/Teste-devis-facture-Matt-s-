@@ -128,7 +128,7 @@ class ClientLinkService
         $url = $document instanceof Quote ? route('quotes.show', $document) : route('invoices.show', $document);
 
         try {
-            Mail::to($to)->send(new ClientMessage($subject, "Bonjour,\n\n$text\n\nVoir dans l'application : $url"));
+            Mail::to($to)->send(new ClientMessage($subject, "Bonjour,\n\n$text", buttonUrl: $url, buttonLabel: 'Ouvrir dans l\'application'));
         } catch (Throwable $e) {
             Log::warning('Notification non envoyée', ['error' => $e->getMessage()]);
         }

@@ -62,7 +62,10 @@ class EmailService
             if ($bcc = $this->mail->bccAddress()) {
                 $message->bcc($bcc);
             }
-            $message->send(new ClientMessage($subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment, $files));
+            $message->send(new ClientMessage(
+                $subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment, $files,
+                $document?->publicUrl(), $document ? $this->buttonLabel($document) : null,
+            ));
             $log->status = 'sent';
         } catch (Throwable $e) {
             Log::warning('Échec d\'envoi d\'email', ['error' => $e->getMessage()]);
@@ -79,5 +82,14 @@ class EmailService
         );
 
         return $log;
+    }
+
+    private function buttonLabel(Quote|Invoice $document): string
+    {
+        return match (true) {
+            $document instanceof Quote => 'Voir et accepter le devis',
+            $document->isCredit() => 'Voir l\'avoir',
+            default => 'Voir la facture',
+        };
     }
 }

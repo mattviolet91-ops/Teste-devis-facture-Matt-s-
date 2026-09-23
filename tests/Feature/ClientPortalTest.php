@@ -168,7 +168,15 @@ class ClientPortalTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $url = $quote->fresh()->publicUrl();
-        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => str_contains($m->text, $url));
+        Mail::assertSent(ClientMessage::class, function (ClientMessage $m) use ($url) {
+            $html = $m->render();
+
+            return str_contains($m->text, $url)
+                && $m->buttonUrl === $url
+                && str_contains($html, 'href="'.$url.'"')
+                && str_contains($html, 'Voir et accepter le devis')
+                && substr_count($html, $url) === 1;
+        });
         $this->get(route('quotes.show', $quote))->assertSee('Lien client')->assertSee($url);
     }
 

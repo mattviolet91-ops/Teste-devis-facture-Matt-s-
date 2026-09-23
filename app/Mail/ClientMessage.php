@@ -17,6 +17,9 @@ class ClientMessage extends Mailable
         public readonly ?string $pdfName = null,
         /** @var list<array{path: string, name: string}> fichiers du dossier privé */
         public readonly array $files = [],
+        /** Bouton d'action (lien client) affiché dans la version HTML. */
+        public readonly ?string $buttonUrl = null,
+        public readonly ?string $buttonLabel = null,
     ) {}
 
     public function envelope(): Envelope
