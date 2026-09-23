@@ -44,9 +44,9 @@ class TrashController extends Controller
         $quote = Quote::onlyTrashed()->findOrFail($id);
         abort_unless($quote->client()->whereNull('deleted_at')->exists(), 409, 'Restaurez d\'abord le client.');
         $quote->restore();
-        ActivityLogger::log('quote.restored', 'Brouillon de devis restauré', $quote);
+        ActivityLogger::log('quote.restored', $quote->number ? "Devis {$quote->number} restauré" : 'Brouillon de devis restauré', $quote);
 
-        return redirect()->route('quotes.show', $quote)->with('status', 'Brouillon restauré.');
+        return redirect()->route('quotes.show', $quote)->with('status', 'Devis restauré.');
     }
 
     public function restoreInvoice(int $id): RedirectResponse

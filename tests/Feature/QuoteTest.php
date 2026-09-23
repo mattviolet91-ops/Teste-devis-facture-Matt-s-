@@ -180,14 +180,32 @@ class QuoteTest extends TestCase
         $this->assertNull($quote->fresh()->number);
     }
 
-    public function test_sent_quote_cannot_be_modified_or_deleted(): void
+    public function test_sent_quote_cannot_be_modified_but_can_be_trashed(): void
     {
         $quote = $this->createQuote();
         $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
 
         $this->get(route('quotes.edit', $quote))->assertRedirect(route('quotes.show', $quote));
         $this->put(route('quotes.update', $quote), $this->payload())->assertForbidden();
-        $this->delete(route('quotes.destroy', $quote))->assertForbidden();
+
+        $this->get(route('quotes.show', $quote))->assertSee('Supprimer le devis');
+        $this->delete(route('quotes.destroy', $quote))->assertRedirect(route('quotes.index'));
+        $this->assertSoftDeleted($quote);
+        $this->get(route('trash.index'))->assertSee('DEV-2026-0001');
+        $this->post(route('trash.quotes.restore', $quote->id))->assertRedirect(route('quotes.show', $quote));
+        $this->assertNotSoftDeleted($quote);
+    }
+
+    public function test_invoiced_quote_cannot_be_trashed(): void
+    {
+        $quote = $this->createQuote();
+        $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
+
+        $this->delete(route('quotes.destroy', $quote))->assertSessionHasErrors('send');
+        $this->assertNotSoftDeleted($quote);
     }
 
     public function test_new_version_gets_a_new_number_and_replaces_the_old_one(): void

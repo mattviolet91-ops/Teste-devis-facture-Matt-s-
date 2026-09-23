@@ -118,11 +118,12 @@
 
     @include('documents._history')
 
-    @if ($quote->isDraft())
-        <form method="POST" action="{{ route('quotes.destroy', $quote) }}" data-confirm="Mettre ce brouillon à la corbeille ?">
+    @if ($quote->invoices->whereIn('status', ['draft', 'sent', 'paid'])->isEmpty())
+        <form method="POST" action="{{ route('quotes.destroy', $quote) }}"
+            data-confirm="{{ $quote->isDraft() ? 'Mettre ce brouillon à la corbeille ?' : 'Supprimer le devis '.$quote->number.($quote->status === 'accepted' ? ' (accepté par le client)' : '').' ? Il reste récupérable 30 jours dans la corbeille.' }}">
             @csrf
             @method('DELETE')
-            <div class="form-actions"><button class="btn btn-danger-outline" type="submit">Mettre le brouillon à la corbeille</button></div>
+            <div class="form-actions"><button class="btn btn-danger-outline" type="submit"><x-icon name="trash" /> {{ $quote->isDraft() ? 'Mettre le brouillon à la corbeille' : 'Supprimer le devis' }}</button></div>
         </form>
     @endif
 

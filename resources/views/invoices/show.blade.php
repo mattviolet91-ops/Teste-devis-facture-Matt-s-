@@ -75,7 +75,7 @@
                 @csrf
                 <button class="btn" type="submit"><x-icon name="file" /> Modifier</button>
             </form>
-            <button class="btn btn-secondary" type="button" data-open-sheet="cancel-dialog"><x-icon name="x" /> Annuler par avoir</button>
+            <button class="btn btn-secondary" type="button" data-open-sheet="cancel-dialog"><x-icon name="trash" /> Supprimer</button>
         @endif
     </div>
 
@@ -126,15 +126,17 @@
             <form method="POST" action="{{ route('invoices.cancel', $invoice) }}">
                 @csrf
                 <div class="card-head">
-                    <h2 id="cancel-title">Annuler la facture</h2>
+                    <h2 id="cancel-title">Supprimer la facture {{ $invoice->number }}</h2>
                     <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
                 </div>
-                <p class="small muted">Une facture envoyée ne peut pas être supprimée : un avoir du même montant ({{ Money::format($invoice->total_ttc) }}) va être émis pour l'annuler.</p>
+                <p class="small">La loi interdit d'effacer une facture envoyée (numérotation continue, conservation 10 ans).
+                    La seule suppression possible est l'<strong>annulation par avoir</strong> : un avoir du même montant ({{ Money::format($invoice->total_ttc) }}) est émis,
+                    la facture ne compte plus dans votre chiffre d'affaires ni dans les montants à encaisser, et elle disparaît de la liste principale (filtre « Annulées »).</p>
                 <div class="field">
                     <label for="reason">Motif (facultatif)</label>
                     <input id="reason" name="reason" type="text" maxlength="300" placeholder="ex. travaux annulés, erreur de client…">
                 </div>
-                <div class="form-actions"><button class="btn btn-danger" type="submit">Émettre l'avoir</button></div>
+                <div class="form-actions"><button class="btn btn-danger" type="submit">Supprimer (annuler par avoir)</button></div>
             </form>
         </dialog>
     @endif

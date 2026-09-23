@@ -28,6 +28,7 @@ class InvoiceController extends Controller
         'overdue' => 'En retard',
         'paid' => 'Payées',
         'credit' => 'Avoirs',
+        'cancelled' => 'Annulées',
     ];
 
     public function __construct(private readonly InvoiceService $invoices) {}
@@ -49,7 +50,10 @@ class InvoiceController extends Controller
                 'overdue' => $query->overdue(),
                 'paid' => $query->invoices()->where('status', 'paid'),
                 'credit' => $query->credits(),
-                default => $query,
+                'cancelled' => $query->where('status', 'cancelled'),
+                // Liste principale : sans les factures annulées ni leurs avoirs.
+                default => $query->where('status', '!=', 'cancelled')
+                    ->where(fn ($q) => $q->where('kind', '!=', 'credit')->orWhereNull('cancels_id')),
             })
             ->latest('updated_at')
             ->paginate(25)
@@ -156,7 +160,7 @@ class InvoiceController extends Controller
 
         $credit = $this->invoices->cancel($invoice, $data['reason'] ?? null);
 
-        return redirect()->route('invoices.show', $credit)->with('status', "Facture {$invoice->number} annulée par l'avoir {$credit->number}.");
+        return redirect()->route('invoices.index')->with('status', "Facture {$invoice->number} supprimée : annulée par l'avoir {$credit->number} (visible dans le filtre « Annulées »).");
     }
 
     /** Facturation d'un devis accepté (acompte, situation, solde, facture complète). */

@@ -34,12 +34,12 @@
 
     @if ($quotes->isNotEmpty())
         <div class="card">
-            <h2>Brouillons de devis</h2>
+            <h2>Devis</h2>
             <ul class="stat-list">
                 @foreach ($quotes as $quote)
                     <li>
                         <span>
-                            <strong>{{ $quote->title ?: 'Devis sans objet' }}</strong><br>
+                            <strong>{{ $quote->number ? $quote->number.' — ' : '' }}{{ $quote->title ?: 'Devis sans objet' }}</strong><br>
                             <span class="muted small">{{ $quote->client?->displayName() }} — supprimé le {{ $quote->deleted_at->format('d/m/Y') }}</span>
                         </span>
                         <form method="POST" action="{{ route('trash.quotes.restore', $quote->id) }}">

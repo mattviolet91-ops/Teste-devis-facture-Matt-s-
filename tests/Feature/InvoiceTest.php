@@ -295,6 +295,10 @@ class InvoiceTest extends TestCase
         $credit = Invoice::query()->credits()->firstOrFail();
         $this->assertSame('cancelled', $invoice->fresh()->status);
         $this->assertSame('Motif : Travaux annulés', $credit->notes);
+        $this->get(route('invoices.index'));
+        $this->get(route('invoices.index'))->assertDontSee('FAC-2026-0001')->assertDontSee('AV-2026-0001');
+        $this->get(route('invoices.index', ['status' => 'cancelled']))->assertSee('FAC-2026-0001');
+        $this->get(route('invoices.index', ['status' => 'credit']))->assertSee('AV-2026-0001');
         $this->assertSame(0, Invoice::query()->where('status', 'draft')->count());
     }
 

@@ -116,14 +116,18 @@ class QuoteController extends Controller
         return redirect()->route('quotes.show', $quote)->with('status', 'Brouillon enregistré.');
     }
 
+    /** Mise à la corbeille (tout statut), récupérable 30 jours ; impossible si le devis a été facturé. */
     public function destroy(Quote $quote): RedirectResponse
     {
-        abort_unless($quote->isDraft(), 403, 'Seul un brouillon peut être supprimé.');
+        if ($quote->invoices()->whereIn('status', ['draft', 'sent', 'paid'])->exists()) {
+            return back()->withErrors(['send' => 'Ce devis a des factures : il ne peut pas être supprimé. Annulez ou supprimez d\'abord ses factures.']);
+        }
 
+        $label = $quote->isDraft() ? 'Brouillon de devis' : "Devis {$quote->number}";
         $quote->delete();
-        ActivityLogger::log('quote.deleted', 'Brouillon de devis mis à la corbeille', $quote);
+        ActivityLogger::log('quote.deleted', "$label mis à la corbeille", $quote);
 
-        return redirect()->route('quotes.index')->with('status', 'Brouillon placé dans la corbeille.');
+        return redirect()->route('quotes.index')->with('status', "$label placé dans la corbeille (récupérable pendant 30 jours).");
     }
 
     public function send(Quote $quote): RedirectResponse
