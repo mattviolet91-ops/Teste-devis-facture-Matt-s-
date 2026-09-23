@@ -12,7 +12,7 @@ tablette et ordinateur.
 |---|---|
 | Nom commercial | Matt's Couverture |
 | Forme juridique | Entreprise individuelle (mention « EI » obligatoire) |
-| Représentant | Matt Violet |
+| Représentant | (jamais affiché sur les documents) |
 | SIRET | 981 708 167 00011 |
 | Adresse | 8 chemin de la Plesse, 91140 Villebon-sur-Yvette |
 | Téléphone / email | 07 67 92 68 36 — mv.entreprise91@gmail.com |
@@ -47,8 +47,8 @@ les réglages.
   expiration, date / durée prévisionnelle des travaux.
 - Informations de toiture sur le chantier (type de couverture, surface, pente,
   niveaux, accessibilité).
-- Signature sur place (formulaire de rétractation de 14 jours joint) ou à
-  distance via le lien client. Le délai de 7 jours avant encaissement sur un
+- Signature sur place ou à distance via le lien client. Pas de formulaire de
+  rétractation dans l'application (décision du 23/09/2026). Le délai de 7 jours avant encaissement sur un
   contrat hors établissement fait l'objet d'un **rappel non bloquant**.
 
 ### Factures
@@ -126,7 +126,8 @@ Pas d'alerte « prestation hors garantie ».
 
 ### PDF
 Un modèle unique, aux couleurs du site. Page de présentation de l'entreprise
-optionnelle, CGV, annexe photos, formulaire de rétractation.
+optionnelle, CGV, annexe photos. Seul le nom commercial « Matt's Couverture »
+apparaît sur les documents, jamais le nom de l'entrepreneur.
 
 ### Tableau de bord
 En tête : montant à encaisser, devis en attente, CA facturé du mois. Puis

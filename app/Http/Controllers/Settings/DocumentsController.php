@@ -9,7 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** Contenu des PDF : assurance décennale, déchets, CGV, rétractation, présentation. */
+/** Contenu des PDF : assurance décennale, déchets, CGV, présentation. */
 class DocumentsController extends Controller
 {
     public function edit(Settings $settings): View
@@ -47,7 +47,6 @@ class DocumentsController extends Controller
 
         $values = collect($data)->dot()->map(fn ($v) => $v ?? '')->all();
         $values['pdf.cgv_enabled'] = $request->boolean('pdf.cgv_enabled');
-        $values['pdf.retraction_form'] = $request->boolean('pdf.retraction_form');
         $values['pdf.presentation_enabled'] = $request->boolean('pdf.presentation_enabled');
 
         $settings->set($values);

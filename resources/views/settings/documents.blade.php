@@ -38,9 +38,7 @@
 
     <div class="card">
         <h2>Annexes des devis</h2>
-        <label class="check"><input type="checkbox" name="pdf[retraction_form]" value="1" @checked(old('pdf.retraction_form', $pdf['retraction_form']))>
-            <span>Joindre le formulaire de rétractation (14 jours) aux devis des clients particuliers</span></label>
-        <label class="check" style="margin-top:.5rem"><input type="checkbox" name="pdf[cgv_enabled]" value="1" @checked(old('pdf.cgv_enabled', $pdf['cgv_enabled']))>
+        <label class="check"><input type="checkbox" name="pdf[cgv_enabled]" value="1" @checked(old('pdf.cgv_enabled', $pdf['cgv_enabled']))>
             <span>Joindre les conditions générales de vente</span></label>
         <div class="form-grid" style="margin-top:.75rem">
             <x-field name="pdf.cgv" label="Conditions générales de vente" type="textarea" rows="12" :value="$pdf['cgv']" hint="Un paragraphe par ligne. Texte de départ à faire relire." />

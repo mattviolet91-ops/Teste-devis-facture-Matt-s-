@@ -94,7 +94,7 @@
 <htmlpagefooter name="footer">
     <table width="100%" class="small muted" style="border-top: 0.5pt solid #D5DDE1;">
         <tr>
-            <td style="padding-top: 3pt;">{{ $company['trade_name'] }} — {{ $company['owner_name'] }} {{ $company['legal_form'] }} — {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }} — SIRET {{ $company['siret'] }}@if (! empty($company['vat_number'])) — TVA {{ $company['vat_number'] }}@endif</td>
+            <td style="padding-top: 3pt;">{{ $company['trade_name'] }} ({{ $company['legal_form'] }}) — {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }} — SIRET {{ $company['siret'] }}@if (! empty($company['vat_number'])) — TVA {{ $company['vat_number'] }}@endif</td>
             <td style="padding-top: 3pt; text-align: right; white-space: nowrap;" width="25%">{{ $number }} — page {PAGENO}/{nbpg}</td>
         </tr>
     </table>
@@ -114,7 +114,7 @@
                 @if ($logo)<img src="{{ $logo }}" style="height: 18mm;" />@else<span class="doc-title">{{ $company['trade_name'] }}</span>@endif
             </td></tr></table>
             <div class="small">
-                <b>{{ $company['trade_name'] }}</b> — {{ $company['owner_name'] }} {{ $company['legal_form'] }}<br>
+                <b>{{ $company['trade_name'] }}</b> ({{ $company['legal_form'] }})<br>
                 {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
                 {{ $company['phone'] }} · {{ $company['email'] }}<br>
                 SIRET {{ $company['siret'] }}@if (! empty($company['ape_code'])) — APE {{ $company['ape_code'] }}@endif
@@ -213,7 +213,6 @@
             @if ($showBank)
                 <div class="box small">
                     <div class="label">Règlement par virement</div>
-                    @if (! empty($bank['holder']))Titulaire : {{ $bank['holder'] }}<br>@endif
                     IBAN : <b>{{ trim(chunk_split($bank['iban'], 4, ' ')) }}</b>
                     @if (! empty($bank['bic']))<br>BIC : {{ $bank['bic'] }}@endif
                 </div>
@@ -267,7 +266,7 @@
         <tr>
             <td>
                 <div class="label">Pour l'entreprise</div>
-                {{ $company['owner_name'] }}, {{ $company['trade_name'] }}
+                {{ $company['trade_name'] }}
             </td>
             <td>
                 <div class="label">Bon pour accord du client</div>
@@ -288,7 +287,7 @@
     @if (! empty($company['mediator_name']))
         <p>En cas de litige, le client consommateur peut recourir gratuitement au médiateur de la consommation : {{ $company['mediator_name'] }}@if (! empty($company['mediator_url'])) — {{ $company['mediator_url'] }}@endif.</p>
     @endif
-    @if ($annexes['cgv'])<p>Conditions générales de vente en annexe.@if ($annexes['retraction']) Formulaire de rétractation joint.@endif</p>@endif
+    @if ($annexes['cgv'])<p>Conditions générales de vente en annexe.</p>@endif
 </div>
 
 @if ($annexes['cgv'])
@@ -301,10 +300,6 @@
     </div>
 @endif
 
-@if ($annexes['retraction'])
-    <pagebreak />
-    @include('pdf._retraction')
-@endif
 
 </body>
 </html>

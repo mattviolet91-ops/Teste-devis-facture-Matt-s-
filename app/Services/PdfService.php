@@ -113,17 +113,14 @@ class PdfService
         ];
     }
 
-    /** @return array{presentation: bool, cgv: bool, retraction: bool} */
+    /** @return array{presentation: bool, cgv: bool} */
     private function annexes(Quote|Invoice $document, bool $isQuote): array
     {
         $pdf = $this->settings->group('pdf');
-        $individual = $document->client?->isIndividual() ?? true;
 
         return [
             'presentation' => $isQuote && ! empty($pdf['presentation_enabled']) && trim((string) $pdf['presentation_text']) !== '',
             'cgv' => $isQuote && ! empty($pdf['cgv_enabled']) && trim((string) $pdf['cgv']) !== '',
-            // Contrat conclu chez un particulier : formulaire de rétractation joint au devis.
-            'retraction' => $isQuote && $individual && ! empty($pdf['retraction_form']),
         ];
     }
 

@@ -21,7 +21,6 @@ class SettingsTest extends TestCase
         return array_replace_recursive([
             'company' => [
                 'trade_name' => "Matt's Couverture",
-                'owner_name' => 'Matt Violet',
                 'legal_form' => 'EI',
                 'slogan' => 'Votre couvreur de confiance',
                 'address' => '8 chemin de la Plesse',

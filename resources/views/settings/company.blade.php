@@ -11,7 +11,6 @@
             <div class="form-grid cols-2">
                 <x-field name="company.trade_name" label="Nom commercial" :value="$company['trade_name']" required />
                 <x-field name="company.slogan" label="Slogan" :value="$company['slogan']" />
-                <x-field name="company.owner_name" label="Nom de l'entrepreneur" :value="$company['owner_name']" required />
                 <x-field name="company.legal_form" label="Forme juridique" :value="$company['legal_form']" hint="« EI » est obligatoire sur les documents d'un entrepreneur individuel." required />
                 <x-field name="company.agreements" label="Agréments / qualifications" :value="$company['agreements']" class="span-2" />
             </div>

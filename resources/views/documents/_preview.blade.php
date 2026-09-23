@@ -17,7 +17,7 @@
     <div>
         <x-brand-logo variant="full" />
         <p class="doc-company">
-            {{ $company['trade_name'] }} — {{ $company['owner_name'] }} {{ $company['legal_form'] }}<br>
+            {{ $company['trade_name'] }} ({{ $company['legal_form'] }})<br>
             {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
             {{ $company['phone'] }} · {{ $company['email'] }}<br>
             SIRET {{ $company['siret'] }}

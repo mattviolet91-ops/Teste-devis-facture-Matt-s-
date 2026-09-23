@@ -11,7 +11,8 @@ return [
 
     'company' => [
         'trade_name' => "Matt's Couverture",
-        'owner_name' => 'Matt Violet',
+        // Jamais imprimé sur les documents : seul le nom commercial apparaît.
+        'owner_name' => '',
         'legal_form' => 'EI',
         'slogan' => 'Votre couvreur de confiance',
         'address' => '8 chemin de la Plesse',
@@ -62,7 +63,6 @@ return [
         'waste_mention' => 'Les déchets du chantier (tuiles, ardoises, bois, isolant, zinc, emballages…) sont triés, '
             .'enlevés et évacués par nos soins vers une installation de collecte agréée. Le coût de leur gestion est '
             .'compris dans le prix des travaux.',
-        'retraction_form' => true,
         'cgv_enabled' => true,
         'cgv' => <<<'CGV'
 1. Devis. Le devis est gratuit. Il est valable pendant la durée indiquée. Le contrat est formé par la signature du devis par le client, précédée de la mention « Bon pour accord ».
@@ -71,8 +71,7 @@ return [
 4. Accès au chantier. Le client assure l'accès au chantier et le branchement à l'eau et à l'électricité si nécessaire. Il signale tout élément caché (réseaux, amiante, fragilité de la structure) dont il a connaissance.
 5. Paiement. Les paiements sont effectués selon les conditions indiquées sur le devis ou la facture. Les travaux restent la propriété de l'entreprise jusqu'au paiement complet du prix.
 6. Réception. Les travaux sont réceptionnés à leur achèvement, avec ou sans réserves. La réception fait courir les garanties légales (parfait achèvement, biennale, décennale).
-7. Rétractation. Pour un contrat conclu hors établissement (au domicile du client), le client particulier dispose d'un délai de rétractation de 14 jours à compter de la signature ; un formulaire de rétractation est joint au devis. Aucun paiement ne peut être exigé avant l'expiration d'un délai de 7 jours à compter de la signature. Si le client demande que les travaux commencent avant la fin du délai de rétractation, il le demande expressément par écrit.
-8. Litiges. En cas de litige, le client est invité à contacter l'entreprise pour rechercher une solution amiable. Le client consommateur peut recourir gratuitement au médiateur de la consommation indiqué sur le document.
+7. Litiges. En cas de litige, le client est invité à contacter l'entreprise pour rechercher une solution amiable. Le client consommateur peut recourir gratuitement au médiateur de la consommation indiqué sur le document.
 CGV,
         'presentation_enabled' => false,
         'presentation_text' => '',

@@ -31,7 +31,6 @@ class CompanyController extends Controller
 
         $data = $request->validate([
             'company.trade_name' => ['required', 'string', 'max:120'],
-            'company.owner_name' => ['required', 'string', 'max:120'],
             'company.legal_form' => ['required', 'string', 'max:30'],
             'company.slogan' => ['nullable', 'string', 'max:160'],
             'company.address' => ['required', 'string', 'max:160'],

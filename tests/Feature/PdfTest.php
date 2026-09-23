@@ -98,7 +98,8 @@ class PdfTest extends TestCase
 
         $html = view('pdf.document', $this->viewData($quote))->render();
 
-        $this->assertStringContainsString('Matt Violet EI', $html);
+        $this->assertStringContainsString('Matt&#039;s Couverture</b> (EI)', $html);
+        $this->assertStringNotContainsString('Violet', $html);
         $this->assertStringContainsString('SIRET 98170816700011', $html);
         $this->assertStringContainsString('TVA non applicable, art. 293 B du CGI', $html);
         $this->assertStringContainsString('QBE Europe SA/NV', $html);
@@ -108,24 +109,23 @@ class PdfTest extends TestCase
         $this->assertStringContainsString('Bon pour accord', $html);
         $this->assertStringContainsString('Médiateur Test', $html);
         $this->assertStringContainsString('Conditions générales de vente', $html);
-        $this->assertStringContainsString('Formulaire de rétractation', $html);
+        $this->assertStringNotContainsString('Formulaire de rétractation', $html);
     }
 
-    public function test_no_retraction_form_for_professional_clients(): void
+    public function test_professional_client_siret_is_printed(): void
     {
         $this->client->update(['type' => 'entreprise', 'company_name' => 'SCI Les Tilleuls', 'siret' => '12345678900012']);
         $quote = $this->quote();
 
         $html = view('pdf.document', $this->viewData($quote))->render();
 
-        $this->assertStringNotContainsString('Formulaire de rétractation', $html);
         $this->assertStringContainsString('SIRET 12345678900012', $html);
     }
 
     public function test_invoice_pdf_has_invoice_mentions(): void
     {
         $quote = $this->quote(['show_bank' => '1']);
-        app(Settings::class)->set(['bank.iban' => 'FR7630001007941234567890185', 'bank.holder' => 'Matt Violet']);
+        app(Settings::class)->set(['bank.iban' => 'FR7630001007941234567890185', 'bank.holder' => 'Titulaire Test']);
         $this->post(route('quotes.send', $quote));
         $this->post(route('quotes.accept', $quote));
         $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
@@ -180,14 +180,13 @@ class PdfTest extends TestCase
                 'valid_from' => '2027-01-01', 'valid_until' => '2027-12-31',
                 'activities' => 'Couverture', 'coverage_area' => 'France métropolitaine',
             ],
-            'pdf' => ['waste_mention' => 'Déchets évacués.', 'waste_facility' => 'Déchetterie de Villejust', 'cgv' => 'CGV', 'retraction_form' => '1'],
+            'pdf' => ['waste_mention' => 'Déchets évacués.', 'waste_facility' => 'Déchetterie de Villejust', 'cgv' => 'CGV'],
         ])->assertSessionHasNoErrors();
 
         $settings = app(Settings::class);
         $this->assertSame('2027-12-31', $settings->get('insurance.valid_until'));
         $this->assertSame('Déchetterie de Villejust', $settings->get('pdf.waste_facility'));
         $this->assertFalse($settings->get('pdf.cgv_enabled'));
-        $this->assertTrue($settings->get('pdf.retraction_form'));
 
         $this->put(route('settings.documents'), ['insurance' => ['valid_from' => '2027-01-01', 'valid_until' => '2026-01-01']])
             ->assertSessionHasErrors(['insurance.valid_until', 'insurance.insurer']);
