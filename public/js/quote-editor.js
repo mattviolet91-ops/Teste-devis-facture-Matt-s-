@@ -150,6 +150,38 @@
     });
   }
   clientSelect.addEventListener('change', function () { fillWorksites(false); });
+
+  // Recherche d'un client : chaque mot doit se retrouver dans le nom, le téléphone, l'email ou la ville.
+  var clientSearch = form.querySelector('[data-client-search]');
+  var clientResults = form.querySelector('[data-client-results]');
+  if (clientSearch) {
+    clientSearch.addEventListener('input', function () {
+      var terms = normalize(clientSearch.value.replace(/[\s.]/g, function (c) { return c === '.' ? '' : ' '; })).split(/\s+/).filter(Boolean);
+      clientResults.innerHTML = '';
+      if (!terms.length) { clientResults.hidden = true; return; }
+      var matches = Array.prototype.filter.call(clientSelect.options, function (option) {
+        var haystack = option.getAttribute('data-search') || '';
+        return option.value && terms.every(function (t) { return haystack.indexOf(t) !== -1; });
+      }).slice(0, 8);
+      if (!matches.length) {
+        clientResults.innerHTML = '<p class="small muted">Aucun client trouvé.</p>';
+      }
+      matches.forEach(function (option) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'client-search-item';
+        button.textContent = option.textContent;
+        button.addEventListener('click', function () {
+          clientSelect.value = option.value;
+          clientSelect.dispatchEvent(new Event('change'));
+          clientSearch.value = '';
+          clientResults.hidden = true;
+        });
+        clientResults.appendChild(button);
+      });
+      clientResults.hidden = false;
+    });
+  }
   fillWorksites(true);
 
   // ---------- Bibliothèque ----------
