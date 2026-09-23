@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Mail\ClientMessage;
 use App\Services\InsuranceService;
 use App\Services\MailSettings;
+use App\Services\PushService;
 use App\Services\Settings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
@@ -25,6 +26,8 @@ class InsuranceReminder extends Command
 
             return self::SUCCESS;
         }
+
+        app(PushService::class)->send('Assurance décennale', (string) $insurance->message(), route('settings.insurance'));
 
         if (! $mail->isConfigured()) {
             $this->warn('Envoi des emails non configuré : rappel visible seulement sur l\'accueil.');

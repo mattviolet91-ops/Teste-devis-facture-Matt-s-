@@ -26,6 +26,7 @@ class ClientLinkService
         private readonly PdfService $pdf,
         private readonly MailSettings $mail,
         private readonly Settings $settings,
+        private readonly PushService $push,
     ) {}
 
     /** Première ouverture du lien : date enregistrée et notification. */
@@ -120,6 +121,9 @@ class ClientLinkService
 
     private function notify(string $subject, string $text, Quote|Invoice $document): void
     {
+        // Notification sur le téléphone (si activée), puis email.
+        $this->push->send($subject, $text, $document instanceof Quote ? route('quotes.show', $document) : route('invoices.show', $document));
+
         $to = $this->settings->get('company.email');
         if (! $to || ! $this->mail->isConfigured()) {
             return;

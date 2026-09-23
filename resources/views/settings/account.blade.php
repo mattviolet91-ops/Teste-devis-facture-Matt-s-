@@ -1,6 +1,24 @@
 @extends('settings.layout', ['title' => 'Mon compte'])
 
 @section('settings')
+<div class="card" data-push data-push-key="{{ $pushKey }}" data-subscribe="{{ route('push.subscribe') }}"
+    data-unsubscribe="{{ route('push.unsubscribe') }}" data-test="{{ route('push.test') }}">
+    @csrf
+    <h2>Notifications sur le téléphone</h2>
+    <p class="muted small">Recevez une notification quand un client ouvre, accepte, refuse ou demande à modifier un devis, et avant l'échéance de votre assurance.
+        Sur iPhone, ouvrez d'abord l'application depuis l'icône de l'écran d'accueil.</p>
+    <p data-push-status role="status">Vérification…</p>
+    <div class="action-bar">
+        <button class="btn" type="button" data-push-enable hidden>Activer les notifications</button>
+        <button class="btn btn-secondary" type="button" data-push-test hidden>Envoyer une notification de test</button>
+        <button class="btn btn-secondary" type="button" data-push-disable hidden>Désactiver sur cet appareil</button>
+    </div>
+    @if ($devices->isNotEmpty())
+        <p class="small muted" style="margin-bottom:0">Appareils abonnés : {{ $devices->count() }}</p>
+    @endif
+</div>
+<script src="{{ asset('js/push.js') }}?v={{ filemtime(public_path('js/push.js')) }}" defer></script>
+
 <form method="POST" action="{{ route('settings.account.profile') }}" class="card">
     @csrf
     @method('PUT')

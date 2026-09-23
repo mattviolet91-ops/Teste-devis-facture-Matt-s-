@@ -14,7 +14,7 @@ class Settings
 {
     private const CACHE_KEY = 'settings.all';
 
-    private const GROUPS = ['company', 'bank', 'vat', 'branding', 'documents', 'insurance', 'pdf', 'mail'];
+    private const GROUPS = ['company', 'bank', 'vat', 'branding', 'documents', 'insurance', 'pdf', 'mail', 'push'];
 
     private ?array $values = null;
 

@@ -89,6 +89,12 @@ CGV,
         'bcc_self' => true,
     ],
 
+    // Notifications sur le téléphone : clés VAPID créées automatiquement.
+    'push' => [
+        'public_key' => '',
+        'private_key' => '',
+    ],
+
     'branding' => [
         'color_accent' => '#3CBDE8',
         'color_primary' => '#494949',

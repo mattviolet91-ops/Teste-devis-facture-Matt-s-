@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\PushSubscription;
 use App\Services\ActivityLogger;
+use App\Services\PushService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,9 +15,13 @@ use Illuminate\View\View;
 
 class AccountController extends Controller
 {
-    public function edit(Request $request): View
+    public function edit(Request $request, PushService $push): View
     {
-        return view('settings.account', ['user' => $request->user()]);
+        return view('settings.account', [
+            'user' => $request->user(),
+            'pushKey' => $push->publicKey(),
+            'devices' => PushSubscription::query()->latest('updated_at')->get(),
+        ]);
     }
 
     public function updateProfile(Request $request): RedirectResponse

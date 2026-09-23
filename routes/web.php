@@ -13,6 +13,7 @@ use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
@@ -113,6 +114,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/clients/{client}/documents', [AttachmentController::class, 'store'])->whereNumber('client')->name('attachments.store');
     Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');
     Route::delete('/documents/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
+
+    Route::post('/notifications/abonnement', [PushController::class, 'subscribe'])->middleware('throttle:20,1')->name('push.subscribe');
+    Route::post('/notifications/desabonnement', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/notifications/test', [PushController::class, 'test'])->middleware('throttle:5,1')->name('push.test');
 
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
     Route::get('/emails/nouveau', [EmailController::class, 'create'])->name('emails.create');
