@@ -137,4 +137,23 @@ class DocumentCalculatorTest extends TestCase
 
         $this->assertSame(0, $result['total_ttc']);
     }
+
+    public function test_negative_lines_are_rounded_symmetrically(): void
+    {
+        $result = (new DocumentCalculator)->calculate([
+            $this->line(1000, 100005, 1000),
+            $this->line(1000, -40005, 1000),
+        ]);
+
+        $this->assertSame(60000, $result['total_ht']);
+        $this->assertSame(10001 - 4001, $result['vat'][1000]['amount'], 'Arrondi identique en positif et en négatif.');
+    }
+
+    public function test_no_global_discount_on_negative_subtotal(): void
+    {
+        $result = (new DocumentCalculator)->calculate([$this->line(1000, -5000)], 'percent', 1000, true);
+
+        $this->assertSame(0, $result['discount']);
+        $this->assertSame(-5000, $result['total_ttc']);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Client;
 use App\Models\Quote;
+use App\Services\Concerns\HandlesDocumentLines;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  */
 class QuoteService
 {
+    use HandlesDocumentLines;
+
     public function __construct(
         private readonly DocumentCalculator $calculator,
         private readonly NumberGenerator $numbers,
@@ -19,7 +22,7 @@ class QuoteService
     ) {}
 
     /**
-     * Enregistre l'en-tête et remplace toutes les lignes du brouillon.
+     * Enregistre l'en-tête (régime de TVA compris) et remplace toutes les lignes du brouillon.
      *
      * @param  array<string, mixed>  $attributes
      * @param  list<array<string, mixed>>  $lines
@@ -28,52 +31,13 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote, $attributes, $lines) {
             $quote->fill($attributes);
-            $quote->vat_regime = $this->settings->get('vat.regime');
+            $quote->vat_regime ??= $this->settings->get('vat.regime');
             $quote->created_by ??= auth()->id();
             $quote->save();
-
-            $quote->lines()->delete();
-            foreach (array_values($lines) as $position => $line) {
-                $quote->lines()->create($line + ['position' => $position + 1]);
-            }
+            $this->replaceLines($quote, $lines);
 
             return $this->recalculate($quote);
         });
-    }
-
-    /** Recalcule et enregistre les totaux à partir des lignes. */
-    public function recalculate(Quote $quote): Quote
-    {
-        $lines = $quote->lines()->get();
-        $result = $this->calculator->calculate(
-            $lines->map->toCalculation()->all(),
-            $quote->discount_type,
-            (int) $quote->discount_value,
-            $quote->isFranchise(),
-        );
-
-        foreach ($lines->values() as $index => $line) {
-            $line->update(['total_ht' => $result['lines'][$index]]);
-        }
-
-        $quote->forceFill([
-            'total_ht' => $result['total_ht'],
-            'total_vat' => $result['total_vat'],
-            'total_ttc' => $result['total_ttc'],
-        ])->save();
-
-        return $quote->setRelation('lines', $lines);
-    }
-
-    /** Totaux détaillés pour l'affichage (sous-totaux de sections, TVA par taux…). */
-    public function breakdown(Quote $quote): array
-    {
-        return $this->calculator->calculate(
-            $quote->lines->map->toCalculation()->values()->all(),
-            $quote->discount_type,
-            (int) $quote->discount_value,
-            $quote->isFranchise(),
-        );
     }
 
     /** Envoi : attribue le numéro, fixe les dates et remplace l'éventuelle version précédente. */
@@ -156,12 +120,11 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote, $clientId, $worksiteId) {
             $copy = new Quote($quote->only([
-                'title', 'validity_days', 'discount_type', 'discount_value', 'work_start', 'work_duration',
+                'title', 'validity_days', 'discount_type', 'discount_value', 'vat_regime', 'work_start', 'work_duration',
                 'payment_terms', 'notes', 'internal_notes',
             ]));
             $copy->client_id = $clientId;
             $copy->worksite_id = $worksiteId;
-            $copy->vat_regime = $this->settings->get('vat.regime');
             $copy->created_by = auth()->id();
             $copy->save();
 

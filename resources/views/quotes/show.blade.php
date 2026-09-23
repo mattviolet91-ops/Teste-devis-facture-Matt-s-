@@ -2,14 +2,10 @@
 
 @php
     use App\Support\Money;
-    use App\Support\Percent;
-    use App\Support\Quantity;
 
-    $company = $settings->group('company');
-    $reducedRates = $quote->lines->where('type', 'item')->where('is_optional', false)->pluck('vat_rate')->unique()
-        ->filter(fn ($rate) => $rate > 0 && $rate < 2000);
-    $attestations = $quote->isFranchise() || ! $settings->get('vat.reduced_rate_mention_enabled') ? collect()
-        : \App\Models\VatRate::query()->whereIn('rate', $reducedRates)->whereNotNull('mention')->pluck('mention')->unique();
+    $meta = $quote->issue_date
+        ? ['Émis le '.$quote->issue_date->format('d/m/Y'), 'Valable jusqu\'au '.$quote->valid_until->format('d/m/Y')]
+        : ['Valable '.$quote->validity_days.' jours à compter de l\'envoi'];
 @endphp
 
 @section('content')
@@ -61,105 +57,37 @@
                 <button class="btn btn-secondary" type="submit"><x-icon name="file" /> Nouvelle version</button>
             </form>
         @endif
+        @if ($quote->isInvoiceable())
+            <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
+        @endif
         <button class="btn btn-secondary" type="button" data-open-sheet="duplicate-dialog"><x-icon name="copy" /> Dupliquer</button>
     </div>
 
+    @error('percent')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
+
+    @if ($quote->invoices->isNotEmpty())
+        @php
+            $billed = $quote->invoices->whereIn('status', ['sent', 'paid'])->sum('total_ttc');
+        @endphp
+        <div class="card">
+            <div class="card-head">
+                <h2>Facturation</h2>
+                <span class="muted small">Facturé {{ Money::format($billed) }} sur {{ Money::format($quote->total_ttc) }}</span>
+            </div>
+            <ul class="stat-list">
+                @foreach ($quote->invoices as $invoice)
+                    <li>
+                        <a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a>
+                        <span>@include('invoices._status') <strong>{{ Money::format($invoice->total_ttc) }}</strong></span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Aperçu du devis (la mise en page PDF arrive à la phase 8) --}}
     <article class="doc">
-        <header class="doc-head">
-            <div>
-                <x-brand-logo variant="full" />
-                <p class="doc-company">
-                    {{ $company['trade_name'] }} — {{ $company['owner_name'] }} {{ $company['legal_form'] }}<br>
-                    {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
-                    {{ $company['phone'] }} · {{ $company['email'] }}<br>
-                    SIRET {{ $company['siret'] }}
-                </p>
-            </div>
-            <div class="doc-meta">
-                <p class="doc-title">Devis {{ $quote->number ?? '(brouillon)' }}</p>
-                @if ($quote->issue_date)
-                    <p>Émis le {{ $quote->issue_date->format('d/m/Y') }}<br>Valable jusqu'au {{ $quote->valid_until->format('d/m/Y') }}</p>
-                @else
-                    <p>Valable {{ $quote->validity_days }} jours à compter de l'envoi</p>
-                @endif
-            </div>
-        </header>
-
-        <div class="doc-parties">
-            @if ($quote->client)
-                <div>
-                    <span class="doc-label">Client</span>
-                    <strong>{{ $quote->client->displayName() }}</strong><br>
-                    @if ($quote->client->contactName()){{ $quote->client->contactName() }}<br>@endif
-                    @if ($quote->client->fullAddress()){{ $quote->client->fullAddress() }}<br>@endif
-                    {{ collect([$quote->client->phone, $quote->client->email])->filter()->implode(' · ') }}
-                </div>
-            @endif
-            @if ($quote->worksite)
-                <div>
-                    <span class="doc-label">Adresse du chantier</span>
-                    @if ($quote->worksite->label)<strong>{{ $quote->worksite->label }}</strong><br>@endif
-                    {{ $quote->worksite->fullAddress() }}
-                </div>
-            @endif
-        </div>
-
-        @if ($quote->title)
-            <h2 class="doc-subject">{{ $quote->title }}</h2>
-        @endif
-
-        <div class="table-wrap">
-            <table class="doc-lines">
-                <thead>
-                    <tr><th>Désignation</th><th class="num">Qté</th><th class="num">Prix unit. HT</th>@unless ($quote->isFranchise())<th class="num">TVA</th>@endunless<th class="num">Total HT</th></tr>
-                </thead>
-                <tbody>
-                    @php $hidePrices = false; @endphp
-                    @foreach ($quote->lines as $index => $line)
-                        @if ($line->isSection())
-                            @php $hidePrices = $line->hide_prices; @endphp
-                            <tr class="doc-section"><td colspan="{{ $quote->isFranchise() ? 3 : 4 }}">{{ $line->title }}</td><td class="num">{{ Money::format($totals['sections'][$index] ?? 0) }}</td></tr>
-                        @elseif ($line->type === 'text')
-                            <tr class="doc-text"><td colspan="{{ $quote->isFranchise() ? 4 : 5 }}">{!! nl2br(e($line->description)) !!}</td></tr>
-                        @else
-                            <tr @class(['doc-optional' => $line->is_optional])>
-                                <td>
-                                    <strong>{{ $line->is_optional ? '(Option) ' : '' }}{{ $line->title }}</strong>
-                                    @if ($line->steps())
-                                        <ul class="doc-steps">@foreach ($line->steps() as $step)<li>{{ $step }}</li>@endforeach</ul>
-                                    @endif
-                                </td>
-                                <td class="num">{{ Quantity::format($line->quantity) }} {{ $line->unit }}</td>
-                                <td class="num">{{ $hidePrices ? '' : Money::format($line->unit_price) }}</td>
-                                @unless ($quote->isFranchise())<td class="num">{{ Percent::format($line->vat_rate) }}</td>@endunless
-                                <td class="num">
-                                    @if ($line->is_offered) <span class="badge badge-success">Offert</span>
-                                    @elseif (! $hidePrices) {{ Money::format($line->total_ht) }}
-                                    @endif
-                                    @if ($line->discount_percent && ! $hidePrices)<br><span class="small muted">remise {{ Percent::format($line->discount_percent) }}</span>@endif
-                                </td>
-                            </tr>
-                        @endif
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <dl class="totals doc-totals">
-            @if ($totals['discount'])
-                <div><dt>Sous-total HT</dt><dd>{{ Money::format($totals['subtotal']) }}</dd></div>
-                <div><dt>Remise{{ $quote->discount_type === 'percent' ? ' ('.Percent::format($quote->discount_value).')' : '' }}</dt><dd>− {{ Money::format($totals['discount']) }}</dd></div>
-            @endif
-            <div class="strong"><dt>Total HT</dt><dd>{{ Money::format($totals['total_ht']) }}</dd></div>
-            @foreach ($totals['vat'] as $rate => $vat)
-                <div><dt>TVA {{ Percent::format($rate) }} sur {{ Money::format($vat['base']) }}</dt><dd>{{ Money::format($vat['amount']) }}</dd></div>
-            @endforeach
-            <div class="grand"><dt>{{ $quote->isFranchise() ? 'Total à payer' : 'Total TTC' }}</dt><dd>{{ Money::format($totals['total_ttc']) }}</dd></div>
-            @if ($totals['optional_total'])
-                <div class="muted"><dt>Options proposées (hors total)</dt><dd>{{ Money::format($totals['optional_total']) }}</dd></div>
-            @endif
-        </dl>
+        @include('documents._preview', ['document' => $quote, 'docTitle' => 'Devis '.($quote->number ?? '(brouillon)'), 'meta' => $meta])
 
         <div class="doc-footer">
             @if ($quote->work_start || $quote->work_duration)
@@ -167,8 +95,7 @@
             @endif
             @if ($quote->payment_terms)<p><strong>Conditions de paiement :</strong> {{ $quote->payment_terms }}</p>@endif
             @if ($quote->notes)<p>{!! nl2br(e($quote->notes)) !!}</p>@endif
-            @if ($quote->isFranchise())<p>{{ $settings->get('vat.franchise_mention') }}</p>@endif
-            @foreach ($attestations as $mention)<p class="small">{{ $mention }}</p>@endforeach
+            @include('documents._mentions', ['document' => $quote])
         </div>
     </article>
 
@@ -179,14 +106,7 @@
         </div>
     @endif
 
-    <div class="card">
-        <div class="card-head"><h2>Historique</h2></div>
-        <ol class="timeline">
-            @foreach ($history as $event)
-                <li><span class="muted small">{{ $event->created_at->format('d/m/Y H:i') }}</span><span>{{ $event->description }}</span></li>
-            @endforeach
-        </ol>
-    </div>
+    @include('documents._history')
 
     @if ($quote->isDraft())
         <form method="POST" action="{{ route('quotes.destroy', $quote) }}" data-confirm="Mettre ce brouillon à la corbeille ?">
@@ -210,6 +130,33 @@
             <div class="form-actions"><button class="btn btn-danger" type="submit">Marquer comme refusé</button></div>
         </form>
     </dialog>
+
+    @if ($quote->isInvoiceable())
+        @php
+            $hasPartial = $quote->invoices->whereIn('kind', ['deposit', 'progress'])->whereIn('status', ['sent', 'paid'])->isNotEmpty();
+        @endphp
+        <dialog class="sheet" id="invoice-dialog" aria-labelledby="invoice-title">
+            <form method="POST" action="{{ route('quotes.invoice', $quote) }}">
+                @csrf
+                <div class="card-head">
+                    <h2 id="invoice-title">Facturer le devis</h2>
+                    <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
+                </div>
+                <fieldset class="choice-list">
+                    <legend class="visually-hidden">Type de facture</legend>
+                    <label class="check"><input type="radio" name="kind" value="deposit" @checked(! $hasPartial) data-kind-percent> <span><strong>Acompte</strong><br><span class="small muted">Un pourcentage du devis, à la signature.</span></span></label>
+                    <label class="check"><input type="radio" name="kind" value="progress" data-kind-percent> <span><strong>Situation de travaux</strong><br><span class="small muted">Un pourcentage du devis selon l'avancement.</span></span></label>
+                    <label class="check"><input type="radio" name="kind" value="final" @checked($hasPartial)> <span><strong>Solde</strong><br><span class="small muted">Le devis complet, moins les acomptes et situations déjà facturés.</span></span></label>
+                    <label class="check"><input type="radio" name="kind" value="standard"> <span><strong>Facture complète</strong><br><span class="small muted">Tout le devis en une seule facture.</span></span></label>
+                </fieldset>
+                <div class="field" data-percent-field>
+                    <label for="invoice_percent">Pourcentage à facturer</label>
+                    <input id="invoice_percent" type="text" inputmode="decimal" name="percent" value="{{ \App\Support\Percent::input((int) $settings->get('documents.deposit_percent', 40) * 100) }}">
+                </div>
+                <div class="form-actions"><button class="btn" type="submit">Préparer la facture</button></div>
+            </form>
+        </dialog>
+    @endif
 
     <dialog class="sheet" id="duplicate-dialog" aria-labelledby="duplicate-title">
         <form method="POST" action="{{ route('quotes.duplicate', $quote) }}">

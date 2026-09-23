@@ -6,6 +6,7 @@ use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -66,6 +67,18 @@ class Quote extends Model
     public function replacedBy(): BelongsTo
     {
         return $this->belongsTo(self::class, 'replaced_by_id')->withTrashed();
+    }
+
+    /** Factures établies à partir de ce devis (hors avoirs). */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->where('kind', '!=', 'credit')->orderBy('id');
+    }
+
+    /** Un devis accepté peut être facturé (acompte, situation, solde…). */
+    public function isInvoiceable(): bool
+    {
+        return $this->status === 'accepted';
     }
 
     public function isDraft(): bool

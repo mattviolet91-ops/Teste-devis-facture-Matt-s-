@@ -62,6 +62,10 @@ return [
 
     'documents' => [
         'quote_validity_days' => 30,
+        // Délai de paiement des factures en jours (0 = à réception).
+        'invoice_due_days' => 0,
+        // Acompte proposé par défaut, en %.
+        'deposit_percent' => 40,
     ],
 
     // Polices embarquées dans public/fonts (aucun appel à Google Fonts).

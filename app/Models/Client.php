@@ -62,6 +62,11 @@ class Client extends Model
         return $this->hasMany(Quote::class)->latest('id');
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->latest('id');
+    }
+
     /**
      * Recherche sur la fiche et sur ses chantiers : chaque mot doit se trouver
      * dans l'un ou l'autre (« dupont massy » trouve Mme Dupont dont le chantier est à Massy).

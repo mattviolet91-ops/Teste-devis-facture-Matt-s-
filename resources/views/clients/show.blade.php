@@ -110,9 +110,27 @@
     </div>
 
     <div class="card">
+        <div class="card-head">
+            <h2>Factures</h2>
+            <a class="btn btn-secondary btn-sm" href="{{ route('invoices.create', ['client' => $client->id]) }}"><x-icon name="plus" /> Nouvelle</a>
+        </div>
+        @if ($client->invoices->isEmpty())
+            <p class="muted" style="margin:0">Aucune facture pour ce client.</p>
+        @else
+            <ul class="stat-list">
+                @foreach ($client->invoices as $invoice)
+                    <li>
+                        <a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a>
+                        <span>@include('invoices._status') <strong>{{ $invoice->isCredit() ? '− ' : '' }}{{ \App\Support\Money::format($invoice->total_ttc) }}</strong></span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
+    <div class="card">
         <div class="card-head"><h2>Documents</h2></div>
         <ul class="stat-list">
-            <li><span>Factures</span><span class="muted small">phase 7</span></li>
             <li><span>Paiements</span><span class="muted small">phase 10</span></li>
             <li><span>Photos</span><span class="muted small">phase 9</span></li>
         </ul>

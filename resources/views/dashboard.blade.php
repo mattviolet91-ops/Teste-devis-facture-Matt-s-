@@ -16,19 +16,20 @@
     </div>
 
     <div class="grid grid-3">
-        <div class="card kpi kpi-accent">
+        <a class="card kpi kpi-accent kpi-link" href="{{ route('invoices.index', ['status' => 'unpaid']) }}">
             <span class="label">Montant à encaisser</span>
             <span class="value">{{ Money::format($kpis['to_collect']) }}</span>
-        </div>
+            @if ($stats['overdue_invoices'])<span class="small" style="color:var(--danger, #c0392b)">{{ $stats['overdue_invoices'] }} facture(s) en retard</span>@endif
+        </a>
         <a class="card kpi kpi-accent kpi-link" href="{{ route('quotes.index', ['status' => 'sent']) }}">
             <span class="label">Devis en attente de réponse</span>
             <span class="value">{{ $kpis['pending_quotes'] }}</span>
             @if ($kpis['pending_amount'])<span class="muted small">{{ Money::format($kpis['pending_amount']) }} au total</span>@endif
         </a>
-        <div class="card kpi kpi-accent">
-            <span class="label">CA facturé du mois</span>
+        <a class="card kpi kpi-accent kpi-link" href="{{ route('invoices.index') }}">
+            <span class="label">CA facturé du mois (HT)</span>
             <span class="value">{{ Money::format($kpis['month_revenue']) }}</span>
-        </div>
+        </a>
     </div>
 
     <div class="grid grid-2" style="margin-top:1rem">
@@ -38,8 +39,8 @@
                 <li><span>Devis acceptés cette année</span><strong>{{ $stats['accepted_quotes'] }}</strong></li>
                 <li><span>Devis refusés cette année</span><strong>{{ $stats['refused_quotes'] }}</strong></li>
                 <li><span>Factures payées</span><strong>{{ $stats['paid_invoices'] }}</strong></li>
-                <li><span>Factures impayées</span><strong>{{ $stats['unpaid_invoices'] }}</strong></li>
-                <li><span>CA de l'année</span><strong>{{ Money::format($stats['year_revenue']) }}</strong></li>
+                <li><span>Factures à encaisser</span><strong>{{ $stats['unpaid_invoices'] }}</strong></li>
+                <li><span>CA de l'année (HT)</span><strong>{{ Money::format($stats['year_revenue']) }}</strong></li>
             </ul>
         </div>
         <div class="card">

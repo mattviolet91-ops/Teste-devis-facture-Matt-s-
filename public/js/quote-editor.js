@@ -1,4 +1,4 @@
-// Éditeur de devis : ajout / déplacement / suppression des lignes, bibliothèque,
+// Éditeur de devis et de factures : ajout / déplacement / suppression des lignes, bibliothèque,
 // étapes types et calcul des totaux en direct. Le serveur recalcule tout à
 // l'enregistrement : l'affichage ici n'est qu'un aperçu.
 (function () {
@@ -21,7 +21,10 @@
     var factor = Math.pow(10, decimals);
     return Math.round(parseFloat(value) * factor);
   }
-  function roundDiv(a, b) { return Math.floor((a + Math.floor(b / 2)) / b); }
+  function roundDiv(a, b) {
+    var rounded = Math.floor((Math.abs(a) + Math.floor(b / 2)) / b);
+    return a < 0 ? -rounded : rounded;
+  }
   function money(cents) { return euro.format(cents / 100); }
 
   // ---------- Numérotation des champs (ordre visuel = ordre enregistré) ----------
@@ -253,7 +256,7 @@
 
     var type = form.querySelector('[name="discount_type"]').value;
     var raw = parseDecimal(form.querySelector('[name="discount_value"]').value, 2) || 0;
-    var discount = type === 'percent' ? Math.min(subtotal, roundDiv(subtotal * Math.min(raw, 10000), 10000))
+    var discount = subtotal <= 0 ? 0 : type === 'percent' ? Math.min(subtotal, roundDiv(subtotal * Math.min(raw, 10000), 10000))
       : type === 'amount' ? Math.min(subtotal, raw) : 0;
 
     // Répartition de la remise sur les taux, comme côté serveur.
@@ -287,6 +290,21 @@
       vatBox.appendChild(div);
     });
   }
+
+  // ---------- Régime de TVA du document ----------
+
+  var regime = form.querySelector('[data-vat-regime]');
+  function applyRegime() {
+    data.franchise = regime.value === 'franchise';
+    var roots = [form].concat(Array.prototype.map.call(document.querySelectorAll('template[id^="tpl-line-"]'), function (t) { return t.content; }));
+    roots.forEach(function (root) {
+      root.querySelectorAll('[data-vat-field]').forEach(function (el) { el.hidden = data.franchise; });
+    });
+    form.querySelector('[data-franchise-mention]').hidden = !data.franchise;
+    form.querySelector('[data-total-label]').textContent = data.franchise ? 'Total' : 'Total TTC';
+    recalc();
+  }
+  if (regime) { regime.addEventListener('change', applyRegime); }
 
   form.addEventListener('input', function (event) { if (event.target.matches('[data-calc]')) { recalc(); } });
   form.addEventListener('change', function (event) { if (event.target.matches('[data-calc]')) { recalc(); } });

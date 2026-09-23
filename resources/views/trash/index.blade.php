@@ -8,7 +8,7 @@
         </div>
     </div>
 
-    @if ($clients->isEmpty() && $worksites->isEmpty() && $quotes->isEmpty())
+    @if ($clients->isEmpty() && $worksites->isEmpty() && $quotes->isEmpty() && $invoices->isEmpty())
         <div class="card empty"><x-icon name="trash" /><h2>La corbeille est vide</h2></div>
     @endif
 
@@ -43,6 +43,26 @@
                             <span class="muted small">{{ $quote->client?->displayName() }} — supprimé le {{ $quote->deleted_at->format('d/m/Y') }}</span>
                         </span>
                         <form method="POST" action="{{ route('trash.quotes.restore', $quote->id) }}">
+                            @csrf
+                            <button class="btn btn-secondary btn-sm" type="submit">Restaurer</button>
+                        </form>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if ($invoices->isNotEmpty())
+        <div class="card">
+            <h2>Brouillons de factures</h2>
+            <ul class="stat-list">
+                @foreach ($invoices as $invoice)
+                    <li>
+                        <span>
+                            <strong>{{ $invoice->kindLabel() }}{{ $invoice->title ? ' — '.$invoice->title : '' }}</strong><br>
+                            <span class="muted small">{{ $invoice->client?->displayName() }} — supprimé le {{ $invoice->deleted_at->format('d/m/Y') }}</span>
+                        </span>
+                        <form method="POST" action="{{ route('trash.invoices.restore', $invoice->id) }}">
                             @csrf
                             <button class="btn btn-secondary btn-sm" type="submit">Restaurer</button>
                         </form>

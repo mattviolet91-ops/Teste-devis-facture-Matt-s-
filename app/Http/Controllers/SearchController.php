@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Worksite;
 use App\Support\Search;
@@ -10,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Recherche globale. Les devis et factures s'y ajouteront aux phases 6 et 7.
+ * Recherche globale : devis, factures, clients et chantiers.
  */
 class SearchController extends Controller
 {
@@ -19,9 +20,10 @@ class SearchController extends Controller
     public function __invoke(Request $request): View
     {
         $q = mb_substr(trim((string) $request->query('q')), 0, 100);
-        $results = ['quotes' => collect(), 'clients' => collect(), 'worksites' => collect()];
+        $results = ['invoices' => collect(), 'quotes' => collect(), 'clients' => collect(), 'worksites' => collect()];
 
         if (Search::terms($q) !== []) {
+            $results['invoices'] = Invoice::query()->search($q)->with('client')->latest('id')->limit(self::LIMIT)->get();
             $results['quotes'] = Quote::query()->search($q)->with('client')->latest('id')->limit(self::LIMIT)->get();
             $results['clients'] = Client::query()->searchWithWorksites($q)->alphabetical()->limit(self::LIMIT)->get();
             $results['worksites'] = Worksite::query()->search($q)->whereHas('client')->with('client')->limit(self::LIMIT)->get();

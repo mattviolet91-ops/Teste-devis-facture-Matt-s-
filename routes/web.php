@@ -7,6 +7,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
@@ -57,6 +58,17 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/refuse', [QuoteController::class, 'refuse'])->name('refuse');
         Route::post('/nouvelle-version', [QuoteController::class, 'revise'])->name('revise');
         Route::post('/dupliquer', [QuoteController::class, 'duplicate'])->name('duplicate');
+        Route::post('/facturer', [InvoiceController::class, 'fromQuote'])->name('invoice');
+    });
+
+    Route::resource('factures', InvoiceController::class)
+        ->parameters(['factures' => 'invoice'])
+        ->names('invoices')
+        ->whereNumber('invoice');
+    Route::prefix('factures/{invoice}')->whereNumber('invoice')->name('invoices.')->group(function () {
+        Route::post('/envoyee', [InvoiceController::class, 'send'])->name('send');
+        Route::post('/corriger', [InvoiceController::class, 'correct'])->name('correct');
+        Route::post('/annuler', [InvoiceController::class, 'cancel'])->name('cancel');
     });
 
     Route::resource('prestations', CatalogController::class)
@@ -68,6 +80,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
 
     Route::get('/corbeille', [TrashController::class, 'index'])->name('trash.index');
+    Route::post('/corbeille/factures/{id}', [TrashController::class, 'restoreInvoice'])->whereNumber('id')->name('trash.invoices.restore');
     Route::post('/corbeille/devis/{id}', [TrashController::class, 'restoreQuote'])->whereNumber('id')->name('trash.quotes.restore');
     Route::post('/corbeille/clients/{id}', [TrashController::class, 'restoreClient'])->whereNumber('id')->name('trash.clients.restore');
     Route::post('/corbeille/chantiers/{id}', [TrashController::class, 'restoreWorksite'])->whereNumber('id')->name('trash.worksites.restore');

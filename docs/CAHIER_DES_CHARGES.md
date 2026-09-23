@@ -34,6 +34,8 @@ les réglages.
 - Numéro attribué **à l'envoi** (un brouillon n'a pas de numéro).
 - Les factures ont leur propre suite continue (obligation légale) et affichent
   « Devis n° DEV-… ».
+- Départ à DEV-2026-0001 (la numérotation Wix n'est pas reprise, validé le
+  23/09/2026).
 - Aucun doublon possible (compteur verrouillé en base).
 
 ### Devis
@@ -62,9 +64,10 @@ les réglages.
   prédéfini à ajouter manuellement.
 
 ### TVA
-- Régime modifiable dans les réglages : franchise en base (art. 293 B du CGI)
+- Régime par défaut dans les réglages : franchise en base (art. 293 B du CGI)
   ou assujetti. **Régime actuel : franchise** (mention présente sur les devis
-  Wix) ; le régime est figé sur chaque devis à l'envoi.
+  Wix). Le régime se choisit **sur chaque devis et chaque facture** (validé le
+  23/09/2026) et il est figé à l'envoi.
 - Taux configurables ; 10 % par défaut, 20 % et 5,5 % disponibles ; plusieurs
   taux par document ; TVA sur les encaissements.
 - Mention d'attestation client ajoutée automatiquement sur les lignes à 10 % /

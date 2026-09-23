@@ -15,7 +15,7 @@
         <input type="text" class="line-title" name="{{ $n }}[title]" value="{{ $l['title'] }}" placeholder="Titre de la section, ex. NETTOYAGE DE TOITURE" aria-label="Titre de la section">
         <label class="check small"><input type="checkbox" name="{{ $n }}[hide_prices]" value="1" @checked($l['hide_prices'])> <span>N'afficher que le total de la section au client</span></label>
     @elseif ($l['type'] === 'text')
-        <textarea name="{{ $n }}[description]" rows="2" placeholder="Texte libre affiché sur le devis" aria-label="Texte libre" data-autogrow>{{ $l['description'] }}</textarea>
+        <textarea name="{{ $n }}[description]" rows="2" placeholder="Texte libre affiché sur le document" aria-label="Texte libre" data-autogrow>{{ $l['description'] }}</textarea>
     @else
         <input type="hidden" name="{{ $n }}[catalog_item_id]" value="{{ $l['catalog_item_id'] }}">
         <input type="text" class="line-title" name="{{ $n }}[title]" value="{{ $l['title'] }}" placeholder="Désignation, ex. Traitement de la toiture" aria-label="Désignation">
@@ -39,7 +39,7 @@
                 </select>
             </div>
             <div class="field"><label>Prix unitaire HT</label><input type="text" inputmode="decimal" name="{{ $n }}[unit_price]" value="{{ $l['unit_price'] }}" placeholder="0,00" data-calc></div>
-            <div class="field" @if ($franchise) hidden @endif><label>TVA</label>
+            <div class="field" data-vat-field @if ($franchise) hidden @endif><label>TVA</label>
                 <select name="{{ $n }}[vat_rate]" data-calc>
                     @foreach ($vatRates as $rate)
                         <option value="{{ $rate->rate }}" @selected((int) $l['vat_rate'] === $rate->rate)>{{ $rate->percentLabel() }}</option>

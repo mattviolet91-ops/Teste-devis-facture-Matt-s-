@@ -1,12 +1,29 @@
 @if (trim($q) === '')
     <p class="muted">Tapez au moins un mot : nom, numéro de téléphone (même partiel), email, rue ou ville.</p>
-@elseif ($results['quotes']->isEmpty() && $results['clients']->isEmpty() && $results['worksites']->isEmpty())
+@elseif ($results['invoices']->isEmpty() && $results['quotes']->isEmpty() && $results['clients']->isEmpty() && $results['worksites']->isEmpty())
     <div class="card empty">
         <x-icon name="search" />
         <h2>Aucun résultat pour « {{ $q }} »</h2>
         <p><a class="btn" href="{{ route('clients.create') }}">Créer un client</a></p>
     </div>
 @else
+    @if ($results['invoices']->isNotEmpty())
+        <h2 class="section-title">Factures</h2>
+        <ul class="list">
+            @foreach ($results['invoices'] as $invoice)
+                <li>
+                    <a class="list-item" href="{{ route('invoices.show', $invoice) }}">
+                        <span class="avatar avatar-muted"><x-icon name="receipt" /></span>
+                        <span class="list-main">
+                            <strong>{{ $invoice->displayNumber() }} · {{ $invoice->client?->displayName() }}</strong>
+                            <span class="muted small">{{ $invoice->kindLabel() }}{{ $invoice->title ? ' · '.$invoice->title : '' }}</span>
+                        </span>
+                        <span class="list-meta">@include('invoices._status')</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    @endif
     @if ($results['quotes']->isNotEmpty())
         <h2 class="section-title">Devis</h2>
         <ul class="list">

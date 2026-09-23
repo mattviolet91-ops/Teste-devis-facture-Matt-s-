@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesEditorData;
 use App\Http\Requests\QuoteRequest;
 use App\Models\ActivityLog;
-use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\TextTemplate;
-use App\Models\Unit;
-use App\Models\VatRate;
 use App\Services\ActivityLogger;
 use App\Services\QuoteService;
 use App\Services\Settings;
@@ -20,6 +18,8 @@ use Illuminate\View\View;
 
 class QuoteController extends Controller
 {
+    use ProvidesEditorData;
+
     public const FILTERS = [
         'all' => 'Tous',
         'draft' => 'Brouillons',
@@ -63,7 +63,7 @@ class QuoteController extends Controller
         ]);
         $quote->vat_regime = $settings->get('vat.regime');
 
-        return view('quotes.edit', $this->editorData($quote, $settings));
+        return view('quotes.edit', ['quote' => $quote] + $this->editorData($quote, $settings));
     }
 
     public function store(QuoteRequest $request): RedirectResponse
@@ -76,7 +76,7 @@ class QuoteController extends Controller
 
     public function show(Quote $quote): View
     {
-        $quote->load(['client', 'worksite', 'lines', 'replaces', 'replacedBy']);
+        $quote->load(['client', 'worksite', 'lines', 'replaces', 'replacedBy', 'invoices']);
 
         $history = ActivityLog::query()
             ->where('subject_type', $quote->getMorphClass())
@@ -100,7 +100,7 @@ class QuoteController extends Controller
                 ->with('status', 'Un devis envoyé ne se modifie plus : créez une nouvelle version.');
         }
 
-        return view('quotes.edit', $this->editorData($quote->load('lines'), $settings));
+        return view('quotes.edit', ['quote' => $quote->load('lines')] + $this->editorData($quote, $settings));
     }
 
     public function update(QuoteRequest $request, Quote $quote): RedirectResponse
@@ -173,26 +173,5 @@ class QuoteController extends Controller
         $copy = $this->quotes->duplicate($quote, Client::query()->findOrFail($data['client_id']));
 
         return redirect()->route('quotes.edit', $copy)->with('status', 'Copie créée en brouillon.');
-    }
-
-    /** @return array<string, mixed> */
-    private function editorData(Quote $quote, Settings $settings): array
-    {
-        $defaultRate = (int) (VatRate::query()->where('is_default', true)->value('rate') ?? 0);
-
-        return [
-            'quote' => $quote,
-            'clients' => Client::query()->with('worksites:id,client_id,label,address,postal_code,city')->alphabetical()->get(),
-            'units' => Unit::query()->where('is_active', true)->ordered()->pluck('label', 'code'),
-            'vatRates' => VatRate::query()->where('is_active', true)->ordered()->get(),
-            'defaultVatRate' => $defaultRate,
-            // L'éditeur ne concerne que les brouillons : on applique le régime actuel.
-            'franchise' => $settings->get('vat.regime') === 'franchise',
-            'catalog' => CatalogItem::query()->active()->with('category')->orderBy('category_id')->orderBy('position')->get()
-                ->map->toPicker($defaultRate)->values(),
-            'steps' => TextTemplate::query()->ofType('step')->get(),
-            'noteTemplates' => TextTemplate::query()->ofType('note')->get(),
-            'paymentTemplates' => TextTemplate::query()->ofType('payment_terms')->get(),
-        ];
     }
 }

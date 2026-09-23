@@ -593,3 +593,9 @@ button.nav-link { width: 100%; border: 0; background: none; font: inherit; color
 .text-row { display: grid; gap: .5rem; padding: .75rem 0; border-bottom: 1px solid var(--border); }
 @media (min-width: 760px) { .text-row { grid-template-columns: 1fr 2fr auto; align-items: end; } }
 .text-row-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+
+/* Phase 7 : factures */
+.vat-regime { margin-bottom: 1rem; }
+.choice-list { border: 0; padding: 0; margin: .5rem 0 1rem; display: grid; gap: .5rem; }
+.choice-list .check { align-items: flex-start; padding: .625rem .75rem; border: 1px solid var(--border); border-radius: var(--radius); }
+.choice-list .check:has(input:checked) { border-color: var(--brand-accent); background: color-mix(in srgb, var(--brand-accent) 8%, transparent); }

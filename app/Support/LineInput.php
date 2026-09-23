@@ -3,6 +3,9 @@
 namespace App\Support;
 
 use App\Models\DocumentLine;
+use App\Models\Invoice;
+use App\Models\Quote;
+use Illuminate\Support\Collection;
 
 /**
  * Valeurs d'une ligne telles qu'affichées dans les champs de l'éditeur,
@@ -27,6 +30,22 @@ final class LineInput
             'hide_prices' => $line->hide_prices,
             'catalog_item_id' => $line->catalog_item_id,
         ];
+    }
+
+    /**
+     * Lignes à afficher dans l'éditeur : celles renvoyées après une erreur de
+     * saisie, sinon celles du document.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public static function forEditor(Quote|Invoice $document, int $defaultVatRate): Collection
+    {
+        $old = old('lines');
+        if ($old !== null) {
+            return collect($old)->map(fn ($l) => array_merge(self::blank($l['type'] ?? 'item', $defaultVatRate), $l))->values();
+        }
+
+        return $document->lines->map(fn ($line) => self::fromModel($line))->values();
     }
 
     /** @return array<string, mixed> */

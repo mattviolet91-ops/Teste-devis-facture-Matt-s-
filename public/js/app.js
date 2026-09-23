@@ -66,6 +66,17 @@
     });
   });
 
+  // Facturer un devis : le pourcentage ne concerne que l'acompte et la situation.
+  document.querySelectorAll('[data-percent-field]').forEach(function (field) {
+    var form = field.closest('form');
+    function refresh() {
+      var checked = form.querySelector('input[name="kind"]:checked');
+      field.hidden = !checked || !checked.hasAttribute('data-kind-percent');
+    }
+    form.addEventListener('change', refresh);
+    refresh();
+  });
+
   // Formulaire client : les champs « société » ne concernent que les professionnels.
   document.querySelectorAll('[data-client-type]').forEach(function (group) {
     var form = group.closest('form');

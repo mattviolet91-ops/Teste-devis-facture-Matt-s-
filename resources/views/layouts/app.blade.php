@@ -5,7 +5,7 @@
         ['dashboard', 'Accueil', 'home', route('dashboard')],
         ['clients', 'Clients', 'users', route('clients.index')],
         ['devis', 'Devis', 'file', route('quotes.index')],
-        ['factures', 'Factures', 'receipt', route('module', 'factures')],
+        ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('module', 'paiements')],
         ['photos', 'Photos', 'camera', route('module', 'photos')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
@@ -14,6 +14,7 @@
         'dashboard' => request()->routeIs('dashboard'),
         'clients' => request()->routeIs('clients.*', 'worksites.*'),
         'devis' => request()->routeIs('quotes.*'),
+        'factures' => request()->routeIs('invoices.*'),
         'prestations' => request()->routeIs('catalog.*'),
         default => request()->route('module') === $key,
     };
@@ -28,7 +29,7 @@
         </a>
         <form class="search" method="GET" action="{{ route('search') }}" role="search">
             <label for="global-search"><x-icon name="search" /><span class="visually-hidden">Rechercher</span></label>
-            <input id="global-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" placeholder="Client, n° de devis, téléphone, adresse…">
+            <input id="global-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" placeholder="Client, n° de devis ou de facture, téléphone, adresse…">
         </form>
         <span class="spacer"></span>
         <a class="icon-btn search-mobile" href="{{ route('search') }}" title="Rechercher"><x-icon name="search" /><span class="visually-hidden">Rechercher</span></a>
@@ -88,6 +89,7 @@
         </div>
         <div class="sheet-grid">
             <a class="sheet-item" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
+            <a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
             <a class="sheet-item" href="{{ route('module', 'photos') }}"><x-icon name="camera" /> Photo</a>
             <a class="sheet-item" href="{{ route('module', 'paiements') }}"><x-icon name="wallet" /> Paiement</a>
@@ -100,7 +102,7 @@
             <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
         </div>
         <div class="sheet-list">
-            <a href="{{ route('module', 'factures') }}"><x-icon name="receipt" /> Factures</a>
+            <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('module', 'paiements') }}"><x-icon name="wallet" /> Paiements</a>
             <a href="{{ route('module', 'photos') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>

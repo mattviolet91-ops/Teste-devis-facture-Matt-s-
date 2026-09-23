@@ -30,6 +30,14 @@
         </div>
     </div>
 
+    <div class="card">
+        <h2>Factures</h2>
+        <div class="form-grid cols-2">
+            <x-field name="invoice_due_days" label="Délai de paiement par défaut (jours)" type="number" min="0" max="120" :value="$documents['invoice_due_days']" hint="0 = payable à réception. Modifiable sur chaque facture." required />
+            <x-field name="deposit_percent" label="Acompte proposé (%)" type="number" min="1" max="100" :value="$documents['deposit_percent']" hint="Pourcentage proposé en premier quand vous facturez un acompte." required />
+        </div>
+    </div>
+
     <div class="form-actions">
         <button class="btn" type="submit">Enregistrer</button>
     </div>

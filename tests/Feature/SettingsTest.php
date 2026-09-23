@@ -226,7 +226,7 @@ class SettingsTest extends TestCase
     public function test_numbering_can_be_configured(): void
     {
         $this->actingAs($this->admin())->put(route('settings.numbering'), [
-            'quote_validity_days' => 45,
+            'quote_validity_days' => 45, 'invoice_due_days' => 0, 'deposit_percent' => 40,
             'sequences' => [
                 'quote' => ['prefix' => 'DEV', 'next_number' => 16],
                 'invoice' => ['prefix' => 'FAC', 'next_number' => 1],
@@ -241,7 +241,7 @@ class SettingsTest extends TestCase
     public function test_numbering_prefix_must_be_uppercase_letters_or_digits(): void
     {
         $this->actingAs($this->admin())->put(route('settings.numbering'), [
-            'quote_validity_days' => 30,
+            'quote_validity_days' => 30, 'invoice_due_days' => 0, 'deposit_percent' => 40,
             'sequences' => [
                 'quote' => ['prefix' => 'dev-', 'next_number' => 1],
                 'invoice' => ['prefix' => 'FAC', 'next_number' => 1],

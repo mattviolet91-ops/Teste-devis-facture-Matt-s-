@@ -18,7 +18,7 @@ class CorrectionsPhase5Test extends TestCase
     private function numberingPayload(int $quoteNext): array
     {
         return [
-            'quote_validity_days' => 30,
+            'quote_validity_days' => 30, 'invoice_due_days' => 0, 'deposit_percent' => 40,
             'sequences' => [
                 'quote' => ['prefix' => 'DEV', 'next_number' => $quoteNext],
                 'invoice' => ['prefix' => 'FAC', 'next_number' => 1],

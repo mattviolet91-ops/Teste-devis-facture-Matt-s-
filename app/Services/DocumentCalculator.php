@@ -114,6 +114,10 @@ class DocumentCalculator
 
     private function globalDiscount(int $subtotal, ?string $type, int $value): int
     {
+        if ($subtotal <= 0) {
+            return 0;
+        }
+
         return match ($type) {
             'percent' => min($subtotal, $this->roundDiv($subtotal * min($value, 10000), 10000)),
             'amount' => min($subtotal, $value),
@@ -148,9 +152,11 @@ class DocumentCalculator
         return $bases;
     }
 
-    /** Division entière arrondie au plus proche (valeurs positives). */
+    /** Division entière arrondie au plus proche, symétrique pour les montants négatifs (déductions). */
     private function roundDiv(int $numerator, int $denominator): int
     {
-        return intdiv($numerator + intdiv($denominator, 2), $denominator);
+        $rounded = intdiv(abs($numerator) + intdiv($denominator, 2), $denominator);
+
+        return $numerator < 0 ? -$rounded : $rounded;
     }
 }

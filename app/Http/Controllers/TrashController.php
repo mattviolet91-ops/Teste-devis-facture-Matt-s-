@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Worksite;
 use App\Services\ActivityLogger;
@@ -24,6 +25,7 @@ class TrashController extends Controller
             // Chantiers supprimés seuls (ceux d'un client supprimé reviennent avec lui).
             'worksites' => Worksite::onlyTrashed()->with('client')->whereHas('client')->latest('deleted_at')->get(),
             'quotes' => Quote::onlyTrashed()->with('client')->latest('deleted_at')->get(),
+            'invoices' => Invoice::onlyTrashed()->with('client')->latest('deleted_at')->get(),
             'retention' => self::RETENTION_DAYS,
         ]);
     }
@@ -45,6 +47,16 @@ class TrashController extends Controller
         ActivityLogger::log('quote.restored', 'Brouillon de devis restauré', $quote);
 
         return redirect()->route('quotes.show', $quote)->with('status', 'Brouillon restauré.');
+    }
+
+    public function restoreInvoice(int $id): RedirectResponse
+    {
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+        abort_unless($invoice->client()->whereNull('deleted_at')->exists(), 409, 'Restaurez d\'abord le client.');
+        $invoice->restore();
+        ActivityLogger::log('invoice.restored', 'Brouillon de facture restauré', $invoice);
+
+        return redirect()->route('invoices.show', $invoice)->with('status', 'Brouillon restauré.');
     }
 
     public function restoreWorksite(int $id): RedirectResponse
