@@ -182,6 +182,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/compte/mot-de-passe', [Settings\AccountController::class, 'updatePassword'])->name('account.password');
         Route::post('/compte/deconnecter-appareils', [Settings\AccountController::class, 'logoutOthers'])->middleware('throttle:5,1')->name('account.logout-others');
         Route::get('/journal', [Settings\AccountController::class, 'journal'])->name('journal');
+
+        Route::get('/sauvegardes', [Settings\BackupController::class, 'index'])->name('backups');
+        Route::post('/sauvegardes', [Settings\BackupController::class, 'create'])->middleware('throttle:5,1')->name('backups.create');
+        Route::get('/sauvegardes/{name}', [Settings\BackupController::class, 'download'])->name('backups.download');
     });
 
 });

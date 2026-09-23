@@ -100,6 +100,10 @@ CGV,
         'max' => 3,
     ],
 
+    'backups' => [
+        'last_download_at' => null,
+    ],
+
     // Notifications sur le téléphone : clés VAPID créées automatiquement.
     'push' => [
         'public_key' => '',

@@ -25,6 +25,10 @@
         </div>
     @endif
 
+    @if ($backupReminder)
+        <div class="alert alert-info" role="status">Pensez à télécharger une copie de votre sauvegarde (une fois par semaine). <a href="{{ route('settings.backups') }}">Télécharger ma sauvegarde</a></div>
+    @endif
+
     <div class="grid grid-3">
         <a class="card kpi kpi-accent kpi-link" href="{{ route('invoices.index', ['status' => 'unpaid']) }}">
             <span class="label">Montant à encaisser</span>

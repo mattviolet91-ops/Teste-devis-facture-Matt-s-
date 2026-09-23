@@ -30,7 +30,8 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 10 | Paiements, relances, tableau de bord, emails | ✅ |
 | 11 | Lien client, signature | ✅ |
 | 12 | Sécurité | ✅ |
-| 13–15 | Sauvegardes, recette, installation | à venir |
+| 13 | Sauvegardes | ✅ |
+| 14–15 | Recette, installation définitive | à venir |
 
 ## Développement
 

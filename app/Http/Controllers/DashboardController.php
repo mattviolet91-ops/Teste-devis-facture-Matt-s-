@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
 use App\Services\InsuranceService;
+use App\Services\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -28,6 +30,10 @@ class DashboardController extends Controller
         return view('dashboard', [
             'insuranceAlert' => $insurance->message(),
             'insuranceLevel' => $insurance->level(),
+            // Rappel hebdomadaire : télécharger une copie de la sauvegarde.
+            'backupReminder' => ($last = app(Settings::class)->get('backups.last_download_at'))
+                ? Carbon::parse($last)->lt(now()->subDays(7))
+                : ActivityLog::query()->oldest('id')->value('created_at')?->lt(now()->subDays(7)) ?? false,
             'period' => $period,
             'from' => $from,
             'to' => $to,
