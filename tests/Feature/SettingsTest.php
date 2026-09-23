@@ -103,7 +103,30 @@ class SettingsTest extends TestCase
 
         $path = app(Settings::class)->get('branding.logo_path');
         Storage::disk('local')->assertExists($path);
-        $this->get(route('branding.logo'))->assertOk();
+        $this->get(route('branding.image', 'logo'))->assertOk();
+    }
+
+    public function test_icon_can_be_uploaded_separately_and_is_used_in_the_top_bar(): void
+    {
+        Storage::fake('local');
+
+        $this->actingAs($this->admin())->post(route('settings.branding'), $this->brandingPayload([
+            'icon' => UploadedFile::fake()->image('icone.png', 256, 256),
+        ]))->assertSessionHasNoErrors();
+
+        $path = app(Settings::class)->get('branding.icon_path');
+        Storage::disk('local')->assertExists($path);
+        $this->assertNull(app(Settings::class)->get('branding.logo_path'), 'Le logo complet n\'est pas touché.');
+        $this->get(route('branding.image', 'icone'))->assertOk();
+        $this->get(route('dashboard'))->assertSee(route('branding.image', 'icone'), false);
+    }
+
+    public function test_bundled_logo_and_icon_are_used_by_default(): void
+    {
+        $this->get(route('login'))->assertSee('images/logo.png', false);
+        $this->actingAs($this->admin())->get(route('dashboard'))->assertSee('images/marque.png', false);
+        $this->assertFileExists(public_path('images/logo.png'));
+        $this->assertFileExists(public_path('images/marque.png'));
     }
 
     public function test_svg_logo_is_refused(): void
@@ -131,7 +154,7 @@ class SettingsTest extends TestCase
 
         Storage::disk('local')->assertMissing($path);
         $this->assertNull(app(Settings::class)->get('branding.logo_path'));
-        $this->get(route('branding.logo'))->assertNotFound();
+        $this->get(route('branding.image', 'logo'))->assertNotFound();
     }
 
     public function test_branding_can_be_reset_to_site_colors(): void

@@ -46,6 +46,7 @@ return [
         'rate' => 'taux',
         'code' => 'abréviation',
         'logo' => 'logo',
+        'icon' => 'icône',
         'quote_validity_days' => 'durée de validité',
         'company.trade_name' => 'nom commercial',
         'company.owner_name' => 'nom de l\'entrepreneur',

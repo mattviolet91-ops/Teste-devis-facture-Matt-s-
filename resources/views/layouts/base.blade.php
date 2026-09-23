@@ -8,7 +8,7 @@
     <title>{{ isset($title) ? $title.' · ' : '' }}{{ $settings->get('company.trade_name') }}</title>
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <link rel="icon" href="{{ asset('icons/icon-192.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
     <script src="{{ asset('js/theme.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     <x-brand-style />

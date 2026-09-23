@@ -13,30 +13,32 @@
 <form method="POST" action="{{ route('settings.branding') }}" enctype="multipart/form-data">
     @csrf
 
-    <div class="card">
-        <fieldset>
-            <legend>Logo</legend>
-            <div class="logo-preview">
-                @if ($branding['logo_path'])
-                    <img id="logo-preview" src="{{ route('branding.logo') }}?v={{ md5($branding['logo_path']) }}" alt="Logo actuel">
-                @else
-                    <img id="logo-preview" alt="Aperçu du logo" hidden>
-                    <span class="muted small">Aucun logo : les initiales sont affichées.</span>
+    @foreach (['logo' => ['Logo complet', 'Page de connexion, documents PDF, page client. Format horizontal, fond transparent de préférence.'],
+               'icon' => ['Icône', 'Barre du haut, icône du téléphone et de l\'onglet. Format carré.']] as $kind => [$title, $usage])
+        <div class="card">
+            <fieldset>
+                <legend>{{ $title }}</legend>
+                <p class="muted small">{{ $usage }}</p>
+                <div class="logo-preview">
+                    <x-brand-logo :variant="$kind === 'logo' ? 'full' : 'icon'" id="{{ $kind }}-preview" />
+                    @unless ($branding[$kind.'_path'])
+                        <span class="muted small">Image fournie avec l'application.</span>
+                    @endunless
+                </div>
+                <div class="field @error($kind) has-error @enderror" style="margin-top:.75rem">
+                    <label for="{{ $kind }}">Remplacer l'image</label>
+                    <input id="{{ $kind }}" type="file" name="{{ $kind }}" accept="image/png,image/jpeg,image/webp" data-preview="{{ $kind }}-preview">
+                    <span class="hint">PNG (fond transparent de préférence), JPG ou WebP — 4 Mo maximum.</span>
+                    @error($kind)<span class="error">{{ $message }}</span>@enderror
+                </div>
+                @if ($branding[$kind.'_path'])
+                    <label class="check" style="margin-top:.75rem">
+                        <input type="checkbox" name="remove_{{ $kind }}" value="1"> <span>Revenir à l'image fournie avec l'application</span>
+                    </label>
                 @endif
-            </div>
-            <div class="field @error('logo') has-error @enderror" style="margin-top:.75rem">
-                <label for="logo">Choisir une image</label>
-                <input id="logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp" data-preview="logo-preview">
-                <span class="hint">PNG (fond transparent de préférence), JPG ou WebP — 2 Mo maximum.</span>
-                @error('logo')<span class="error">{{ $message }}</span>@enderror
-            </div>
-            @if ($branding['logo_path'])
-                <label class="check" style="margin-top:.75rem">
-                    <input type="checkbox" name="remove_logo" value="1"> <span>Retirer le logo</span>
-                </label>
-            @endif
-        </fieldset>
-    </div>
+            </fieldset>
+        </div>
+    @endforeach
 
     <div class="card">
         <fieldset>

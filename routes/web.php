@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::resourceVerbs(['create' => 'nouveau', 'edit' => 'modifier']);
 
-Route::get('/marque/logo', [BrandingAssetController::class, 'logo'])->name('branding.logo');
+Route::get('/marque/{kind}', [BrandingAssetController::class, 'show'])
+    ->whereIn('kind', array_keys(BrandingAssetController::KINDS))
+    ->name('branding.image');
 
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [LoginController::class, 'create'])->name('login');

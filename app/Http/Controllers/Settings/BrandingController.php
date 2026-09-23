@@ -34,21 +34,24 @@ class BrandingController extends Controller
             'font_heading' => $font,
             'font_body' => $font,
             // Pas de SVG : un SVG peut contenir du code exécutable.
-            'logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+            'icon' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ], [
             'regex' => 'Couleur attendue au format #RRGGBB.',
         ]);
 
-        $values = collect($data)->except('logo')
+        $values = collect($data)->except(['logo', 'icon'])
             ->mapWithKeys(fn ($value, $key) => ["branding.$key" => str_starts_with($key, 'color') ? strtoupper($value) : $value])
             ->all();
 
-        if ($request->hasFile('logo')) {
-            $this->deleteLogo($settings);
-            $values['branding.logo_path'] = $request->file('logo')->store('branding', 'local');
-        } elseif ($request->boolean('remove_logo')) {
-            $this->deleteLogo($settings);
-            $values['branding.logo_path'] = null;
+        foreach (['logo', 'icon'] as $kind) {
+            if ($request->hasFile($kind)) {
+                $this->deleteImage($settings, $kind);
+                $values["branding.{$kind}_path"] = $request->file($kind)->store('branding', 'local');
+            } elseif ($request->boolean("remove_$kind")) {
+                $this->deleteImage($settings, $kind);
+                $values["branding.{$kind}_path"] = null;
+            }
         }
 
         $settings->set($values);
@@ -59,7 +62,7 @@ class BrandingController extends Controller
 
     public function reset(Settings $settings): RedirectResponse
     {
-        $defaults = collect(config('entreprise.branding'))->except('logo_path')
+        $defaults = collect(config('entreprise.branding'))->except(['logo_path', 'icon_path'])
             ->mapWithKeys(fn ($value, $key) => ["branding.$key" => $value])
             ->all();
 
@@ -69,9 +72,9 @@ class BrandingController extends Controller
         return back()->with('status', 'Couleurs et polices du site rétablies.');
     }
 
-    private function deleteLogo(Settings $settings): void
+    private function deleteImage(Settings $settings, string $kind): void
     {
-        if ($path = $settings->get('branding.logo_path')) {
+        if ($path = $settings->get("branding.{$kind}_path")) {
             Storage::disk('local')->delete($path);
         }
     }

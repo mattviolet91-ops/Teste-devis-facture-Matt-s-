@@ -49,7 +49,15 @@ return [
         'color_background' => '#ECF0F1',
         'font_heading' => 'Montserrat',
         'font_body' => 'Figtree',
+        // Images envoyées dans Réglages → Apparence. Sans image envoyée, on
+        // utilise celles fournies avec l'application (public/images).
         'logo_path' => null,
+        'icon_path' => null,
+    ],
+
+    'default_images' => [
+        'logo' => 'images/logo.png',
+        'icon' => 'images/marque.png',
     ],
 
     'documents' => [
