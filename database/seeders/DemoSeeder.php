@@ -64,8 +64,30 @@ class DemoSeeder extends Seeder
             'phone' => '01 60 10 20 30', 'email' => 'contact@immo-essonne.example', 'city' => 'Orsay', 'source' => 'bouche_a_oreille',
         ]);
 
-        Client::factory()->count(20)->create()->each(fn (Client $client) => $client->worksites()->create(
-            $client->only('address', 'postal_code', 'city')
-        ));
+        // Clients supplémentaires fixes (pas de dépendance à Faker : fonctionne aussi sur un serveur de test).
+        $people = [
+            ['Mme', 'Claire', 'Marchand', 'Massy'], ['M.', 'Nicolas', 'Caron', 'Palaiseau'], ['Mme', 'Nathalie', 'Poulain', 'Orsay'],
+            ['M.', 'Laurent', 'Gautier', 'Massy'], ['M. et Mme', 'Adrien', 'Hervé', 'Palaiseau'], ['Mme', 'Céline', 'Bègue', 'Orsay'],
+            ['M.', 'Roger', 'Ménard', 'Villebon-sur-Yvette'], ['Mme', 'Gabrielle', 'Martel', 'Palaiseau'], ['M.', 'Victor', 'Michel', 'Les Ulis'],
+            ['Mme', 'Henriette', 'Mercier', 'Les Ulis'], ['M.', 'Alphonse', 'Guillou', 'Orsay'], ['M. et Mme', 'Raymond', 'Joly', 'Massy'],
+            ['Mme', 'Suzanne', 'Langlois', 'Palaiseau'], ['M.', 'Pierre', 'Muller', 'Massy'], ['Mme', 'Adèle', 'Teixeira', 'Palaiseau'],
+            ['M.', 'Émile', 'Clément', 'Palaiseau'], ['Mme', 'Jacqueline', 'Bourdon', 'Villebon-sur-Yvette'], ['M.', 'Thibaut', 'Roux', 'Palaiseau'],
+            ['M. et Mme', 'Marc', 'Guillet', 'Orsay'], ['Mme', 'Laure', 'Martineau', 'Orsay'],
+        ];
+        $postalCodes = ['Massy' => '91300', 'Palaiseau' => '91120', 'Orsay' => '91400', 'Les Ulis' => '91940', 'Villebon-sur-Yvette' => '91140'];
+        $streets = ['rue de la Paix', 'avenue du Général Leclerc', 'allée des Peupliers', 'rue Victor Hugo', 'chemin des Vignes'];
+        $sources = array_keys(Client::SOURCES);
+
+        foreach ($people as $i => [$civility, $firstName, $lastName, $city]) {
+            $address = (($i * 7) % 60 + 1).' '.$streets[$i % count($streets)];
+            Client::query()->create([
+                'type' => 'particulier', 'status' => $i % 3 === 0 ? 'client' : 'prospect',
+                'civility' => $civility, 'first_name' => $firstName, 'last_name' => $lastName,
+                'phone' => sprintf('06 %02d %02d %02d %02d', 10 + $i, 20 + $i, 30 + $i, 40 + $i),
+                'email' => strtolower(\Illuminate\Support\Str::ascii($firstName.'.'.$lastName)).'@example.com',
+                'address' => $address, 'postal_code' => $postalCodes[$city], 'city' => $city,
+                'source' => $sources[$i % count($sources)],
+            ])->worksites()->create(['address' => $address, 'postal_code' => $postalCodes[$city], 'city' => $city]);
+        }
     }
 }
