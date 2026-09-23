@@ -9,7 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** Contenu des PDF : assurance décennale, déchets, CGV, présentation. */
+/** Contenu des PDF : couverture, assurance décennale, déchets, CGV. */
 class DocumentsController extends Controller
 {
     public function edit(Settings $settings): View
@@ -47,7 +47,8 @@ class DocumentsController extends Controller
 
         $values = collect($data)->dot()->map(fn ($v) => $v ?? '')->all();
         $values['pdf.cgv_enabled'] = $request->boolean('pdf.cgv_enabled');
-        $values['pdf.presentation_enabled'] = $request->boolean('pdf.presentation_enabled');
+        $values['pdf.cover_quotes'] = $request->boolean('pdf.cover_quotes');
+        $values['pdf.cover_invoices'] = $request->boolean('pdf.cover_invoices');
 
         $settings->set($values);
         ActivityLogger::log('settings.documents', 'Contenu des documents PDF modifié');

@@ -113,13 +113,13 @@ class PdfService
         ];
     }
 
-    /** @return array{presentation: bool, cgv: bool} */
+    /** @return array{cover: bool, cgv: bool} */
     private function annexes(Quote|Invoice $document, bool $isQuote): array
     {
         $pdf = $this->settings->group('pdf');
 
         return [
-            'presentation' => $isQuote && ! empty($pdf['presentation_enabled']) && trim((string) $pdf['presentation_text']) !== '',
+            'cover' => ! empty($pdf[$isQuote ? 'cover_quotes' : 'cover_invoices']),
             'cgv' => $isQuote && ! empty($pdf['cgv_enabled']) && trim((string) $pdf['cgv']) !== '',
         ];
     }

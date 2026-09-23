@@ -41,15 +41,6 @@
     $attestations = $franchise || empty($vat['reduced_rate_mention_enabled']) ? collect()
         : \App\Models\VatRate::query()->whereIn('rate', $reducedRates)->whereNotNull('mention')->pluck('mention')->unique();
 
-    $insuranceLine = collect([
-        $insurance['insurer'] ?? null,
-        $insurance['insurer_address'] ?? null,
-        ! empty($insurance['policy_number']) ? 'contrat n° '.$insurance['policy_number'].(! empty($insurance['broker']) ? ' (via '.$insurance['broker'].')' : '') : null,
-        ! empty($insurance['valid_from']) && ! empty($insurance['valid_until'])
-            ? 'valable du '.Carbon::parse($insurance['valid_from'])->format('d/m/Y').' au '.Carbon::parse($insurance['valid_until'])->format('d/m/Y') : null,
-        ! empty($insurance['activities']) ? 'activité : '.$insurance['activities'] : null,
-        ! empty($insurance['coverage_area']) ? 'couverture géographique : '.$insurance['coverage_area'] : null,
-    ])->filter()->implode(' — ');
     $showBank = $document->show_bank && ! empty($bank['iban']);
 @endphp
 <html>
@@ -86,7 +77,19 @@
     .sign td { border: 0.6pt solid #D5DDE1; height: 30mm; vertical-align: top; padding: 6pt 8pt; width: 50%; }
     .annex-title { font-family: montserrat; font-weight: bold; font-size: 14pt; margin-bottom: 8pt; border-bottom: 2pt solid {{ $accent }}; padding-bottom: 4pt; }
     .cgv p { margin: 0 0 6pt; text-align: justify; }
-    .form-line { border-bottom: 0.5pt dotted #5F6F7D; height: 16pt; }
+    .insurance { background: #F3F9FC; border-left: 3pt solid {{ $accent }}; }
+    .insurance-title { font-family: montserrat; font-weight: bold; font-size: 9.5pt; color: {{ $ink }}; text-transform: uppercase; letter-spacing: 0.5pt; }
+    .insurance-text { font-size: 7.8pt; color: #3E4F5E; margin-top: 2pt; line-height: 1.4; }
+    .cover-title { font-family: montserrat; font-weight: bold; font-size: 24pt; color: {{ $ink }}; }
+    .cover-slogan { font-family: montserrat; font-size: 11pt; color: {{ $accent }}; margin-top: 3mm; }
+    .cover-kind { font-family: montserrat; font-weight: bold; font-size: 34pt; color: {{ $ink }}; letter-spacing: 1pt; }
+    .cover-number { font-family: montserrat; font-weight: bold; font-size: 16pt; color: {{ $accent }}; margin-top: 1mm; }
+    .cover-subject { font-size: 13pt; color: {{ $ink }}; margin-top: 4mm; }
+    .cover-card { border: 0.6pt solid #D5DDE1; border-top: 2.5pt solid {{ $accent }}; padding: 8pt 10pt; vertical-align: top; font-size: 9.5pt; }
+    .cover-strong { font-family: montserrat; font-weight: bold; font-size: 11pt; margin: 2pt 0; }
+    .cover-intro { margin-top: 8mm; font-size: 9.5pt; color: #3E4F5E; text-align: justify; }
+    .cover-intro p { margin: 0 0 5pt; }
+    .cover-badge { font-family: montserrat; font-weight: bold; font-size: 9pt; color: {{ $primary }}; border: 1pt solid {{ $accent }}; padding: 4pt 10pt; }
 </style>
 </head>
 <body>
@@ -99,11 +102,11 @@
         </tr>
     </table>
 </htmlpagefooter>
-<sethtmlpagefooter name="footer" value="on" />
-
-@if ($annexes['presentation'])
-    @include('pdf._presentation')
-    <pagebreak />
+@if ($annexes['cover'])
+    @include('pdf._cover')
+    <pagebreak resetpagenum="1" odd-footer-name="html_footer" odd-footer-value="1" />
+@else
+    <sethtmlpagefooter name="footer" value="on" />
 @endif
 
 {{-- En-tête --}}
@@ -276,11 +279,12 @@
     </table>
 @endif
 
+<div style="margin-top: 10pt;">@include('pdf._insurance')</div>
+
 {{-- Mentions légales --}}
 <div class="legal">
     @if ($franchise)<p>{{ $vat['franchise_mention'] ?? 'TVA non applicable, art. 293 B du CGI' }}</p>@endif
     @foreach ($attestations as $mention)<p>{{ $mention }}</p>@endforeach
-    @if ($insuranceLine)<p><b>Assurance décennale :</b> {{ $insuranceLine }}.</p>@endif
     @unless ($isQuote)
         <p>Catégorie de l'opération : prestation de services.@unless ($isCredit) Pas d'escompte pour paiement anticipé.@endunless</p>
     @endunless

@@ -73,7 +73,10 @@ return [
 6. Réception. Les travaux sont réceptionnés à leur achèvement, avec ou sans réserves. La réception fait courir les garanties légales (parfait achèvement, biennale, décennale).
 7. Litiges. En cas de litige, le client est invité à contacter l'entreprise pour rechercher une solution amiable. Le client consommateur peut recourir gratuitement au médiateur de la consommation indiqué sur le document.
 CGV,
-        'presentation_enabled' => false,
+        // Page de couverture stylisée (logo, client, assurance, coordonnées).
+        'cover_quotes' => true,
+        'cover_invoices' => false,
+        // Texte de présentation facultatif, imprimé sur la couverture.
         'presentation_text' => '',
     ],
 

@@ -12,6 +12,17 @@
     @endif
 
     <div class="card">
+        <h2>Page de couverture</h2>
+        <p class="muted small">Une première page à vos couleurs : logo, type de document, client, encadré d'assurance décennale et coordonnées.</p>
+        <label class="check"><input type="checkbox" name="pdf[cover_quotes]" value="1" @checked(old('pdf.cover_quotes', $pdf['cover_quotes']))> <span>Sur les devis</span></label>
+        <label class="check" style="margin-top:.5rem"><input type="checkbox" name="pdf[cover_invoices]" value="1" @checked(old('pdf.cover_invoices', $pdf['cover_invoices']))> <span>Sur les factures et avoirs</span></label>
+        <div class="form-grid" style="margin-top:.75rem">
+            <x-field name="pdf.presentation_text" label="Texte de présentation (facultatif)" type="textarea" rows="4" :value="$pdf['presentation_text']"
+                placeholder="ex. Couvreur dans l'Essonne, nous intervenons pour l'entretien, la réparation et la rénovation de toitures…" hint="Imprimé sur la page de couverture." />
+        </div>
+    </div>
+
+    <div class="card">
         <h2>Assurance décennale</h2>
         <p class="muted small">Mention obligatoire sur les devis et les factures. L'attestation PDF et les rappels d'échéance arriveront avec la phase 9.</p>
         <div class="form-grid cols-2">
@@ -43,11 +54,7 @@
         <div class="form-grid" style="margin-top:.75rem">
             <x-field name="pdf.cgv" label="Conditions générales de vente" type="textarea" rows="12" :value="$pdf['cgv']" hint="Un paragraphe par ligne. Texte de départ à faire relire." />
         </div>
-        <label class="check" style="margin-top:.75rem"><input type="checkbox" name="pdf[presentation_enabled]" value="1" @checked(old('pdf.presentation_enabled', $pdf['presentation_enabled']))>
-            <span>Ajouter une page de présentation de l'entreprise en tête des devis</span></label>
-        <div class="form-grid" style="margin-top:.75rem">
-            <x-field name="pdf.presentation_text" label="Texte de présentation" type="textarea" rows="5" :value="$pdf['presentation_text']" placeholder="Qui vous êtes, votre expérience, vos engagements…" />
-        </div>
+
     </div>
 
     <div class="form-actions">
