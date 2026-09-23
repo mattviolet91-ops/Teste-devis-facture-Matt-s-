@@ -98,6 +98,8 @@
         </div>
     </article>
 
+    @include('documents._photos', ['document' => $invoice, 'route' => 'invoices.photos'])
+
     @if ($invoice->internal_notes)
         <div class="card">
             <h2>Notes internes</h2>

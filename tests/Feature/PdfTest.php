@@ -172,24 +172,19 @@ class PdfTest extends TestCase
 
     public function test_documents_settings_can_be_updated(): void
     {
-        $this->get(route('settings.documents'))->assertOk()->assertSee('Assurance décennale')->assertSee('médiateur');
+        $this->get(route('settings.documents'))->assertOk()->assertSee('Page de couverture')->assertSee('médiateur');
 
         $this->put(route('settings.documents'), [
-            'insurance' => [
-                'insurer' => 'QBE Europe SA/NV', 'policy_number' => '037 0010701-D1002575',
-                'valid_from' => '2027-01-01', 'valid_until' => '2027-12-31',
-                'activities' => 'Couverture', 'coverage_area' => 'France métropolitaine',
-            ],
-            'pdf' => ['waste_mention' => 'Déchets évacués.', 'waste_facility' => 'Déchetterie de Villejust', 'cgv' => 'CGV'],
+            'pdf' => ['waste_mention' => 'Déchets évacués.', 'waste_facility' => 'Déchetterie de Villejust', 'cgv' => 'CGV', 'cover_invoices' => '1'],
         ])->assertSessionHasNoErrors();
 
         $settings = app(Settings::class);
-        $this->assertSame('2027-12-31', $settings->get('insurance.valid_until'));
         $this->assertSame('Déchetterie de Villejust', $settings->get('pdf.waste_facility'));
         $this->assertFalse($settings->get('pdf.cgv_enabled'));
+        $this->assertFalse($settings->get('pdf.cover_quotes'));
+        $this->assertTrue($settings->get('pdf.cover_invoices'));
 
-        $this->put(route('settings.documents'), ['insurance' => ['valid_from' => '2027-01-01', 'valid_until' => '2026-01-01']])
-            ->assertSessionHasErrors(['insurance.valid_until', 'insurance.insurer']);
+        $this->put(route('settings.documents'), ['pdf' => ['waste_mention' => '']])->assertSessionHasErrors('pdf.waste_mention');
     }
 
     /** Données de la vue PDF, comme les prépare PdfService. */

@@ -294,6 +294,24 @@
     @if ($annexes['cgv'])<p>Conditions générales de vente en annexe.</p>@endif
 </div>
 
+@if ($document->photos->isNotEmpty())
+    <pagebreak />
+    <div class="annex-title">Photos du chantier</div>
+    <table width="100%">
+        @foreach ($document->photos->chunk(2) as $row)
+            <tr>
+                @foreach ($row as $photo)
+                    <td width="50%" style="vertical-align: top; padding: 0 4pt 10pt; page-break-inside: avoid;">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($photo->displayPath()) }}" style="width: 86mm; border: 0.5pt solid #D5DDE1;" />
+                        <div class="small" style="margin-top: 3pt;"><b>{{ $photo->categoryLabel() }}</b>{{ $photo->caption ? ' — '.$photo->caption : '' }}</div>
+                    </td>
+                @endforeach
+                @if ($row->count() === 1)<td width="50%"></td>@endif
+            </tr>
+        @endforeach
+    </table>
+@endif
+
 @if ($annexes['cgv'])
     <pagebreak />
     <div class="annex-title">Conditions générales de vente</div>

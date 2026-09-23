@@ -66,6 +66,11 @@
     });
   });
 
+  // Envoi immédiat d'un fichier choisi (documents du client).
+  document.querySelectorAll('[data-autosubmit]').forEach(function (input) {
+    input.addEventListener('change', function () { if (input.files.length) { input.form.submit(); } });
+  });
+
   // Facturer un devis : le pourcentage ne concerne que l'acompte et la situation.
   document.querySelectorAll('[data-percent-field]').forEach(function (field) {
     var form = field.closest('form');

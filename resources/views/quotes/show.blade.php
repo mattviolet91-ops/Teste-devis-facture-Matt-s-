@@ -103,6 +103,8 @@
         </div>
     </article>
 
+    @include('documents._photos', ['document' => $quote, 'route' => 'quotes.photos'])
+
     @if ($quote->internal_notes)
         <div class="card">
             <h2>Notes internes</h2>

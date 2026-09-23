@@ -64,6 +64,7 @@
                     </div>
                     <div class="chips">
                         <a class="chip" href="{{ $worksite->mapsUrl() }}" target="_blank" rel="noopener"><x-icon name="map" /> Itinéraire</a>
+                        <a class="chip" href="{{ route('photos.worksite', $worksite) }}"><x-icon name="camera" /> Photos ({{ $worksite->photos->count() }})</a>
                         @if ($worksite->contact_phone)
                             <a class="chip" href="{{ Phone::href($worksite->contact_phone) }}"><x-icon name="phone" /> {{ $worksite->contact_name ?: 'Contact sur place' }}</a>
                         @endif
@@ -82,6 +83,13 @@
                     @endif
                     @if ($worksite->notes)
                         <p class="small muted pre-line">{{ $worksite->notes }}</p>
+                    @endif
+                    @if ($worksite->photos->isNotEmpty())
+                        <a class="photo-strip" href="{{ route('photos.worksite', $worksite) }}">
+                            @foreach ($worksite->photos->take(6) as $photo)
+                                <img src="{{ route('photos.file', [$photo, 'mini']) }}" alt="{{ $photo->caption ?: $photo->categoryLabel() }}" loading="lazy">
+                            @endforeach
+                        </a>
                     @endif
                 </article>
             @empty
@@ -130,10 +138,32 @@
 
     <div class="card">
         <div class="card-head"><h2>Documents</h2></div>
-        <ul class="stat-list">
-            <li><span>Paiements</span><span class="muted small">phase 10</span></li>
-            <li><span>Photos</span><span class="muted small">phase 9</span></li>
-        </ul>
+        @error('files')<div class="alert alert-error">{{ $message }}</div>@enderror
+        @error('files.*')<div class="alert alert-error">{{ $message }}</div>@enderror
+        @if ($client->attachments->isEmpty())
+            <p class="muted">Aucun document. Rangez ici les plans, courriers, attestations du client…</p>
+        @else
+            <ul class="stat-list">
+                @foreach ($client->attachments as $attachment)
+                    <li>
+                        <a href="{{ route('attachments.show', $attachment) }}" target="_blank" rel="noopener">{{ $attachment->name }}</a>
+                        <span class="muted small">{{ $attachment->humanSize() }} · {{ $attachment->created_at->format('d/m/Y') }}
+                            <form method="POST" action="{{ route('attachments.destroy', $attachment) }}" data-confirm="Supprimer « {{ $attachment->name }} » ?" style="display:inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="link-danger" type="submit">Supprimer</button>
+                            </form>
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        <form method="POST" action="{{ route('attachments.store', $client) }}" enctype="multipart/form-data" class="inline-upload">
+            @csrf
+            <label class="btn btn-secondary btn-sm" for="client-files"><x-icon name="plus" /> Ajouter un document</label>
+            <input id="client-files" class="visually-hidden" type="file" name="files[]" multiple data-autosubmit
+                accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt">
+        </form>
     </div>
 
     <div class="card">

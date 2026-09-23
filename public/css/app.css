@@ -607,3 +607,30 @@ button.nav-link { width: 100%; border: 0; background: none; font: inherit; color
 .template-card summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; list-style: none; }
 .template-card summary::-webkit-details-marker { display: none; }
 .template-card[open] summary { margin-bottom: 1rem; }
+
+/* Photos */
+.photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-bottom: 1rem; }
+@media (min-width: 640px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .photo-grid { grid-template-columns: repeat(4, 1fr); } }
+.photo-tile { margin: 0; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.photo-tile img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #DDE3E6; }
+.photo-tile figcaption { display: flex; flex-wrap: wrap; gap: .25rem .375rem; align-items: center; padding: .5rem .625rem; }
+.photo-edit { padding: 0 .625rem .625rem; }
+.photo-edit summary { cursor: pointer; color: var(--brand-accent-strong, #1B7FA3); }
+.photo-edit form, .photo-edit > button { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: .5rem; }
+.photo-edit select, .photo-edit input[type=text] { width: 100%; }
+.photo-pick { width: 100%; justify-content: center; }
+.annotator-tools { display: flex; gap: .5rem; align-items: center; margin-bottom: .75rem; }
+.swatch { width: 2rem; height: 2rem; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; }
+.swatch.is-active { outline: 3px solid var(--brand-accent); outline-offset: 2px; }
+.annotator-canvas canvas { display: block; max-width: 100%; max-height: 60vh; margin: 0 auto; touch-action: none; border-radius: var(--radius); }
+.photo-pick-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+@media (min-width: 640px) { .photo-pick-list { grid-template-columns: repeat(5, 1fr); } }
+.photo-pick-list label { position: relative; display: block; cursor: pointer; }
+.photo-pick-list img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 3px solid transparent; }
+.photo-pick-list input { position: absolute; top: .375rem; left: .375rem; width: 1.25rem; height: 1.25rem; }
+.photo-pick-list input:checked + img { border-color: var(--brand-accent); }
+.photo-strip { display: flex; gap: .5rem; overflow-x: auto; margin-top: .5rem; }
+.photo-strip img { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; flex: none; }
+.link-danger { background: none; border: 0; padding: 0; margin-left: .5rem; color: var(--danger); font: inherit; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
+.inline-upload { margin-top: .75rem; }

@@ -87,7 +87,7 @@ class PdfService
     /** @return array<string, mixed> */
     private function viewData(Quote|Invoice $document): array
     {
-        $document->loadMissing(['client', 'worksite', 'lines']);
+        $document->loadMissing(['client', 'worksite', 'lines', 'photos']);
         $isQuote = $document instanceof Quote;
         if (! $isQuote) {
             $document->loadMissing(['quote', 'cancels', 'corrects']);
