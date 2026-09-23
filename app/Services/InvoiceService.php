@@ -138,7 +138,7 @@ class InvoiceService
      */
     public function cancel(Invoice $invoice, ?string $reason = null): Invoice
     {
-        abort_unless($invoice->isCorrectable(), 409, 'Seule une facture envoyée et non payée peut être annulée.');
+        abort_unless($invoice->isCancellable(), 409, 'Seule une facture envoyée peut être annulée.');
 
         return DB::transaction(function () use ($invoice, $reason) {
             $invoice->loadMissing('lines');

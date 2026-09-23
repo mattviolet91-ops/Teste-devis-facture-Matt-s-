@@ -80,13 +80,16 @@ class DashboardController extends Controller
     }
 
     /**
-     * Chiffre d'affaires HT facturé sur la période : factures émises (même
-     * annulées ensuite) moins les avoirs émis sur la même période.
+     * Chiffre d'affaires HT facturé sur la période. Une facture supprimée
+     * (annulée par avoir) ne compte pas du tout, pas plus que son avoir.
      */
     private function revenue(Carbon $from, Carbon $to): int
     {
-        $invoiced = (int) Invoice::query()->invoices()->issued()->whereDate('issue_date', '>=', $from)->whereDate('issue_date', '<=', $to)->sum('total_ht');
-        $credited = (int) Invoice::query()->credits()->issued()->whereDate('issue_date', '>=', $from)->whereDate('issue_date', '<=', $to)->sum('total_ht');
+        $invoiced = (int) Invoice::query()->invoices()->issued()->where('status', '!=', 'cancelled')
+            ->whereDate('issue_date', '>=', $from)->whereDate('issue_date', '<=', $to)->sum('total_ht');
+        // Avoirs isolés (sans facture annulée associée) : déduits.
+        $credited = (int) Invoice::query()->credits()->issued()->whereNull('cancels_id')
+            ->whereDate('issue_date', '>=', $from)->whereDate('issue_date', '<=', $to)->sum('total_ht');
 
         return $invoiced - $credited;
     }

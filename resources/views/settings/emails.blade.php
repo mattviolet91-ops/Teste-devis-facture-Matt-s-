@@ -40,6 +40,18 @@
         </form>
     @endif
 
+    <form method="POST" action="{{ route('settings.emails.share') }}" class="card" id="sms">
+        @csrf
+        @method('PUT')
+        <h2>Messages SMS / WhatsApp</h2>
+        <p class="muted small">Texte proposé par les boutons WhatsApp, SMS et « Copier le message » d'un devis ou d'une facture. Mêmes variables que les emails ({lien}, {numero}, {montant}…).</p>
+        <div class="form-grid">
+            <x-field name="sms_quote" label="Pour un devis" type="textarea" rows="6" :value="$mail['sms_quote']" required />
+            <x-field name="sms_invoice" label="Pour une facture" type="textarea" rows="6" :value="$mail['sms_invoice']" required />
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
+    </form>
+
     <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
         @csrf
         @method('PUT')

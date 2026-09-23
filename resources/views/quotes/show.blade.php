@@ -65,7 +65,33 @@
             <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
         @endif
         <button class="btn btn-secondary" type="button" data-open-sheet="duplicate-dialog"><x-icon name="copy" /> Dupliquer</button>
+        @php $invoiced = $quote->invoices->whereIn('status', ['draft', ...\App\Models\Invoice::ISSUED])->isNotEmpty(); @endphp
+        @if ($invoiced)
+            <button class="btn btn-secondary" type="button" data-open-sheet="delete-blocked"><x-icon name="trash" /> Supprimer</button>
+        @else
+            <form method="POST" action="{{ route('quotes.destroy', $quote) }}"
+                data-confirm="{{ $quote->isDraft() ? 'Mettre ce brouillon à la corbeille ?' : 'Supprimer le devis '.$quote->number.' ? Il reste récupérable 30 jours dans la corbeille.' }}">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-secondary" type="submit"><x-icon name="trash" /> Supprimer</button>
+            </form>
+        @endif
     </div>
+
+    @if ($invoiced)
+        <dialog class="sheet" id="delete-blocked" aria-labelledby="delete-blocked-title">
+            <div class="card-head">
+                <h2 id="delete-blocked-title">Supprimer le devis</h2>
+                <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
+            </div>
+            <p>Ce devis a des factures. Supprimez d'abord ses factures (bouton « Supprimer » sur chaque facture), puis revenez supprimer le devis.</p>
+            <ul class="stat-list">
+                @foreach ($quote->invoices->whereIn('status', ['draft', ...\App\Models\Invoice::ISSUED]) as $invoice)
+                    <li><a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a></li>
+                @endforeach
+            </ul>
+        </dialog>
+    @endif
 
     @error('percent')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
 

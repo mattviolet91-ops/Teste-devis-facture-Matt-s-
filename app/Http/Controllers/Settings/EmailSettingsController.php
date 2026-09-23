@@ -57,6 +57,18 @@ class EmailSettingsController extends Controller
         return back()->with('status', 'Réglages des emails enregistrés.');
     }
 
+    public function updateShareTexts(Request $request, Settings $settings): RedirectResponse
+    {
+        $data = $request->validate([
+            'sms_quote' => ['required', 'string', 'max:1000'],
+            'sms_invoice' => ['required', 'string', 'max:1000'],
+        ], [], ['sms_quote' => 'message pour les devis', 'sms_invoice' => 'message pour les factures']);
+
+        $settings->set(['mail.sms_quote' => $data['sms_quote'], 'mail.sms_invoice' => $data['sms_invoice']]);
+
+        return back()->with('status', 'Messages SMS / WhatsApp enregistrés.');
+    }
+
     public function updateReminders(Request $request, Settings $settings): RedirectResponse
     {
         $data = $request->validate([

@@ -147,4 +147,19 @@ class PaymentTest extends TestCase
 
         $this->assertSame(2, $invoice->fresh()->reminder_count);
     }
+
+    public function test_paid_invoice_can_be_deleted_and_no_longer_counts_in_revenue(): void
+    {
+        $invoice = $this->sentInvoice('1000');
+        $this->post(route('payments.store', $invoice), ['amount' => '1000', 'paid_at' => '2026-10-01', 'method' => 'virement']);
+        $this->get(route('dashboard'))->assertSeeInOrder(['CA facturé (HT)', "1\u{202F}000,00\u{00A0}€"], false);
+
+        Carbon::setTestNow('2026-11-05 10:00');
+        $this->get(route('invoices.show', $invoice))->assertSee('Supprimer la facture');
+        $this->post(route('invoices.cancel', $invoice))->assertRedirect(route('invoices.index'));
+
+        $this->assertSame('cancelled', $invoice->fresh()->status);
+        $this->get(route('dashboard', ['periode' => 'annee']))->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false);
+        $this->get(route('dashboard', ['periode' => 'mois']))->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false);
+    }
 }

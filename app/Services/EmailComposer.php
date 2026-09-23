@@ -47,6 +47,12 @@ class EmailComposer
         ];
     }
 
+    /** Texte libre (message SMS / WhatsApp) avec ses variables remplies. */
+    public function renderText(string $text, Client $client, Quote|Invoice|null $document = null): string
+    {
+        return $this->replace($text, $this->values($client, $document));
+    }
+
     /** @return array<string, string> */
     public function values(Client $client, Quote|Invoice|null $document = null): array
     {

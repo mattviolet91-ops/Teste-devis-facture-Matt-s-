@@ -87,6 +87,9 @@ CGV,
         'password' => '',
         'from_name' => '',
         'bcc_self' => true,
+        // Messages SMS / WhatsApp / copier (mêmes variables que les emails).
+        'sms_quote' => "{salutation}\nVoici votre devis n° {numero} de {entreprise} pour {objet} ({montant}).\nVous pouvez le consulter et l'accepter en ligne, avec signature sur votre téléphone :\n{lien}\nBien cordialement,\n{entreprise} – {telephone}",
+        'sms_invoice' => "{salutation}\nVoici {document} n° {numero} de {entreprise} d'un montant de {montant}, {echeance}.\nConsultez-la et téléchargez-la ici :\n{lien}\nMerci pour votre confiance !\n{entreprise} – {telephone}",
     ],
 
     // Relances automatiques des factures impayées (désactivées par défaut).

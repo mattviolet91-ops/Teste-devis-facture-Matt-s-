@@ -155,7 +155,7 @@ class InvoiceController extends Controller
 
     public function cancel(Request $request, Invoice $invoice): RedirectResponse
     {
-        abort_unless($invoice->isCorrectable(), 403);
+        abort_unless($invoice->isCancellable(), 403);
         $data = $request->validate(['reason' => ['nullable', 'string', 'max:300']]);
 
         $credit = $this->invoices->cancel($invoice, $data['reason'] ?? null);

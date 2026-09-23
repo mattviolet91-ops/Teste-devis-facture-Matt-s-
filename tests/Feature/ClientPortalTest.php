@@ -177,7 +177,7 @@ class ClientPortalTest extends TestCase
                 && str_contains($html, 'Voir et accepter le devis')
                 && substr_count($html, $url) === 1;
         });
-        $this->get(route('quotes.show', $quote))->assertSee('Lien client')->assertSee($url);
+        $this->get(route('quotes.show', $quote))->assertSee('Envoyer au client')->assertSee($url)->assertSee('Voici votre devis n° DEV-2026-0001');
     }
 
     public function test_invoice_link_shows_and_downloads_the_invoice(): void

@@ -81,6 +81,8 @@
                 @csrf
                 <button class="btn" type="submit"><x-icon name="file" /> Modifier</button>
             </form>
+        @endif
+        @if ($invoice->isCancellable())
             <button class="btn btn-secondary" type="button" data-open-sheet="cancel-dialog"><x-icon name="trash" /> Supprimer</button>
         @endif
     </div>
@@ -129,7 +131,9 @@
         </form>
     @endif
 
-    @if ($invoice->isCorrectable())
+    @if ($invoice->isCancellable())
+        <div class="form-actions"><button class="btn btn-danger-outline" type="button" data-open-sheet="cancel-dialog"><x-icon name="trash" /> Supprimer la facture</button></div>
+
         <dialog class="sheet" id="cancel-dialog" aria-labelledby="cancel-title">
             <form method="POST" action="{{ route('invoices.cancel', $invoice) }}">
                 @csrf
@@ -139,7 +143,7 @@
                 </div>
                 <p class="small">La loi interdit d'effacer une facture envoyée (numérotation continue, conservation 10 ans).
                     La seule suppression possible est l'<strong>annulation par avoir</strong> : un avoir du même montant ({{ Money::format($invoice->total_ttc) }}) est émis,
-                    la facture ne compte plus dans votre chiffre d'affaires ni dans les montants à encaisser, et elle disparaît de la liste principale (filtre « Annulées »).</p>
+                    la facture et son avoir ne comptent plus du tout dans votre chiffre d'affaires ni dans les montants à encaisser, et ils disparaissent de la liste principale (filtre « Annulées »).</p>
                 @if ($invoice->amount_paid > 0)
                     <div class="alert alert-warning small">{{ Money::format($invoice->amount_paid) }} ont déjà été réglés sur cette facture : pensez à rembourser le client
                         (ou utilisez plutôt « Modifier » : les paiements passeront sur la facture corrigée).</div>

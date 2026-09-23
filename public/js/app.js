@@ -66,6 +66,33 @@
     });
   });
 
+  // Message au client par WhatsApp, SMS ou copie (texte modifiable).
+  document.querySelectorAll('[data-share]').forEach(function (box) {
+    var text = box.querySelector('[data-share-message]');
+    box.querySelectorAll('[data-share-to]').forEach(function (button) {
+      button.addEventListener('click', function (event) {
+        var message = text.value.trim();
+        var kind = button.getAttribute('data-share-to');
+        var phone = button.getAttribute('data-phone') || '';
+        if (kind === 'copy') {
+          event.preventDefault();
+          var done = function () { var old = button.innerHTML; button.textContent = 'Message copié ✓'; setTimeout(function () { button.innerHTML = old; }, 2000); };
+          if (navigator.clipboard) { navigator.clipboard.writeText(message).then(done, function () { text.select(); }); }
+          else { text.select(); document.execCommand('copy'); done(); }
+          return;
+        }
+        if (kind === 'whatsapp') {
+          button.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+          button.target = '_blank';
+        } else {
+          // iPhone : « sms:numéro&body= » ; Android : « sms:numéro?body= ».
+          var separator = /iPhone|iPad/.test(navigator.userAgent) ? '&' : '?';
+          button.href = 'sms:' + phone + separator + 'body=' + encodeURIComponent(message);
+        }
+      });
+    });
+  });
+
   // Copier un lien dans le presse-papiers.
   document.querySelectorAll('[data-copy]').forEach(function (button) {
     button.addEventListener('click', function () {

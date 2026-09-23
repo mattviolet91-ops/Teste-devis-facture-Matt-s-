@@ -169,6 +169,12 @@ class Invoice extends Model
         return ! $this->isCredit() && in_array($this->status, self::OPEN, true);
     }
 
+    /** « Supprimer » (annulation par avoir) : toute facture émise, même payée. */
+    public function isCancellable(): bool
+    {
+        return ! $this->isCredit() && in_array($this->status, self::ISSUED, true);
+    }
+
     /** Un paiement peut être enregistré (facture émise, pas un avoir, pas soldée). */
     public function acceptsPayments(): bool
     {
