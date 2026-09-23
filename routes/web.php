@@ -3,10 +3,16 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BrandingAssetController;
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
+use App\Http\Controllers\TrashController;
+use App\Http\Controllers\WorksiteController;
 use Illuminate\Support\Facades\Route;
+
+Route::resourceVerbs(['create' => 'nouveau', 'edit' => 'modifier']);
 
 Route::get('/marque/logo', [BrandingAssetController::class, 'logo'])->name('branding.logo');
 
@@ -24,6 +30,22 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/deconnexion', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('/recherche', SearchController::class)->name('search');
+
+    Route::resource('clients', ClientController::class)
+        ->parameters(['clients' => 'client'])
+        ->names('clients')
+        ->whereNumber('client');
+
+    Route::get('/clients/{client}/chantiers/nouveau', [WorksiteController::class, 'create'])->name('worksites.create');
+    Route::post('/clients/{client}/chantiers', [WorksiteController::class, 'store'])->name('worksites.store');
+    Route::get('/chantiers/{worksite}/modifier', [WorksiteController::class, 'edit'])->name('worksites.edit');
+    Route::put('/chantiers/{worksite}', [WorksiteController::class, 'update'])->name('worksites.update');
+    Route::delete('/chantiers/{worksite}', [WorksiteController::class, 'destroy'])->name('worksites.destroy');
+
+    Route::get('/corbeille', [TrashController::class, 'index'])->name('trash.index');
+    Route::post('/corbeille/clients/{id}', [TrashController::class, 'restoreClient'])->whereNumber('id')->name('trash.clients.restore');
+    Route::post('/corbeille/chantiers/{id}', [TrashController::class, 'restoreWorksite'])->whereNumber('id')->name('trash.worksites.restore');
 
     Route::prefix('reglages')->name('settings.')->group(function () {
         Route::redirect('/', '/reglages/entreprise')->name('index');

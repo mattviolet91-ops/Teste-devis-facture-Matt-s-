@@ -8,7 +8,6 @@ use Illuminate\View\View;
 class ComingSoonController extends Controller
 {
     public const MODULES = [
-        'clients' => ['Clients', 5],
         'devis' => ['Devis', 6],
         'factures' => ['Factures', 7],
         'paiements' => ['Paiements', 10],

@@ -19,7 +19,7 @@ La procédure d'installation pas à pas sera rédigée à la phase 15.
 |---|---|---|
 | 1–3 | Cahier des charges, architecture, base de données | ✅ |
 | 4 | Connexion, interface mobile, réglages de l'entreprise | ✅ |
-| 5 | Clients et chantiers, recherche | à venir |
+| 5 | Clients et chantiers, recherche, corbeille | ✅ |
 | 6 | Bibliothèque de prestations et devis | à venir |
 | 7 | Factures, acomptes, situations, avoirs | à venir |
 | 8 | PDF | à venir |
@@ -39,6 +39,7 @@ php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
 php artisan app:create-admin     # crée le compte administrateur
+php artisan db:seed --class=DemoSeeder   # données fictives (facultatif)
 php artisan serve
 ```
 

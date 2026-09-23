@@ -65,4 +65,53 @@
       if (!window.confirm(form.getAttribute('data-confirm'))) { event.preventDefault(); }
     });
   });
+
+  // Formulaire client : les champs « société » ne concernent que les professionnels.
+  document.querySelectorAll('[data-client-type]').forEach(function (group) {
+    var form = group.closest('form');
+    function refresh() {
+      var checked = group.querySelector('input:checked');
+      var individual = !checked || checked.value === 'particulier';
+      form.querySelectorAll('[data-pro-only]').forEach(function (el) {
+        (el.closest('.field') || el).classList.toggle('is-hidden', individual);
+      });
+    }
+    group.addEventListener('change', refresh);
+    refresh();
+  });
+
+  // Chantier : reprendre l'adresse du client.
+  document.querySelectorAll('[data-fill-address]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var values = JSON.parse(button.getAttribute('data-fill-address'));
+      var form = button.closest('form');
+      Object.keys(values).forEach(function (name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (input && values[name]) { input.value = values[name]; }
+      });
+    });
+  });
+
+  // Recherche instantanée : les résultats se mettent à jour pendant la saisie.
+  document.querySelectorAll('[data-live-search]').forEach(function (input) {
+    var target = document.getElementById(input.getAttribute('data-live-search'));
+    var form = input.closest('form');
+    var timer = null;
+    var controller = null;
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (controller) { controller.abort(); }
+        controller = new AbortController();
+        var url = form.action + '?partial=1&q=' + encodeURIComponent(input.value);
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: controller.signal })
+          .then(function (response) { return response.ok ? response.text() : Promise.reject(); })
+          .then(function (html) {
+            target.innerHTML = html;
+            history.replaceState(null, '', form.action + '?q=' + encodeURIComponent(input.value));
+          })
+          .catch(function () { /* requête annulée ou hors ligne : on garde l'affichage */ });
+      }, 200);
+    });
+  });
 })();
