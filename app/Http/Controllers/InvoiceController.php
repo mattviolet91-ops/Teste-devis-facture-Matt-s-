@@ -46,7 +46,7 @@ class InvoiceController extends Controller
             ->when($filters['q'] ?? null, fn ($query, $q) => $query->search($q))
             ->when($filters['status'], fn ($query, $status) => match ($status) {
                 'draft' => $query->where('status', 'draft'),
-                'unpaid' => $query->invoices()->where('status', 'sent'),
+                'unpaid' => $query->invoices()->whereIn('status', Invoice::OPEN),
                 'overdue' => $query->overdue(),
                 'paid' => $query->invoices()->where('status', 'paid'),
                 'credit' => $query->credits(),
@@ -80,7 +80,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): View
     {
-        $invoice->load(['client', 'worksite', 'lines', 'quote', 'cancels', 'corrects', 'creditNote', 'correction']);
+        $invoice->load(['client', 'worksite', 'lines', 'quote', 'cancels', 'corrects', 'creditNote', 'correction', 'payments']);
 
         $history = ActivityLog::query()
             ->where('subject_type', $invoice->getMorphClass())

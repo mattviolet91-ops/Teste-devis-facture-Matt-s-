@@ -70,6 +70,12 @@
                 <button class="btn btn-secondary" type="submit"><x-icon name="send" /> Marquer comme envoyée</button>
             </form>
         @endif
+        @if ($invoice->acceptsPayments())
+            <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'relance' => 1]) }}"><x-icon name="send" /> Relancer{{ $invoice->reminder_count ? ' ('.$invoice->reminder_count.')' : '' }}</a>
+        @endif
+        @if (session('thank') && $invoice->client?->email)
+            <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'modele' => 'merci']) }}"><x-icon name="mail" /> Envoyer un remerciement</a>
+        @endif
         @if ($invoice->isCorrectable())
             <form method="POST" action="{{ route('invoices.correct', $invoice) }}" data-confirm="Modifier cette facture ? Un avoir sera émis pour l'annuler (obligation légale) et une copie modifiable sera préparée ; elle recevra un nouveau numéro à l'envoi.">
                 @csrf
@@ -97,6 +103,8 @@
             @include('documents._mentions', ['document' => $invoice])
         </div>
     </article>
+
+    @include('payments._card')
 
     @unless ($invoice->isDraft())
         @include('documents._client-link', ['document' => $invoice])
@@ -132,6 +140,10 @@
                 <p class="small">La loi interdit d'effacer une facture envoyée (numérotation continue, conservation 10 ans).
                     La seule suppression possible est l'<strong>annulation par avoir</strong> : un avoir du même montant ({{ Money::format($invoice->total_ttc) }}) est émis,
                     la facture ne compte plus dans votre chiffre d'affaires ni dans les montants à encaisser, et elle disparaît de la liste principale (filtre « Annulées »).</p>
+                @if ($invoice->amount_paid > 0)
+                    <div class="alert alert-warning small">{{ Money::format($invoice->amount_paid) }} ont déjà été réglés sur cette facture : pensez à rembourser le client
+                        (ou utilisez plutôt « Modifier » : les paiements passeront sur la facture corrigée).</div>
+                @endif
                 <div class="field">
                     <label for="reason">Motif (facultatif)</label>
                     <input id="reason" name="reason" type="text" maxlength="300" placeholder="ex. travaux annulés, erreur de client…">

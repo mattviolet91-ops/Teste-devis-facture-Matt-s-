@@ -7,10 +7,10 @@ use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientPortalController;
-use App\Http\Controllers\ComingSoonController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PushController;
@@ -99,6 +99,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
 
+    Route::get('/paiements', [PaymentController::class, 'index'])->name('payments.index');
+    Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');
+    Route::delete('/paiements/{payment}', [PaymentController::class, 'destroy'])->whereNumber('payment')->name('payments.destroy');
+
     Route::get('/photos', [PhotoController::class, 'index'])->name('photos.index');
     Route::get('/chantiers/{worksite}/photos', [PhotoController::class, 'worksite'])->whereNumber('worksite')->name('photos.worksite');
     Route::post('/chantiers/{worksite}/photos', [PhotoController::class, 'store'])->whereNumber('worksite')->middleware('throttle:60,1')->name('photos.store');
@@ -156,6 +160,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::get('/emails', [Settings\EmailSettingsController::class, 'edit'])->name('emails');
         Route::put('/emails', [Settings\EmailSettingsController::class, 'update']);
+        Route::put('/emails/relances', [Settings\EmailSettingsController::class, 'updateReminders'])->name('emails.reminders');
         Route::post('/emails/test', [Settings\EmailSettingsController::class, 'test'])->middleware('throttle:5,1')->name('emails.test');
         Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');
         Route::put('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'updateTemplate'])->name('emails.templates.update');
@@ -174,7 +179,4 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/compte/mot-de-passe', [Settings\AccountController::class, 'updatePassword'])->name('account.password');
     });
 
-    Route::get('/{module}', ComingSoonController::class)
-        ->whereIn('module', array_keys(ComingSoonController::MODULES))
-        ->name('module');
 });

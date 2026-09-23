@@ -71,7 +71,7 @@
 
     @if ($quote->invoices->isNotEmpty())
         @php
-            $billed = $quote->invoices->whereIn('status', ['sent', 'paid'])->sum('total_ttc');
+            $billed = $quote->invoices->whereIn('status', \App\Models\Invoice::ISSUED)->sum('total_ttc');
         @endphp
         <div class="card">
             <div class="card-head">
@@ -118,7 +118,7 @@
 
     @include('documents._history')
 
-    @if ($quote->invoices->whereIn('status', ['draft', 'sent', 'paid'])->isEmpty())
+    @if ($quote->invoices->whereIn('status', ['draft', ...\App\Models\Invoice::ISSUED])->isEmpty())
         <form method="POST" action="{{ route('quotes.destroy', $quote) }}"
             data-confirm="{{ $quote->isDraft() ? 'Mettre ce brouillon à la corbeille ?' : 'Supprimer le devis '.$quote->number.($quote->status === 'accepted' ? ' (accepté par le client)' : '').' ? Il reste récupérable 30 jours dans la corbeille.' }}">
             @csrf
@@ -144,7 +144,7 @@
 
     @if ($quote->isInvoiceable())
         @php
-            $hasPartial = $quote->invoices->whereIn('kind', ['deposit', 'progress'])->whereIn('status', ['sent', 'paid'])->isNotEmpty();
+            $hasPartial = $quote->invoices->whereIn('kind', ['deposit', 'progress'])->whereIn('status', \App\Models\Invoice::ISSUED)->isNotEmpty();
         @endphp
         <dialog class="sheet" id="invoice-dialog" aria-labelledby="invoice-title">
             <form method="POST" action="{{ route('quotes.invoice', $quote) }}">

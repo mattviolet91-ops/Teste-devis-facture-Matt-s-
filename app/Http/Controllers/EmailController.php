@@ -48,7 +48,13 @@ class EmailController extends Controller
         };
         $templates = EmailTemplate::query()->for($context)->get();
         $rendered = $templates->mapWithKeys(fn (EmailTemplate $t) => [$t->id => $composer->render($t, $client, $document)]);
-        $selected = $templates->first();
+        // Modèle demandé : relance de paiement ou de devis, remerciement…
+        $wanted = match (true) {
+            $request->boolean('relance') => 'Relance',
+            $request->query('modele') === 'merci' => 'Remerciement',
+            default => null,
+        };
+        $selected = ($wanted ? $templates->first(fn (EmailTemplate $t) => str_starts_with($t->name, $wanted)) : null) ?? $templates->first();
 
         return view('emails.create', [
             'client' => $client,
@@ -59,6 +65,7 @@ class EmailController extends Controller
             'configured' => $mail->isConfigured(),
             'bcc' => $mail->bccAddress(),
             'certificate' => $insurance->currentCertificate(),
+            'reminder' => $request->boolean('relance'),
         ]);
     }
 
@@ -93,6 +100,11 @@ class EmailController extends Controller
 
         if (! $log->isSent()) {
             return back()->withInput()->withErrors(['to' => 'L\'envoi a échoué : '.$log->error]);
+        }
+
+        // Relance : comptée sur la facture (suivi des relances).
+        if ($request->boolean('reminder') && $document instanceof Invoice) {
+            $document->forceFill(['reminder_count' => $document->reminder_count + 1, 'last_reminder_at' => now()])->save();
         }
 
         $target = match (true) {

@@ -6,6 +6,7 @@ use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -32,9 +33,16 @@ class Invoice extends Model
     public const STATUSES = [
         'draft' => 'Brouillon',
         'sent' => 'Envoyée',
+        'partial' => 'Partiellement payée',
         'paid' => 'Payée',
         'cancelled' => 'Annulée',
     ];
+
+    /** Factures émises et non annulées (elles comptent comme facturées). */
+    public const ISSUED = ['sent', 'partial', 'paid'];
+
+    /** Factures émises restant à encaisser (tout ou partie). */
+    public const OPEN = ['sent', 'partial'];
 
     protected $fillable = [
         'client_id', 'worksite_id', 'title', 'work_period', 'show_bank', 'due_days', 'discount_type', 'discount_value', 'vat_regime',
@@ -48,6 +56,9 @@ class Invoice extends Model
             'due_date' => 'date',
             'sent_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'paid_at' => 'date',
+            'last_reminder_at' => 'datetime',
+            'reminder_count' => 'integer',
             'viewed_at' => 'datetime',
             'due_days' => 'integer',
             'show_bank' => 'boolean',
@@ -110,6 +121,11 @@ class Invoice extends Model
         return $this->morphToMany(Photo::class, 'document', 'document_photo')->withPivot('position')->orderByPivot('position');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->orderBy('paid_at')->orderBy('id');
+    }
+
     /** PDF figé au moment de l'envoi. */
     public function snapshot(): MorphOne
     {
@@ -141,15 +157,21 @@ class Invoice extends Model
         return $this->vat_regime === 'franchise';
     }
 
-    /** Une facture envoyée et pas encore payée peut être corrigée ou annulée par avoir. */
+    /** Une facture envoyée et pas entièrement payée peut être corrigée ou annulée par avoir. */
     public function isCorrectable(): bool
     {
-        return ! $this->isCredit() && $this->status === 'sent';
+        return ! $this->isCredit() && in_array($this->status, self::OPEN, true);
+    }
+
+    /** Un paiement peut être enregistré (facture émise, pas un avoir, pas soldée). */
+    public function acceptsPayments(): bool
+    {
+        return ! $this->isCredit() && in_array($this->status, self::OPEN, true);
     }
 
     public function isOverdue(): bool
     {
-        return ! $this->isCredit() && $this->status === 'sent' && $this->due_date?->lt(today());
+        return ! $this->isCredit() && in_array($this->status, self::OPEN, true) && $this->due_date?->lt(today());
     }
 
     public function balance(): int
@@ -200,7 +222,7 @@ class Invoice extends Model
 
     public function scopeOverdue(Builder $query): Builder
     {
-        return $query->invoices()->where('status', 'sent')->whereDate('due_date', '<', today());
+        return $query->invoices()->whereIn('status', self::OPEN)->whereDate('due_date', '<', today());
     }
 
     protected function searchableValues(): array

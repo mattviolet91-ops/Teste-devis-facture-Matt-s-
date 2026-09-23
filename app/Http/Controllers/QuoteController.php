@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ProvidesEditorData;
 use App\Http\Requests\QuoteRequest;
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\TextTemplate;
 use App\Services\ActivityLogger;
@@ -119,7 +120,7 @@ class QuoteController extends Controller
     /** Mise à la corbeille (tout statut), récupérable 30 jours ; impossible si le devis a été facturé. */
     public function destroy(Quote $quote): RedirectResponse
     {
-        if ($quote->invoices()->whereIn('status', ['draft', 'sent', 'paid'])->exists()) {
+        if ($quote->invoices()->whereIn('status', ['draft', ...Invoice::ISSUED])->exists()) {
             return back()->withErrors(['send' => 'Ce devis a des factures : il ne peut pas être supprimé. Annulez ou supprimez d\'abord ses factures.']);
         }
 

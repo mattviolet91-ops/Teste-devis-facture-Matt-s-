@@ -18,12 +18,4 @@ class DashboardTest extends TestCase
             ->assertSee('Devis en attente de réponse')
             ->assertSee('CA facturé du mois');
     }
-
-    public function test_upcoming_modules_show_their_phase(): void
-    {
-        $this->actingAs($this->admin())
-            ->get(route('module', 'paiements'))
-            ->assertOk()
-            ->assertSee('phase 10');
-    }
 }

@@ -89,6 +89,14 @@ CGV,
         'bcc_self' => true,
     ],
 
+    // Relances automatiques des factures impayées (désactivées par défaut).
+    'reminders' => [
+        'auto_enabled' => false,
+        'first_after_days' => 3,
+        'repeat_days' => 7,
+        'max' => 3,
+    ],
+
     // Notifications sur le téléphone : clés VAPID créées automatiquement.
     'push' => [
         'public_key' => '',

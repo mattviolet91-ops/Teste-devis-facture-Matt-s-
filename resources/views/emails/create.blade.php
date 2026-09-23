@@ -41,6 +41,7 @@
         'client' => $document ? null : $client->id,
     ])) }}" data-email-form data-confirm="{{ $document && $document->isDraft() ? 'Envoyer cet email ? Le document recevra son numéro définitif.' : 'Envoyer cet email ?' }}">
         @csrf
+        @if ($reminder)<input type="hidden" name="reminder" value="1">@endif
 
         <div class="card">
             <div class="form-grid cols-2">

@@ -40,6 +40,21 @@
         </form>
     @endif
 
+    <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
+        @csrf
+        @method('PUT')
+        <h2>Relances automatiques des factures</h2>
+        <p class="muted small">Chaque matin, les factures en retard reçoivent le modèle « Relance de paiement » avec le PDF, si le client a une adresse email.
+            Vous êtes prévenu sur votre téléphone. Vous pouvez toujours relancer à la main avec le bouton « Relancer » d'une facture.</p>
+        <label class="check"><input type="checkbox" name="auto_enabled" value="1" @checked($reminders['auto_enabled'])> <span>Activer les relances automatiques</span></label>
+        <div class="form-grid cols-2" style="margin-top:.75rem">
+            <x-field name="first_after_days" label="Première relance (jours après l'échéance)" type="number" min="0" max="90" :value="$reminders['first_after_days']" required />
+            <x-field name="repeat_days" label="Puis tous les (jours)" type="number" min="1" max="90" :value="$reminders['repeat_days']" required />
+            <x-field name="max" label="Nombre maximum de relances" type="number" min="1" max="10" :value="$reminders['max']" required />
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
+    </form>
+
     <div class="card" id="modeles">
         <h2>Modèles d'emails</h2>
         <p class="muted small">Les mots entre accolades sont remplacés automatiquement à l'envoi :</p>

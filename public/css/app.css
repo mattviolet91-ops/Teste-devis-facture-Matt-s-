@@ -663,3 +663,12 @@ button.nav-link { width: 100%; border: 0; background: none; font: inherit; color
   .doc-lines td.num:empty { display: none; }
   .doc-section td { display: flex; }
 }
+
+/* Paiements */
+.progress { height: .5rem; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: .75rem; }
+.progress span { display: block; height: 100%; background: var(--success, #2E7D32); }
+.chip-radio { cursor: pointer; }
+.chip-radio input { margin: 0 .25rem 0 0; }
+.chip-radio:has(input:checked) { background: var(--brand-accent); border-color: var(--brand-accent); color: #0B2A36; }
+details > summary.btn { list-style: none; display: inline-flex; }
+details > summary.btn::-webkit-details-marker { display: none; }

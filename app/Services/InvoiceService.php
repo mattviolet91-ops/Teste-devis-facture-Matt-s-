@@ -123,6 +123,11 @@ class InvoiceService
             ActivityLogger::log('invoice.sent', "{$invoice->fullTitle()} envoyée", $invoice);
             app(PdfService::class)->freeze($invoice);
 
+            // Facture corrigée : les règlements reçus sur la facture d'origine la suivent.
+            if ($invoice->corrects) {
+                app(PaymentService::class)->transfer($invoice->corrects, $invoice);
+            }
+
             return $invoice;
         });
     }
@@ -209,7 +214,7 @@ class InvoiceService
     /** Montant déjà facturé sur un devis (factures envoyées non annulées, hors brouillons). */
     public function invoicedAmount(Quote $quote): int
     {
-        return (int) $quote->invoices()->whereIn('status', ['sent', 'paid'])->sum('total_ttc');
+        return (int) $quote->invoices()->whereIn('status', Invoice::ISSUED)->sum('total_ttc');
     }
 
     /**
@@ -227,7 +232,7 @@ class InvoiceService
         $bases = array_filter($bases);
 
         $label = $kind === 'deposit' ? 'Acompte' : 'Situation de travaux';
-        $count = $kind === 'progress' ? $quote->invoices()->where('kind', 'progress')->whereIn('status', ['sent', 'paid'])->count() + 1 : null;
+        $count = $kind === 'progress' ? $quote->invoices()->where('kind', 'progress')->whereIn('status', Invoice::ISSUED)->count() + 1 : null;
         $title = $label.($count ? " n° $count" : '').' : '.Percent::format($percent)." du devis {$quote->number}";
 
         return collect($bases)->map(fn (int $base, int $rate) => [
@@ -252,7 +257,7 @@ class InvoiceService
      */
     private function deductionLines(Quote $quote): array
     {
-        $previous = $quote->invoices()->whereIn('kind', ['deposit', 'progress'])->whereIn('status', ['sent', 'paid'])->with('lines')->get();
+        $previous = $quote->invoices()->whereIn('kind', ['deposit', 'progress'])->whereIn('status', Invoice::ISSUED)->with('lines')->get();
         if ($previous->isEmpty()) {
             return [];
         }

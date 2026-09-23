@@ -27,6 +27,7 @@ class EmailSettingsController extends Controller
             'hasPassword' => $mail->hasPassword(),
             'configured' => $mail->isConfigured(),
             'templates' => EmailTemplate::query()->ordered()->get(),
+            'reminders' => $settings->group('reminders'),
             'variables' => EmailComposer::VARIABLES,
         ]);
     }
@@ -54,6 +55,25 @@ class EmailSettingsController extends Controller
         ActivityLogger::log('settings.mail', 'Réglages d\'envoi des emails modifiés');
 
         return back()->with('status', 'Réglages des emails enregistrés.');
+    }
+
+    public function updateReminders(Request $request, Settings $settings): RedirectResponse
+    {
+        $data = $request->validate([
+            'first_after_days' => ['required', 'integer', 'min:0', 'max:90'],
+            'repeat_days' => ['required', 'integer', 'min:1', 'max:90'],
+            'max' => ['required', 'integer', 'min:1', 'max:10'],
+        ], [], ['first_after_days' => 'délai de la première relance', 'repeat_days' => 'intervalle', 'max' => 'nombre maximum']);
+
+        $settings->set([
+            'reminders.auto_enabled' => $request->boolean('auto_enabled'),
+            'reminders.first_after_days' => (int) $data['first_after_days'],
+            'reminders.repeat_days' => (int) $data['repeat_days'],
+            'reminders.max' => (int) $data['max'],
+        ]);
+        ActivityLogger::log('settings.reminders', 'Relances automatiques '.($request->boolean('auto_enabled') ? 'activées' : 'désactivées'));
+
+        return back()->with('status', 'Relances automatiques enregistrées.');
     }
 
     public function test(Settings $settings, MailSettings $mail): RedirectResponse
