@@ -19,13 +19,14 @@ class EmailService
         private readonly PdfService $pdf,
         private readonly QuoteService $quotes,
         private readonly InvoiceService $invoices,
+        private readonly InsuranceService $insurance,
     ) {}
 
     /**
      * @param  list<string>  $to
      * @param  list<string>  $cc
      */
-    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf): SentEmail
+    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf, bool $attachInsurance = false): SentEmail
     {
         // Un brouillon envoyé par email reçoit son numéro définitif.
         if ($document && $document->isDraft()) {
@@ -38,6 +39,11 @@ class EmailService
         }
 
         $attachment = $document && $attachPdf ? $this->pdf->filename($document) : null;
+        $files = [];
+        if ($attachInsurance && ($certificate = $this->insurance->currentCertificate())) {
+            $extension = pathinfo($certificate->path, PATHINFO_EXTENSION) ?: 'pdf';
+            $files[] = ['path' => $certificate->path, 'name' => 'Attestation assurance décennale.'.$extension];
+        }
 
         $log = new SentEmail([
             'client_id' => $client->id,
@@ -45,7 +51,7 @@ class EmailService
             'cc' => $cc ? implode(', ', $cc) : null,
             'subject' => $subject,
             'body' => $body,
-            'attachment' => $attachment,
+            'attachment' => collect([$attachment, $files ? 'Attestation d\'assurance' : null])->filter()->implode(' + ') ?: null,
             'sent_by' => auth()->id(),
         ]);
         $log->document()->associate($document);
@@ -55,7 +61,7 @@ class EmailService
             if ($bcc = $this->mail->bccAddress()) {
                 $message->bcc($bcc);
             }
-            $message->send(new ClientMessage($subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment));
+            $message->send(new ClientMessage($subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment, $files));
             $log->status = 'sent';
         } catch (Throwable $e) {
             Log::warning('Échec d\'envoi d\'email', ['error' => $e->getMessage()]);

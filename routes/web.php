@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;

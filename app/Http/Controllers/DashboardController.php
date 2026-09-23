@@ -4,17 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Services\InsuranceService;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(InsuranceService $insurance): View
     {
         $year = now()->startOfYear();
         $unpaid = Invoice::query()->invoices()->where('status', 'sent');
 
         return view('dashboard', [
+            'insuranceAlert' => $insurance->message(),
+            'insuranceLevel' => $insurance->level(),
             'kpis' => [
                 'to_collect' => (int) (clone $unpaid)->selectRaw('COALESCE(SUM(total_ttc - amount_paid), 0) as due')->value('due'),
                 'pending_quotes' => Quote::query()->pending()->count(),

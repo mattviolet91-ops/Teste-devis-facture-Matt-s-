@@ -15,6 +15,8 @@ class ClientMessage extends Mailable
         public readonly string $text,
         public readonly ?string $pdf = null,
         public readonly ?string $pdfName = null,
+        /** @var list<array{path: string, name: string}> fichiers du dossier privé */
+        public readonly array $files = [],
     ) {}
 
     public function envelope(): Envelope
@@ -30,10 +32,15 @@ class ClientMessage extends Mailable
     /** @return list<Attachment> */
     public function attachments(): array
     {
-        if ($this->pdf === null) {
-            return [];
+        $attachments = array_map(
+            fn (array $file) => Attachment::fromStorageDisk('local', $file['path'])->as($file['name']),
+            $this->files,
+        );
+
+        if ($this->pdf !== null) {
+            array_unshift($attachments, Attachment::fromData(fn () => $this->pdf, $this->pdfName)->withMime('application/pdf'));
         }
 
-        return [Attachment::fromData(fn () => $this->pdf, $this->pdfName)->withMime('application/pdf')];
+        return $attachments;
     }
 }

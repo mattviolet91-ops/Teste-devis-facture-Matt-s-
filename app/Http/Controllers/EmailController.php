@@ -9,6 +9,7 @@ use App\Models\Quote;
 use App\Models\SentEmail;
 use App\Services\EmailComposer;
 use App\Services\EmailService;
+use App\Services\InsuranceService;
 use App\Services\MailSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class EmailController extends Controller
         return view('emails.show', ['email' => $email->load(['client', 'document'])]);
     }
 
-    public function create(Request $request, EmailComposer $composer, MailSettings $mail): View|RedirectResponse
+    public function create(Request $request, EmailComposer $composer, MailSettings $mail, InsuranceService $insurance): View|RedirectResponse
     {
         [$client, $document] = $this->context($request);
 
@@ -57,6 +58,7 @@ class EmailController extends Controller
             'selected' => $selected,
             'configured' => $mail->isConfigured(),
             'bcc' => $mail->bccAddress(),
+            'certificate' => $insurance->currentCertificate(),
         ]);
     }
 
@@ -87,7 +89,7 @@ class EmailController extends Controller
             }
         })->validate();
 
-        $log = $emails->send($client, $document, $to, $cc, $data['subject'], $data['body'], $request->boolean('attach_pdf'));
+        $log = $emails->send($client, $document, $to, $cc, $data['subject'], $data['body'], $request->boolean('attach_pdf'), $request->boolean('attach_insurance'));
 
         if (! $log->isSent()) {
             return back()->withInput()->withErrors(['to' => 'L\'envoi a échoué : '.$log->error]);

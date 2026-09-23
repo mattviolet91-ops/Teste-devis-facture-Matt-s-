@@ -58,8 +58,7 @@ class PhotoService
         $this->save($image, $path, 82);
         $this->save($this->resize($image, self::THUMB_SIZE), $thumbPath, 75);
 
-        $old = array_filter([$photo->annotated_path, $photo->annotated_path ? $photo->thumb_path : null]);
-        Storage::disk('local')->delete($old);
+        Storage::disk('local')->delete(array_filter([$photo->annotated_path, $photo->thumb_path]));
 
         $photo->forceFill(['annotated_path' => $path, 'thumb_path' => $thumbPath])->save();
 

@@ -15,6 +15,12 @@
         </div>
     </div>
 
+    @if ($insuranceAlert)
+        <div class="alert {{ $insuranceLevel === 'danger' ? 'alert-error' : 'alert-warning' }}" role="alert">
+            {{ $insuranceAlert }} <a href="{{ route('settings.insurance') }}">Mettre à jour l'assurance</a>
+        </div>
+    @endif
+
     <div class="grid grid-3">
         <a class="card kpi kpi-accent kpi-link" href="{{ route('invoices.index', ['status' => 'unpaid']) }}">
             <span class="label">Montant à encaisser</span>

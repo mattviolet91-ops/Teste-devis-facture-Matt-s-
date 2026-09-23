@@ -66,6 +66,12 @@
                             <span>Joindre le PDF « {{ app(\App\Services\PdfService::class)->filename($document) }} »</span></label>
                     </div>
                 @endif
+                @if ($certificate)
+                    <div class="field span-2">
+                        <label class="check"><input type="checkbox" name="attach_insurance" value="1" @checked(old('attach_insurance', $document instanceof \App\Models\Quote))>
+                            <span>Joindre l'attestation d'assurance décennale (valable jusqu'au {{ $certificate->valid_until->format('d/m/Y') }})</span></label>
+                    </div>
+                @endif
                 @if ($bcc)<p class="small muted span-2" style="margin:0">Une copie cachée est envoyée à {{ $bcc }}.</p>@endif
             </div>
         </div>
