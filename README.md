@@ -25,7 +25,7 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 5 | Clients et chantiers, recherche, corbeille | ✅ |
 | 6 | Bibliothèque de prestations, textes types et devis | ✅ |
 | 7 | Factures, acomptes, situations, avoirs | ✅ |
-| 8 | PDF | à venir |
+| 8 | PDF | ✅ |
 | 9 | Photos, documents, assurance | à venir |
 | 10 | Paiements, relances, tableau de bord, emails | à venir |
 | 11 | Lien client, signature | à venir |

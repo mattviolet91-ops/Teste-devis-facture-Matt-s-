@@ -95,7 +95,7 @@
     <table width="100%" class="small muted" style="border-top: 0.5pt solid #D5DDE1;">
         <tr>
             <td style="padding-top: 3pt;">{{ $company['trade_name'] }} — {{ $company['owner_name'] }} {{ $company['legal_form'] }} — {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }} — SIRET {{ $company['siret'] }}@if (! empty($company['vat_number'])) — TVA {{ $company['vat_number'] }}@endif</td>
-            <td style="padding-top: 3pt; text-align: right; white-space: nowrap;">{{ $title }} {{ $number }} — page {PAGENO}/{nbpg}</td>
+            <td style="padding-top: 3pt; text-align: right; white-space: nowrap;" width="25%">{{ $number }} — page {PAGENO}/{nbpg}</td>
         </tr>
     </table>
 </htmlpagefooter>
@@ -110,8 +110,10 @@
 <table width="100%" class="head">
     <tr>
         <td width="55%">
-            @if ($logo)<img src="{{ $logo }}" style="max-height: 22mm; max-width: 70mm;" />@else<div class="doc-title">{{ $company['trade_name'] }}</div>@endif
-            <div class="small" style="margin-top: 5pt;">
+            <table><tr><td style="padding: 0 0 8pt 0;">
+                @if ($logo)<img src="{{ $logo }}" style="height: 18mm;" />@else<span class="doc-title">{{ $company['trade_name'] }}</span>@endif
+            </td></tr></table>
+            <div class="small">
                 <b>{{ $company['trade_name'] }}</b> — {{ $company['owner_name'] }} {{ $company['legal_form'] }}<br>
                 {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
                 {{ $company['phone'] }} · {{ $company['email'] }}<br>

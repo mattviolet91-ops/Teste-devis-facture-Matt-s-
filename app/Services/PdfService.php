@@ -70,13 +70,30 @@ class PdfService
 
     public function render(Quote|Invoice $document): string
     {
+        $html = view('pdf.document', $this->viewData($document))->render();
+
+        $mpdf = $this->mpdf();
+        $mpdf->SetTitle(Str::beforeLast($this->filename($document), '.pdf'));
+        $mpdf->SetAuthor((string) $this->settings->get('company.trade_name'));
+        if ($document->isDraft()) {
+            $mpdf->SetWatermarkText('BROUILLON', 0.08);
+            $mpdf->showWatermarkText = true;
+        }
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('', 'S');
+    }
+
+    /** @return array<string, mixed> */
+    private function viewData(Quote|Invoice $document): array
+    {
         $document->loadMissing(['client', 'worksite', 'lines']);
         $isQuote = $document instanceof Quote;
         if (! $isQuote) {
             $document->loadMissing(['quote', 'cancels', 'corrects']);
         }
 
-        $html = view('pdf.document', [
+        return [
             'document' => $document,
             'isQuote' => $isQuote,
             'totals' => $this->calculator->calculate(
@@ -93,18 +110,7 @@ class PdfService
             'colors' => $this->settings->group('branding'),
             'logo' => $this->logoPath(),
             'annexes' => $this->annexes($document, $isQuote),
-        ])->render();
-
-        $mpdf = $this->mpdf();
-        $mpdf->SetTitle(Str::beforeLast($this->filename($document), '.pdf'));
-        $mpdf->SetAuthor((string) $this->settings->get('company.trade_name'));
-        if ($document->isDraft()) {
-            $mpdf->SetWatermarkText('BROUILLON', 0.08);
-            $mpdf->showWatermarkText = true;
-        }
-        $mpdf->WriteHTML($html);
-
-        return $mpdf->Output('', 'S');
+        ];
     }
 
     /** @return array{presentation: bool, cgv: bool, retraction: bool} */

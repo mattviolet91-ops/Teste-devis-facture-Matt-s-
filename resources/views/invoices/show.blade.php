@@ -88,6 +88,7 @@
             @if (! $invoice->isCredit() && $invoice->amount_paid > 0)
                 <p><strong>Déjà réglé :</strong> {{ Money::format($invoice->amount_paid) }} — <strong>reste à payer :</strong> {{ Money::format($invoice->balance()) }}</p>
             @endif
+            @if ($invoice->work_period)<p><strong>Date des travaux :</strong> {{ $invoice->work_period }}</p>@endif
             @if ($invoice->payment_terms)<p><strong>Conditions de paiement :</strong> {{ $invoice->payment_terms }}</p>@endif
             @if ($invoice->notes)<p>{!! nl2br(e($invoice->notes)) !!}</p>@endif
             @include('documents._mentions', ['document' => $invoice])
