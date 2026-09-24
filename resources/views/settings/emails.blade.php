@@ -48,6 +48,8 @@
         <div class="form-grid">
             <x-field name="sms_quote" label="Pour un devis" type="textarea" rows="6" :value="$mail['sms_quote']" required />
             <x-field name="sms_invoice" label="Pour une facture" type="textarea" rows="6" :value="$mail['sms_invoice']" required />
+            <x-field name="reminder_before" label="Relance : rappel avant l'échéance" type="textarea" rows="6" :value="$mail['reminder_before']" required />
+            <x-field name="reminder_after" label="Relance : facture en retard ({retard} = « en retard de 5 jours »)" type="textarea" rows="7" :value="$mail['reminder_after']" required />
         </div>
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>
@@ -55,10 +57,12 @@
     <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
         @csrf
         @method('PUT')
-        <h2>Relances automatiques des factures</h2>
+        <h2>Relances des factures</h2>
         <p class="muted small">Chaque matin, les factures en retard reçoivent le modèle « Relance de paiement » avec le PDF, si le client a une adresse email.
             Vous êtes prévenu sur votre téléphone. Vous pouvez toujours relancer à la main avec le bouton « Relancer » d'une facture.</p>
-        <label class="check"><input type="checkbox" name="auto_enabled" value="1" @checked($reminders['auto_enabled'])> <span>Activer les relances automatiques</span></label>
+        <label class="check"><input type="checkbox" name="notify_enabled" value="1" @checked($reminders['notify_enabled'])>
+            <span>Me prévenir chaque matin (notification) des factures à relancer : 3 jours avant l'échéance, le jour même, puis après 1, 7, 15 et 30 jours de retard</span></label>
+        <label class="check" style="margin-top:.5rem"><input type="checkbox" name="auto_enabled" value="1" @checked($reminders['auto_enabled'])> <span>Envoyer aussi des relances automatiques par email aux clients</span></label>
         <div class="form-grid cols-2" style="margin-top:.75rem">
             <x-field name="first_after_days" label="Première relance (jours après l'échéance)" type="number" min="0" max="90" :value="$reminders['first_after_days']" required />
             <x-field name="repeat_days" label="Puis tous les (jours)" type="number" min="1" max="90" :value="$reminders['repeat_days']" required />

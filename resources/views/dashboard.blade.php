@@ -87,7 +87,7 @@
                     @foreach ($overdue as $invoice)
                         <li>
                             <a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->number }} · {{ $invoice->client?->displayName() }}</a>
-                            <span><strong>{{ Money::format($invoice->balance()) }}</strong> <a class="small" href="{{ route('emails.create', ['facture' => $invoice->id, 'relance' => 1]) }}">Relancer</a></span>
+                            <span><strong>{{ Money::format($invoice->balance()) }}</strong> <a class="small" href="{{ route('reminders.show', $invoice) }}">Relancer</a></span>
                         </li>
                     @endforeach
                 </ul>

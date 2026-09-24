@@ -32,6 +32,7 @@ class EmailComposer
         'email_entreprise' => 'Votre email',
         'site' => 'Votre site internet',
         'lien' => 'Lien pour consulter (et accepter) en ligne',
+        'retard' => '« en retard de 5 jours »',
     ];
 
     public function __construct(private readonly Settings $settings) {}
@@ -66,7 +67,7 @@ class EmailComposer
             'email_entreprise' => (string) $company['email'],
             'site' => (string) ($company['website'] ?? ''),
             'adresse_chantier' => (string) ($document?->worksite?->fullAddress() ?? $client->fullAddress() ?? ''),
-            'lien' => '', 'numero' => '', 'document' => '', 'document_titre' => '', 'objet' => 'vos travaux',
+            'lien' => '', 'retard' => '', 'numero' => '', 'document' => '', 'document_titre' => '', 'objet' => 'vos travaux',
             'montant' => '', 'reste_a_payer' => '', 'date_validite' => '', 'echeance' => '', 'date_echeance' => '',
         ];
 
@@ -95,6 +96,12 @@ class EmailComposer
             $due = $document->due_date ?? today()->addDays($document->due_days);
             $values['date_echeance'] = $document->due_days === 0 ? 'à réception' : $due->format('d/m/Y');
             $values['echeance'] = $document->due_days === 0 ? 'payable à réception' : 'à régler avant le '.$due->format('d/m/Y');
+            if ($document->due_date) {
+                // La date réelle d'échéance, même pour une facture « à réception ».
+                $values['date_echeance'] = $document->due_date->format('d/m/Y');
+                $late = (int) $document->due_date->diffInDays(today(), false);
+                $values['retard'] = $late > 0 ? 'en retard de '.$late.' jour'.($late > 1 ? 's' : '') : 'échéance aujourd\'hui';
+            }
         }
 
         return $values;

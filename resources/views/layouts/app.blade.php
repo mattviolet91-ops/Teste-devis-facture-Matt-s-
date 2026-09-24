@@ -7,6 +7,7 @@
         ['devis', 'Devis', 'file', route('quotes.index')],
         ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('payments.index')],
+        ['relances', 'Relances', 'send', route('reminders.index')],
         ['photos', 'Photos', 'camera', route('photos.index')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
         ['emails', 'Emails', 'mail', route('emails.index')],
@@ -20,6 +21,7 @@
         'emails' => request()->routeIs('emails.*'),
         'photos' => request()->routeIs('photos.*'),
         'paiements' => request()->routeIs('payments.*'),
+        'relances' => request()->routeIs('reminders.*'),
         default => false,
     };
 @endphp
@@ -108,6 +110,7 @@
         <div class="sheet-list">
             <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiements</a>
+            <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>
             <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>
             <a href="{{ route('emails.index') }}"><x-icon name="mail" /> Emails</a>

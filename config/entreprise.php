@@ -89,11 +89,16 @@ CGV,
         'bcc_self' => true,
         // Messages SMS / WhatsApp / copier (mêmes variables que les emails).
         'sms_quote' => "{salutation}\nVoici votre devis n° {numero} de {entreprise} pour {objet} ({montant}).\nVous pouvez le consulter et l'accepter en ligne, avec signature sur votre téléphone :\n{lien}\nBien cordialement,\n{entreprise} – {telephone}",
+        // Relances (SMS / WhatsApp / copie) : avant l'échéance, puis en retard.
+        'reminder_before' => "{salutation}\nPetit rappel : la facture n° {numero} de {entreprise}, d'un montant de {reste_a_payer}, arrive à échéance le {date_echeance}.\nVous pouvez la consulter ici :\n{lien}\nMerci d'avance,\n{entreprise} – {telephone}",
+        'reminder_after' => "{salutation}\nSauf erreur de notre part, la facture n° {numero} d'un montant de {reste_a_payer} n'a pas encore été réglée (échéance : {date_echeance}, {retard}).\nVous la retrouverez ici :\n{lien}\nSi le règlement a déjà été fait, merci de ne pas tenir compte de ce message.\n{entreprise} – {telephone}",
         'sms_invoice' => "{salutation}\nVoici {document} n° {numero} de {entreprise} d'un montant de {montant}, {echeance}.\nConsultez-la et téléchargez-la ici :\n{lien}\nMerci pour votre confiance !\n{entreprise} – {telephone}",
     ],
 
     // Relances automatiques des factures impayées (désactivées par défaut).
     'reminders' => [
+        // Notification sur le téléphone des factures à relancer.
+        'notify_enabled' => true,
         'auto_enabled' => false,
         'first_after_days' => 3,
         'repeat_days' => 7,

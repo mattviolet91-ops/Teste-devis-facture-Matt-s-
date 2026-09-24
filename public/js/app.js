@@ -69,11 +69,21 @@
   // Message au client par WhatsApp, SMS ou copie (texte modifiable).
   document.querySelectorAll('[data-share]').forEach(function (box) {
     var text = box.querySelector('[data-share-message]');
+    var trackUrl = box.getAttribute('data-track');
+    var track = function (channel) {
+      if (!trackUrl) { return; }
+      var data = new FormData();
+      data.append('_token', box.querySelector('[name="_token"]').value);
+      data.append('channel', channel);
+      if (navigator.sendBeacon) { navigator.sendBeacon(trackUrl, data); }
+      else { fetch(trackUrl, { method: 'POST', body: data, credentials: 'same-origin', keepalive: true }); }
+    };
     box.querySelectorAll('[data-share-to]').forEach(function (button) {
       button.addEventListener('click', function (event) {
         var message = text.value.trim();
         var kind = button.getAttribute('data-share-to');
         var phone = button.getAttribute('data-phone') || '';
+        track(kind);
         if (kind === 'copy') {
           event.preventDefault();
           var done = function () { var old = button.innerHTML; button.textContent = 'Message copié ✓'; setTimeout(function () { button.innerHTML = old; }, 2000); };

@@ -16,6 +16,7 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\TrashController;
@@ -103,6 +104,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->whereNumber('item');
     Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
+
+    Route::get('/relances', [ReminderController::class, 'index'])->name('reminders.index');
+    Route::get('/factures/{invoice}/relancer', [ReminderController::class, 'show'])->whereNumber('invoice')->name('reminders.show');
+    Route::post('/factures/{invoice}/relance', [ReminderController::class, 'track'])->whereNumber('invoice')->middleware('throttle:30,1')->name('reminders.track');
 
     Route::get('/paiements', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');

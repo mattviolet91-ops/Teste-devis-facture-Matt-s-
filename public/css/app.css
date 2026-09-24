@@ -688,3 +688,6 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .client-search-item:last-child { border-bottom: 0; }
 .client-search-item:hover, .client-search-item:focus { background: color-mix(in srgb, var(--brand-accent) 12%, transparent); }
 .client-search-results p { margin: 0; padding: .5rem .75rem; }
+.share-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.share-buttons .btn { justify-content: center; }
+.share-buttons [aria-disabled="true"] { opacity: .5; pointer-events: none; }

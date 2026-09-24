@@ -71,7 +71,7 @@
             </form>
         @endif
         @if ($invoice->acceptsPayments())
-            <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'relance' => 1]) }}"><x-icon name="send" /> Relancer{{ $invoice->reminder_count ? ' ('.$invoice->reminder_count.')' : '' }}</a>
+            <a class="btn btn-secondary" href="{{ route('reminders.show', $invoice) }}"><x-icon name="send" /> Relancer{{ $invoice->reminder_count ? ' ('.$invoice->reminder_count.')' : '' }}</a>
         @endif
         @if (session('thank') && $invoice->client?->email)
             <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'modele' => 'merci']) }}"><x-icon name="mail" /> Envoyer un remerciement</a>

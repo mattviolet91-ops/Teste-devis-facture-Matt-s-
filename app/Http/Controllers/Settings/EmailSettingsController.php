@@ -62,9 +62,17 @@ class EmailSettingsController extends Controller
         $data = $request->validate([
             'sms_quote' => ['required', 'string', 'max:1000'],
             'sms_invoice' => ['required', 'string', 'max:1000'],
-        ], [], ['sms_quote' => 'message pour les devis', 'sms_invoice' => 'message pour les factures']);
+            'reminder_before' => ['required', 'string', 'max:1000'],
+            'reminder_after' => ['required', 'string', 'max:1000'],
+        ], [], [
+            'sms_quote' => 'message pour les devis', 'sms_invoice' => 'message pour les factures',
+            'reminder_before' => 'rappel avant échéance', 'reminder_after' => 'relance en retard',
+        ]);
 
-        $settings->set(['mail.sms_quote' => $data['sms_quote'], 'mail.sms_invoice' => $data['sms_invoice']]);
+        $settings->set([
+            'mail.sms_quote' => $data['sms_quote'], 'mail.sms_invoice' => $data['sms_invoice'],
+            'mail.reminder_before' => $data['reminder_before'], 'mail.reminder_after' => $data['reminder_after'],
+        ]);
 
         return back()->with('status', 'Messages SMS / WhatsApp enregistrés.');
     }
@@ -79,6 +87,7 @@ class EmailSettingsController extends Controller
 
         $settings->set([
             'reminders.auto_enabled' => $request->boolean('auto_enabled'),
+            'reminders.notify_enabled' => $request->boolean('notify_enabled'),
             'reminders.first_after_days' => (int) $data['first_after_days'],
             'reminders.repeat_days' => (int) $data['repeat_days'],
             'reminders.max' => (int) $data['max'],
