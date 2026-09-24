@@ -22,16 +22,20 @@ main() {
     cd "$SRC" || exit 1
     git fetch -q origin 2>>"$LOG" || exit 0
 
-    local LOCAL REMOTE
-    LOCAL=$(git rev-parse HEAD)
+    # Version réellement installée (et non la dernière téléchargée : un « git pull »
+    # fait à la main ne doit pas empêcher l'installation complète).
+    local LOCAL REMOTE STATE="$HOME/.deployed-commit"
+    LOCAL=$(cat "$STATE" 2>/dev/null)
+    git cat-file -e "${LOCAL:-x}^{commit}" 2>/dev/null || LOCAL=$(git rev-parse HEAD)
     REMOTE=$(git rev-parse '@{u}') || exit 0
-    [ "$LOCAL" = "$REMOTE" ] && exit 0
+    # Première fois (aucune version enregistrée) : installation complète, une fois.
+    [ -f "$STATE" ] && [ "$LOCAL" = "$REMOTE" ] && exit 0
     # Version déjà essayée sans succès : on attend la suivante (pas d'alerte toutes les 10 minutes).
     [ "$(cat "$HOME/.deploy-failed" 2>/dev/null)" = "$REMOTE" ] && exit 0
 
     {
         echo "=== $(date '+%d/%m/%Y %H:%M') : ${LOCAL:0:7} -> ${REMOTE:0:7}"
-        git merge --ff-only -q '@{u}' &&
+        git reset -q --hard "$REMOTE" &&
         composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction -q &&
         rsync -a --exclude .git --exclude .env --exclude storage "$SRC/" "$APP/" &&
         cd "$APP" &&
@@ -43,6 +47,7 @@ main() {
 
     if [ $? -eq 0 ]; then
         echo "OK" >>"$LOG"
+        echo "$REMOTE" >"$STATE"
         rm -f "$HOME/.deploy-failed"
         php "$APP/artisan" app:deployed "$(git -C "$SRC" log -1 --pretty=%s)" >>"$LOG" 2>&1
     else
