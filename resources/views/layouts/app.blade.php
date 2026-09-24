@@ -110,7 +110,6 @@
             <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>
             <a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>
             <a class="sheet-item" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
-            <a class="sheet-item" href="{{ route('planning.create') }}"><x-icon name="tool" /> Chantier</a>
         </div>
     </dialog>
 
