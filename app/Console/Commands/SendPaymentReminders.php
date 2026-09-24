@@ -58,7 +58,7 @@ class SendPaymentReminders extends Command
         $sent = 0;
         foreach ($invoices as $invoice) {
             $message = $composer->render($template, $invoice->client, $invoice);
-            $log = $emails->send($invoice->client, $invoice, [$invoice->client->email], [], $message['subject'], $message['body'], true);
+            $log = $emails->send($invoice->client, $invoice, [$invoice->client->email], [], $message['subject'], $message['body'], false);
             if ($log->isSent()) {
                 $invoice->forceFill(['reminder_count' => $invoice->reminder_count + 1, 'last_reminder_at' => now()])->save();
                 $sent++;

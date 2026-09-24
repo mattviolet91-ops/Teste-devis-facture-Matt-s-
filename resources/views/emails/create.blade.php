@@ -63,8 +63,9 @@
                 </div>
                 @if ($document)
                     <div class="field span-2">
-                        <label class="check"><input type="checkbox" name="attach_pdf" value="1" @checked(old('attach_pdf', true))>
-                            <span>Joindre le PDF « {{ app(\App\Services\PdfService::class)->filename($document) }} »</span></label>
+                        <label class="check"><input type="checkbox" name="attach_pdf" value="1" @checked(old('attach_pdf', false))>
+                            <span>Joindre aussi le PDF « {{ app(\App\Services\PdfService::class)->filename($document) }} »<br>
+                                <span class="muted small">Pas nécessaire : le client consulte et télécharge le PDF avec le bouton de l'email.</span></span></label>
                     </div>
                 @endif
                 @if ($certificate)

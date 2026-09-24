@@ -199,4 +199,17 @@ class EmailTest extends TestCase
         $this->get(route('emails.index'))->assertRedirect(route('login'));
         $this->get(route('emails.create', ['client' => $this->client->id]))->assertRedirect(route('login'));
     }
+
+    public function test_pdf_is_not_attached_by_default(): void
+    {
+        $this->actingAs($this->admin());
+        $this->post(route('quotes.store'), [
+            'client_id' => Client::factory()->create(['email' => 'x@example.com'])->id, 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'A', 'quantity' => '1', 'unit_price' => '10']],
+        ]);
+        $quote = Quote::query()->latest('id')->firstOrFail();
+
+        $html = $this->get(route('emails.create', ['devis' => $quote->id]))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/name="attach_pdf" value="1"\s*>/', $html, 'Case « Joindre le PDF » décochée par défaut.');
+    }
 }
