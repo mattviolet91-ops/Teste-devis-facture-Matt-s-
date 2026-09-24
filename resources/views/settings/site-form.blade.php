@@ -33,10 +33,10 @@
     @endif
 </form>
 
-<form method="POST" action="{{ route('settings.site-form.preview') }}" class="card">
+<form method="POST" action="{{ route('settings.site-form.preview') }}" class="card" data-busy="Lecture de votre boîte Gmail… (jusqu'à 1 minute)">
     @csrf
     <h2>Voir mes derniers emails</h2>
-    <p class="muted small">Affiche vos emails des 14 derniers jours : ceux reconnus comme venant du formulaire portent l'étiquette « formulaire », avec ce que l'application en lirait. Rien n'est créé.</p>
+    <p class="muted small">Affiche vos 30 derniers emails (7 derniers jours) : ceux reconnus comme venant du formulaire portent l'étiquette « formulaire », avec ce que l'application en lirait. Rien n'est créé.</p>
     <button class="btn btn-secondary" type="submit">Voir mes derniers emails</button>
 
     @if ($errors->has('preview'))

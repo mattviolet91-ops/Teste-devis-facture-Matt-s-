@@ -253,4 +253,13 @@
       }, 200);
     });
   });
+  // Formulaires longs à traiter : bouton désactivé et message d'attente.
+  document.querySelectorAll('form[data-busy]').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      form.querySelectorAll('[type="submit"]').forEach(function (button) {
+        button.disabled = true;
+        button.textContent = form.getAttribute('data-busy');
+      });
+    });
+  });
 })();

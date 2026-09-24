@@ -60,18 +60,18 @@ class SiteFormImporter
      *
      * @return list<array{id: string, from: string, reply_to: string, subject: string, date: ?Carbon, text: string}>
      */
-    public function fetch(Carbon $since): array
+    public function fetch(Carbon $since, int $limit = 50): array
     {
         $manager = new ClientManager(['options' => ['fetch_order' => 'desc']]);
         $client = $manager->make([
             'host' => 'imap.gmail.com', 'port' => 993, 'encryption' => 'ssl', 'validate_cert' => true,
-            'username' => $this->mail->username(), 'password' => $this->mail->password(), 'protocol' => 'imap',
+            'username' => $this->mail->username(), 'password' => $this->mail->password(), 'protocol' => 'imap', 'timeout' => 20,
         ]);
         $client->connect();
 
         $messages = [];
         try {
-            $query = $client->getFolder('INBOX')->query()->since($since->copy()->startOfDay())->leaveUnread()->setFetchBody(true)->limit(100);
+            $query = $client->getFolder('INBOX')->query()->since($since->copy()->startOfDay())->leaveUnread()->setFetchBody(true)->limit($limit);
             foreach ($query->get() as $message) {
                 $html = $message->hasHTMLBody() ? (string) $message->getHTMLBody() : '';
                 $messages[] = [

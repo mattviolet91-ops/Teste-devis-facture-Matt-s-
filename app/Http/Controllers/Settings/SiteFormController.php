@@ -51,8 +51,9 @@ class SiteFormController extends Controller
             return back()->withErrors(['preview' => 'Configurez d\'abord Gmail dans Réglages → Emails.']);
         }
 
+        @set_time_limit(120);
         try {
-            $messages = $importer->fetch(now()->subDays(14));
+            $messages = $importer->fetch(now()->subDays(7), 30);
         } catch (Throwable $e) {
             return back()->withErrors(['preview' => 'Lecture de la boîte Gmail impossible : '.$e->getMessage()
                 .'. Vérifiez que l\'accès IMAP est activé dans Gmail (Paramètres → Transfert et POP/IMAP).']);
