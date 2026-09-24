@@ -9,7 +9,6 @@ use App\Services\Settings;
 use App\Services\SiteFormImporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -33,9 +32,6 @@ class SiteFormController extends Controller
             'subject' => ['nullable', 'string', 'max:120'],
         ]);
         $enabled = $request->boolean('enabled');
-        if ($enabled && blank($data['from'] ?? null) && blank($data['subject'] ?? null)) {
-            throw ValidationException::withMessages(['from' => 'Indiquez l\'expéditeur ou l\'objet des emails du formulaire (utilisez « Voir mes derniers emails »).']);
-        }
 
         $settings->set([
             'site_form.enabled' => $enabled,
@@ -52,13 +48,14 @@ class SiteFormController extends Controller
     public function preview(SiteFormImporter $importer, MailSettings $mail): RedirectResponse
     {
         if (! $mail->isConfigured()) {
-            return back()->withErrors(['from' => 'Configurez d\'abord Gmail dans Réglages → Emails.']);
+            return back()->withErrors(['preview' => 'Configurez d\'abord Gmail dans Réglages → Emails.']);
         }
 
         try {
             $messages = $importer->fetch(now()->subDays(14));
         } catch (Throwable $e) {
-            return back()->withErrors(['from' => 'Lecture de la boîte Gmail impossible : '.$e->getMessage()]);
+            return back()->withErrors(['preview' => 'Lecture de la boîte Gmail impossible : '.$e->getMessage()
+                .'. Vérifiez que l\'accès IMAP est activé dans Gmail (Paramètres → Transfert et POP/IMAP).']);
         }
 
         $preview = collect($messages)->take(25)->map(fn ($m) => [

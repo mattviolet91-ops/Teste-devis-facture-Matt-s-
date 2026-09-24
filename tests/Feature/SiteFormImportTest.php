@@ -101,18 +101,30 @@ TXT;
         $this->actingAs($this->admin());
         $this->put(route('settings.emails'), ['username' => 'mv.entreprise91@gmail.com', 'password' => 'abcdabcdabcdabcd']);
         $this->get(route('settings.site-form'))->assertOk()->assertSee('Formulaire de votre site internet');
-        $this->put(route('settings.site-form'), ['enabled' => '1'])->assertSessionHasErrors('from');
-        $this->put(route('settings.site-form'), ['enabled' => '1', 'subject' => 'Demande de devis'])->assertSessionHasNoErrors();
+        $this->put(route('settings.site-form'), ['enabled' => '1'])->assertSessionHasNoErrors();
 
         $fake = Mockery::mock(SiteFormImporter::class, [app(Settings::class), app(MailSettings::class), app(QuoteRequestService::class)])->makePartial();
-        $fake->shouldReceive('fetch')->andReturn([$this->message(self::JETPACK_TEXT), $this->message('Bonjour', ['subject' => 'Autre chose', 'id' => 'x'])]);
+        $fake->shouldReceive('fetch')->andReturn([$this->message(self::JETPACK_TEXT), $this->message('Bonjour', ['subject' => 'Autre chose', 'id' => 'x', 'from' => 'ami@example.com'])]);
         $this->app->instance(SiteFormImporter::class, $fake);
 
         $this->followingRedirects()->post(route('settings.site-form.preview'))->assertOk()
-            ->assertSee('formulaire')->assertSee('Julie · Garnier · 06 45 67 89 01', false)->assertSee('Autre chose');
+            ->assertSee('formulaire')->assertSee('Julie · Garnier · 06 45 67 89 01', false)->assertSee('Autre chose')
+            ->assertSee('dont <strong>1 reconnu(s) comme venant du formulaire', false);
         $this->assertSame(0, QuoteRequest::query()->count(), 'L\'aperçu ne crée rien.');
 
         $this->artisan('app:import-site-requests')->expectsOutputToContain('1 demande(s) importée(s)');
         $this->get(route('settings.site-form'))->assertSee('1 demande(s) importée(s)');
+    }
+
+    public function test_automatic_detection_without_any_setting(): void
+    {
+        app(Settings::class)->set(['site_form.enabled' => true, 'site_form.from' => '', 'site_form.subject' => '']);
+        $importer = app(SiteFormImporter::class);
+
+        // Jetpack envoie souvent au nom du visiteur : l'expéditeur change à chaque demande.
+        $this->assertTrue($importer->matches($this->message(self::JETPACK_TEXT, ['from' => 'julie.garnier@example.com', 'subject' => 'Demande de devis'])));
+        $this->assertTrue($importer->matches($this->message('Nom: X', ['from' => 'donotreply@wordpress.com'])));
+        $this->assertFalse($importer->matches($this->message('Votre facture est disponible', ['from' => 'facture@edf.fr', 'subject' => 'Facture'])));
+        $this->assertFalse($importer->matches($this->message(self::JETPACK_TEXT, ['subject' => 'Re: Demande de devis'])), 'Une réponse n\'est pas une nouvelle demande.');
     }
 }

@@ -90,13 +90,27 @@ class SiteFormImporter
         return $messages;
     }
 
-    /** L'email vient-il du formulaire du site ? (expéditeur et/ou objet configurés) */
+    /** Mentions ajoutées par WordPress / Jetpack en bas des emails de formulaire. */
+    private const MARKERS = ['contact form url', 'ip address', 'adresse ip', 'url du formulaire', 'sent by an unverified visitor',
+        'sent by a verified', 'envoye par un visiteur', 'formulaire de contact', 'contact form', 'jetpack', 'wpforms', 'contact form 7'];
+
+    /**
+     * L'email vient-il du formulaire du site ? Sans réglage : détection automatique
+     * (mentions WordPress / Jetpack, ou expéditeur WordPress). Sinon : expéditeur et/ou objet.
+     */
     public function matches(array $message): bool
     {
         $from = trim(mb_strtolower((string) $this->settings->get('site_form.from', '')));
         $subject = trim(mb_strtolower((string) $this->settings->get('site_form.subject', '')));
         if ($from === '' && $subject === '') {
-            return false;
+            if (preg_match('/^(re|tr|fwd?)\s*:/i', trim($message['subject']))) {
+                return false; // Réponses et transferts : jamais une nouvelle demande.
+            }
+            $sender = mb_strtolower($message['from']);
+            $text = Str::of($message['text'])->ascii()->lower()->toString();
+
+            return str_contains($sender, 'wordpress') || str_contains($sender, 'jetpack')
+                || collect(self::MARKERS)->contains(fn ($marker) => str_contains($text, $marker));
         }
 
         return ($from === '' || str_contains(mb_strtolower($message['from']), $from))

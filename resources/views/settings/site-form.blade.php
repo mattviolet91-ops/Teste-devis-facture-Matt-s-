@@ -14,11 +14,14 @@
     @endunless
 
     <label class="check"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $form['enabled']))> <span><strong>Lire les demandes du formulaire du site</strong></span></label>
-    <div class="form-grid cols-2" style="margin-top:1rem">
-        <x-field name="from" label="Expéditeur des emails du formulaire (contient…)" :value="$form['from']" placeholder="ex. wordpress@ ou jetpack" />
-        <x-field name="subject" label="Objet des emails (contient…)" :value="$form['subject']" placeholder="ex. Demande de devis" />
-    </div>
-    <p class="small muted">Remplissez l'un ou l'autre (ou les deux). Aidez-vous du bouton « Voir mes derniers emails » ci-dessous.</p>
+    <p class="small">Les emails du formulaire sont <strong>reconnus automatiquement</strong> (mentions ajoutées par WordPress). Vérifiez avec « Voir mes derniers emails » ci-dessous.</p>
+    <details @if ($form['from'] || $form['subject']) open @endif>
+        <summary class="small">Réglage avancé : reconnaître par l'objet (si la détection automatique ne suffit pas)</summary>
+        <div class="form-grid cols-2" style="margin-top:.75rem">
+            <x-field name="subject" label="Objet des emails du formulaire (contient…)" :value="$form['subject']" placeholder="ex. Demande de devis" hint="Le début de l'objet, identique pour toutes les demandes." />
+            <x-field name="from" label="Expéditeur (contient…)" :value="$form['from']" placeholder="Laisser vide en général" hint="Pas l'adresse d'un client : l'expéditeur change souvent à chaque demande." />
+        </div>
+    </details>
     <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
 
     @if ($form['enabled'])
@@ -33,9 +36,15 @@
 <form method="POST" action="{{ route('settings.site-form.preview') }}" class="card">
     @csrf
     <h2>Voir mes derniers emails</h2>
-    <p class="muted small">Affiche l'expéditeur et l'objet de vos emails des 14 derniers jours, pour repérer ceux du formulaire, et montre ce que l'application en lirait. Rien n'est créé.</p>
+    <p class="muted small">Affiche vos emails des 14 derniers jours : ceux reconnus comme venant du formulaire portent l'étiquette « formulaire », avec ce que l'application en lirait. Rien n'est créé.</p>
     <button class="btn btn-secondary" type="submit">Voir mes derniers emails</button>
 
+    @if ($errors->has('preview'))
+        <div class="alert alert-error" style="margin-top:1rem">{{ $errors->first('preview') }}</div>
+    @endif
+    @if (is_array($preview))
+        <p class="small" style="margin:1rem 0 0">{{ count($preview) }} email(s) lu(s), dont <strong>{{ collect($preview)->where('matches', true)->count() }} reconnu(s) comme venant du formulaire</strong>.</p>
+    @endif
     @if ($preview)
         <ul class="stat-list" style="margin-top:1rem">
             @foreach ($preview as $item)
