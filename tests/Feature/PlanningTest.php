@@ -98,7 +98,7 @@ class PlanningTest extends TestCase
     public function test_appointments_with_or_without_client_and_reminder_one_hour_before(): void
     {
         $this->get(route('planning.create', ['type' => 'rdv', 'client' => $this->client->id]))->assertOk()
-            ->assertSee('Visite pour devis (métré)')->assertSee('js/planning.js', false);
+            ->assertSee('Visite pour devis (métré)')->assertSee('js/planning.js', false)->assertSee('data-client-search', false);
 
         // Visite chez un prospect : heure de fin par défaut 1 heure après.
         $this->post(route('planning.store'), [

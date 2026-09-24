@@ -24,10 +24,15 @@
             <div class="form-grid cols-2">
                 <div class="field span-2 @error('client_id') has-error @enderror">
                     <label for="client_id">Client <span data-kind-only="chantier">*</span><span data-kind-only="rdv" class="muted small">(facultatif)</span></label>
+                    <div class="client-search">
+                        <input type="search" placeholder="Rechercher : nom, téléphone, ville…" aria-label="Rechercher un client" autocomplete="off" data-client-search>
+                        <div class="client-search-results" data-client-results hidden></div>
+                    </div>
                     <select id="client_id" name="client_id" data-planning-client>
                         <option value="">{{ $appointment ? 'Aucun client (fournisseur, comptable…)' : 'Choisir un client…' }}</option>
                         @foreach ($clients as $client)
-                            <option value="{{ $client->id }}" @selected((string) old('client_id', $intervention->client_id) === (string) $client->id)>{{ $client->displayName() }}</option>
+                            <option value="{{ $client->id }}" @selected((string) old('client_id', $intervention->client_id) === (string) $client->id)
+                                data-search="{{ \App\Support\Search::index([$client->displayName(), $client->company_name, $client->first_name, $client->last_name, $client->email, $client->city, preg_replace('/\D/', '', (string) $client->phone)]) }}">{{ $client->displayName() }}{{ $client->city ? ' — '.$client->city : '' }}</option>
                         @endforeach
                     </select>
                     @error('client_id')<span class="error">{{ $message }}</span>@enderror
