@@ -11,6 +11,7 @@ use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
@@ -117,6 +118,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/relances', [ReminderController::class, 'index'])->name('reminders.index');
     Route::get('/factures/{invoice}/relancer', [ReminderController::class, 'show'])->whereNumber('invoice')->name('reminders.show');
     Route::post('/factures/{invoice}/relance', [ReminderController::class, 'track'])->whereNumber('invoice')->middleware('throttle:30,1')->name('reminders.track');
+
+    Route::get('/entretiens', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::post('/entretiens/analyser', [MaintenanceController::class, 'scan'])->middleware('throttle:5,1')->name('maintenance.scan');
+    Route::get('/entretiens/{reminder}', [MaintenanceController::class, 'show'])->whereNumber('reminder')->name('maintenance.show');
+    Route::post('/entretiens/{reminder}/relance', [MaintenanceController::class, 'track'])->whereNumber('reminder')->middleware('throttle:30,1')->name('maintenance.track');
+    Route::put('/entretiens/{reminder}', [MaintenanceController::class, 'update'])->whereNumber('reminder')->name('maintenance.update');
+    Route::post('/clients/{client}/entretiens', [MaintenanceController::class, 'store'])->whereNumber('client')->name('maintenance.store');
 
     Route::get('/paiements', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');

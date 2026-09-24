@@ -97,7 +97,8 @@ class CatalogController extends Controller
             'unit' => ['required', 'string', 'max:20'],
             'unit_price' => ['nullable', 'string', 'max:20'],
             'vat_rate' => ['nullable', 'integer', 'min:0', 'max:10000'],
-        ], [], ['name' => 'nom', 'unit' => 'unité', 'unit_price' => 'prix']);
+            'maintenance_months' => ['nullable', 'integer', 'min:1', 'max:240'],
+        ], [], ['name' => 'nom', 'unit' => 'unité', 'unit_price' => 'prix', 'maintenance_months' => 'délai d\'entretien']);
 
         validator($data, [])->after(function (Validator $validator) use ($data) {
             if (($data['unit_price'] ?? '') !== '' && Money::parse($data['unit_price']) === null) {
@@ -107,6 +108,7 @@ class CatalogController extends Controller
 
         $data['unit_price'] = ($data['unit_price'] ?? '') === '' ? 0 : Money::parse($data['unit_price']);
         $data['vat_rate'] = ($data['vat_rate'] ?? '') === '' ? null : (int) $data['vat_rate'];
+        $data['maintenance_months'] = ($data['maintenance_months'] ?? '') === '' ? null : (int) $data['maintenance_months'];
         $data['is_active'] = $request->boolean('is_active');
 
         return $data;

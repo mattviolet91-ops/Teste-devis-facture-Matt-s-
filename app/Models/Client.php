@@ -74,6 +74,11 @@ class Client extends Model
         return $this->hasMany(Attachment::class)->latest('id');
     }
 
+    public function maintenanceReminders(): HasMany
+    {
+        return $this->hasMany(MaintenanceReminder::class)->orderBy('due_on');
+    }
+
     public function wixArchives(): HasMany
     {
         return $this->hasMany(WixArchive::class)->orderByDesc('issue_date');

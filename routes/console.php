@@ -9,3 +9,4 @@ Schedule::command('app:insurance-reminder')->dailyAt('08:00');
 Schedule::command('app:payment-reminders')->dailyAt('09:00');
 Schedule::command('app:backup')->dailyAt('01:30');
 Schedule::command('app:reminder-notifications')->dailyAt('08:30');
+Schedule::command('app:maintenance-notifications')->dailyAt('08:40');

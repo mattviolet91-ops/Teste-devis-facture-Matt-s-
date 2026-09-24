@@ -150,6 +150,33 @@
         </div>
     @endif
 
+    <div class="card" id="entretiens">
+        <div class="card-head"><h2>Entretiens</h2><a class="small" href="{{ route('maintenance.index') }}">Tous les entretiens</a></div>
+        @if ($client->maintenanceReminders->isNotEmpty())
+            <ul class="stat-list">
+                @foreach ($client->maintenanceReminders as $reminder)
+                    <li>
+                        <a href="{{ route('maintenance.show', $reminder) }}">{{ $reminder->label }} <span class="muted small">(fait le {{ $reminder->done_on->format('d/m/Y') }})</span></a>
+                        <span class="small">{{ $reminder->statusLabel() }} · {{ $reminder->due_on->format('m/Y') }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        <details>
+            <summary class="small">Ajouter un rappel d'entretien</summary>
+            <form method="POST" action="{{ route('maintenance.store', $client) }}" class="form-grid cols-2" style="margin-top:.5rem">
+                @csrf
+                <x-field name="label" label="Prestation" placeholder="ex. Démoussage de la toiture" class="span-2" required />
+                <x-field name="done_on" label="Date des travaux" type="date" :value="today()->toDateString()" required />
+                <x-select name="months" label="Relancer" :options="[12 => 'Après 1 an', 24 => 'Après 2 ans', 36 => 'Après 3 ans', 60 => 'Après 5 ans']" :value="36" :placeholder="false" />
+                @if ($client->worksites->isNotEmpty())
+                    <x-select name="worksite_id" label="Chantier" :options="$client->worksites->mapWithKeys(fn ($w) => [$w->id => $w->fullAddress()])" placeholder="—" class="span-2" />
+                @endif
+                <div class="form-actions span-2"><button class="btn btn-secondary" type="submit">Ajouter</button></div>
+            </form>
+        </details>
+    </div>
+
     <div class="card">
         <div class="card-head"><h2>Documents</h2></div>
         @error('files')<div class="alert alert-error">{{ $message }}</div>@enderror

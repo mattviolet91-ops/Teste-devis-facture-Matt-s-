@@ -92,6 +92,8 @@ CGV,
         // Relances (SMS / WhatsApp / copie) : avant l'échéance, puis en retard.
         'reminder_before' => "{salutation}\nPetit rappel : la facture n° {numero} de {entreprise}, d'un montant de {reste_a_payer}, arrive à échéance le {date_echeance}.\nVous pouvez la consulter ici :\n{lien}\nMerci d'avance,\n{entreprise} – {telephone}",
         'reminder_after' => "{salutation}\nSauf erreur de notre part, la facture n° {numero} d'un montant de {reste_a_payer} n'a pas encore été réglée (échéance : {date_echeance}, {retard}).\nVous la retrouverez ici :\n{lien}\nSi le règlement a déjà été fait, merci de ne pas tenir compte de ce message.\n{entreprise} – {telephone}",
+        // Relance d'entretien ({prestation}, {anciennete}, {date_travaux}).
+        'maintenance' => "{salutation}\nNous sommes intervenus chez vous il y a {anciennete} ({date_travaux}) pour : {prestation}.\nPour garder votre toiture en bon état, un nouvel entretien est conseillé. Souhaitez-vous que nous passions faire un point, sans engagement ?\nBien cordialement,\n{entreprise} – {telephone}",
         'sms_invoice' => "{salutation}\nVoici {document} n° {numero} de {entreprise} d'un montant de {montant}, {echeance}.\nConsultez-la et téléchargez-la ici :\n{lien}\nMerci pour votre confiance !\n{entreprise} – {telephone}",
     ],
 

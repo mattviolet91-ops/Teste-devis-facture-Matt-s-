@@ -128,6 +128,9 @@ class InvoiceService
                 app(PaymentService::class)->transfer($invoice->corrects, $invoice);
             }
 
+            // Rappels d'entretien des prestations réalisées (ex. démoussage dans 3 ans).
+            app(MaintenanceService::class)->fromInvoice($invoice);
+
             return $invoice;
         });
     }
@@ -159,6 +162,7 @@ class InvoiceService
             $this->send($credit);
 
             $invoice->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+            app(MaintenanceService::class)->forgetInvoice($invoice);
             ActivityLogger::log('invoice.cancelled', "Facture {$invoice->number} annulée par l'avoir {$credit->number}", $invoice, array_filter(['motif' => $reason]));
 
             return $credit;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\EmailTemplate;
 use App\Models\Invoice;
+use App\Models\MaintenanceReminder;
 use App\Models\Quote;
 use App\Models\SentEmail;
 use App\Services\EmailComposer;
@@ -66,6 +67,10 @@ class EmailController extends Controller
             'bcc' => $mail->bccAddress(),
             'certificate' => $insurance->currentCertificate(),
             'reminder' => $request->boolean('relance'),
+            // Relance d'entretien : objet et message déjà rédigés.
+            'prefill' => ($id = $request->integer('entretien'))
+                ? app(MaintenanceController::class)->emailFor(MaintenanceReminder::query()->where('client_id', $client->id)->findOrFail($id))
+                : null,
         ]);
     }
 

@@ -11,7 +11,7 @@
         $document instanceof \App\Models\Invoice => route('invoices.show', $document),
         default => route('clients.show', $client),
     };
-    $initial = $selected ? $rendered[$selected->id] : ['subject' => '', 'body' => ''];
+    $initial = $prefill ?? ($selected ? $rendered[$selected->id] : ['subject' => '', 'body' => '']);
 @endphp
 
 @section('content')

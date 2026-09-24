@@ -11,11 +11,11 @@ class CatalogItem extends Model
 {
     use Searchable;
 
-    protected $fillable = ['category_id', 'name', 'description', 'unit', 'unit_price', 'vat_rate', 'is_active', 'position'];
+    protected $fillable = ['category_id', 'name', 'description', 'unit', 'unit_price', 'vat_rate', 'maintenance_months', 'is_active', 'position'];
 
     protected function casts(): array
     {
-        return ['unit_price' => 'integer', 'vat_rate' => 'integer', 'is_active' => 'boolean'];
+        return ['unit_price' => 'integer', 'vat_rate' => 'integer', 'maintenance_months' => 'integer', 'is_active' => 'boolean'];
     }
 
     public function category(): BelongsTo
