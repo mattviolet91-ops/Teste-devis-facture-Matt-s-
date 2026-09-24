@@ -67,7 +67,7 @@ class PlanningTest extends TestCase
 
         $this->get(route('planning.index', ['date' => '2026-10-13']))->assertSee('Leroy')->assertSee('jour 2/2')->assertDontSee('Devis acceptés à planifier');
         $this->get(route('planning.index', ['vue' => 'mois']))->assertOk()->assertSee('Leroy');
-        $this->get(route('dashboard'))->assertSee('Prochaines interventions');
+        $this->get(route('dashboard'))->assertSee('Prochains rendez-vous et chantiers');
 
         $ics = $this->get(route('planning.ics', $intervention))->assertOk()->assertHeader('Content-Type', 'text/calendar; charset=utf-8')->getContent();
         $this->assertStringContainsString('DTSTART;TZID=Europe/Paris:20261012T080000', $ics);
@@ -91,7 +91,52 @@ class PlanningTest extends TestCase
 
         $push = Mockery::mock(PushService::class);
         $this->app->instance(PushService::class, $push);
-        $push->shouldReceive('send')->once()->withArgs(fn ($title, $body) => $title === 'Demain : 1 intervention' && str_contains($body, '9h30') && str_contains($body, 'Villebon'));
+        $push->shouldReceive('send')->once()->withArgs(fn ($title, $body) => $title === 'Demain : 1 chantier' && str_contains($body, '9h30') && str_contains($body, 'Villebon'));
         $this->artisan('app:planning-notifications')->assertSuccessful();
+    }
+
+    public function test_appointments_with_or_without_client_and_reminder_one_hour_before(): void
+    {
+        $this->get(route('planning.create', ['type' => 'rdv', 'client' => $this->client->id]))->assertOk()
+            ->assertSee('Visite pour devis (métré)')->assertSee('js/planning.js', false);
+
+        // Visite chez un prospect : heure de fin par défaut 1 heure après.
+        $this->post(route('planning.store'), [
+            'kind' => 'rdv', 'client_id' => $this->client->id, 'worksite_id' => $this->worksite->id,
+            'title' => 'Visite pour devis (métré)', 'starts_on' => '2026-10-08', 'start_time' => '14:00',
+        ])->assertSessionHasNoErrors();
+        $rdv = Intervention::query()->latest('id')->firstOrFail();
+        $this->assertSame(['rdv', '15:00', '2026-10-08'], [$rdv->kind, $rdv->end_time, $rdv->ends_on->toDateString()]);
+
+        $this->get(route('planning.show', $rdv))->assertOk()
+            ->assertSee('Nous vous confirmons notre rendez-vous le jeudi 8 octobre de 14h00 à 15h00 au 3 rue des Lilas', false)
+            ->assertSee('Faire le devis');
+
+        // Rendez-vous fournisseur, sans client : lieu libre, heure obligatoire.
+        $this->post(route('planning.store'), ['kind' => 'rdv', 'title' => 'Rendez-vous fournisseur', 'starts_on' => '2026-10-08'])
+            ->assertSessionHasErrors('start_time');
+        $this->post(route('planning.store'), [
+            'kind' => 'rdv', 'title' => 'Rendez-vous fournisseur', 'location' => 'Point P Massy', 'starts_on' => '2026-10-08', 'start_time' => '08:00', 'end_time' => '08:30',
+        ])->assertSessionHasNoErrors();
+        $supplier = Intervention::query()->latest('id')->firstOrFail();
+        $this->get(route('planning.show', $supplier))->assertOk()->assertSee('Point P Massy')->assertDontSee('Prévenir le client');
+        $this->get(route('planning.ics', $supplier))->assertSee('DTEND;TZID=Europe/Paris:20261008T083000', false);
+
+        // Un chantier sans client reste refusé.
+        $this->post(route('planning.store'), ['kind' => 'chantier', 'title' => 'X', 'starts_on' => '2026-10-08'])->assertSessionHasErrors('client_id');
+
+        $this->get(route('planning.index', ['date' => '2026-10-08']))->assertOk()
+            ->assertSee('14h00 – 15h00 · M')->assertSee('8h00 – 8h30 · Rendez-vous fournisseur')->assertSee('Point P Massy');
+
+        $push = Mockery::mock(PushService::class);
+        $this->app->instance(PushService::class, $push);
+        $push->shouldReceive('send')->once()->withArgs(fn ($title, $body) => $title === 'Demain : 2 rendez-vous' && str_contains($body, '8h00 RDV Rendez-vous fournisseur (Point P Massy)'));
+        $this->artisan('app:planning-notifications')->assertSuccessful();
+
+        // Le jour même, 1 heure avant : un seul rappel.
+        Carbon::setTestNow('2026-10-08 13:05');
+        $push->shouldReceive('send')->once()->withArgs(fn ($title) => str_starts_with($title, 'Rendez-vous à 14h00'));
+        $this->artisan('app:planning-notifications --bientot')->assertSuccessful();
+        $this->artisan('app:planning-notifications --bientot')->assertSuccessful();
     }
 }

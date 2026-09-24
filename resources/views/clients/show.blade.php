@@ -29,6 +29,7 @@
             <a class="quick-action" href="{{ route('emails.create', ['client' => $client->id]) }}"><x-icon name="mail" /> Email</a>
         @endif
         <a class="quick-action" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Nouveau devis</a>
+        <a class="quick-action" href="{{ route('planning.create', ['type' => 'rdv', 'client' => $client->id]) }}"><x-icon name="calendar" /> Rendez-vous</a>
     </div>
 
     <div class="grid grid-2">

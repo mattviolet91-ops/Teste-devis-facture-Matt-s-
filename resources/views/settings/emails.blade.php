@@ -52,6 +52,7 @@
             <x-field name="reminder_after" label="Relance : facture en retard ({retard} = « en retard de 5 jours »)" type="textarea" rows="7" :value="$mail['reminder_after']" required />
             <x-field name="maintenance" label="Relance d'entretien ({prestation}, {anciennete} = « 3 ans », {date_travaux})" type="textarea" rows="7" :value="$mail['maintenance']" required />
             <x-field name="intervention" label="Confirmation d'intervention ({date_intervention} = « le lundi 12 octobre à 8h00 »)" type="textarea" rows="6" :value="$mail['intervention']" required />
+            <x-field name="appointment" label="Confirmation de rendez-vous ({date_rdv} = « le lundi 12 octobre de 9h00 à 10h00 », {objet_rdv})" type="textarea" rows="6" :value="$mail['appointment']" required />
         </div>
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>

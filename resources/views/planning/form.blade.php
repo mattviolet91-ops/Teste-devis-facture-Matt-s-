@@ -1,24 +1,37 @@
-@extends('layouts.app', ['title' => $intervention->exists ? 'Modifier l\'intervention' : 'Planifier une intervention'])
+@php
+    $appointment = old('kind', $intervention->kind) === 'rdv';
+    $noun = $appointment ? 'le rendez-vous' : 'l\'intervention';
+    $heading = $intervention->exists ? 'Modifier '.$noun : 'Ajouter au planning';
+@endphp
+@extends('layouts.app', ['title' => $heading])
 
 @section('content')
     <div class="page-head">
-        <h1>{{ $intervention->exists ? 'Modifier l\'intervention' : 'Planifier une intervention' }}</h1>
+        <h1>{{ $heading }}</h1>
     </div>
 
-    <form method="POST" action="{{ $intervention->exists ? route('planning.update', $intervention) : route('planning.store') }}" data-offline="Intervention">
+    <form method="POST" action="{{ $intervention->exists ? route('planning.update', $intervention) : route('planning.store') }}" data-offline="Planning" data-planning-form>
         @csrf
         @if ($intervention->exists) @method('PUT') @endif
         <div class="card">
+            <div class="chips" role="radiogroup" aria-label="Type" style="margin-bottom:1rem">
+                @foreach (\App\Models\Intervention::KINDS as $key => $label)
+                    <label class="chip chip-radio"><input type="radio" name="kind" value="{{ $key }}" @checked(old('kind', $intervention->kind) === $key) data-planning-kind>
+                        <x-icon :name="$key === 'rdv' ? 'users' : 'tool'" /> {{ $label }}</label>
+                @endforeach
+            </div>
+
             <div class="form-grid cols-2">
                 <div class="field span-2 @error('client_id') has-error @enderror">
-                    <label for="client_id">Client *</label>
-                    <select id="client_id" name="client_id" required data-planning-client>
-                        <option value="">Choisir un client…</option>
+                    <label for="client_id">Client <span data-kind-only="chantier">*</span><span data-kind-only="rdv" class="muted small">(facultatif)</span></label>
+                    <select id="client_id" name="client_id" data-planning-client>
+                        <option value="">{{ $appointment ? 'Aucun client (fournisseur, comptable…)' : 'Choisir un client…' }}</option>
                         @foreach ($clients as $client)
                             <option value="{{ $client->id }}" @selected((string) old('client_id', $intervention->client_id) === (string) $client->id)>{{ $client->displayName() }}</option>
                         @endforeach
                     </select>
                     @error('client_id')<span class="error">{{ $message }}</span>@enderror
+                    <span class="hint">Nouveau prospect ? <a href="{{ route('clients.create') }}">Créez d'abord sa fiche</a>.</span>
                 </div>
                 <div class="field @error('worksite_id') has-error @enderror">
                     <label for="worksite_id">Chantier</label>
@@ -35,14 +48,29 @@
                     </select>
                     @error('quote_id')<span class="error">{{ $message }}</span>@enderror
                 </div>
-                <x-field name="title" label="Intitulé *" :value="$intervention->title" class="span-2" placeholder="ex. Démoussage et traitement hydrofuge" required />
-                <x-field name="starts_on" label="Début *" type="date" :value="$intervention->starts_on?->toDateString()" required />
-                <x-field name="start_time" label="Heure d'arrivée" type="time" :value="$intervention->start_time" />
-                <x-field name="ends_on" label="Fin (si plusieurs jours)" type="date" :value="$intervention->ends_on?->toDateString()" />
+                <x-field name="location" label="Lieu (si autre que le chantier)" :value="$intervention->location" class="span-2" placeholder="ex. Point P Massy, ou adresse d'un prospect" />
+
+                <div class="field span-2 @error('title') has-error @enderror">
+                    <label for="title">Objet *</label>
+                    <input id="title" type="text" name="title" value="{{ old('title', $intervention->title) }}" required maxlength="200" list="appointment-titles" placeholder="ex. Démoussage et traitement hydrofuge">
+                    <datalist id="appointment-titles">
+                        @foreach (\App\Models\Intervention::APPOINTMENT_TITLES as $title)<option value="{{ $title }}">@endforeach
+                    </datalist>
+                    @error('title')<span class="error">{{ $message }}</span>@enderror
+                </div>
+
+                <x-field name="starts_on" label="Date" type="date" :value="$intervention->starts_on?->toDateString()" required />
+                <x-field name="start_time" label="Heure" type="time" :value="$intervention->start_time" />
+                <div data-kind-only="rdv">
+                    <x-field name="end_time" label="Heure de fin" type="time" :value="$intervention->end_time" hint="Vide = 1 heure." />
+                </div>
+                <div data-kind-only="chantier">
+                    <x-field name="ends_on" label="Fin (si plusieurs jours)" type="date" :value="$intervention->ends_on?->toDateString()" />
+                </div>
                 @if ($intervention->exists)
                     <x-select name="status" label="Statut" :options="\App\Models\Intervention::STATUSES" :value="$intervention->status" :placeholder="false" />
                 @endif
-                <x-field name="notes" label="Notes (matériel, accès, benne…)" type="textarea" rows="3" :value="$intervention->notes" class="span-2" />
+                <x-field name="notes" label="Notes (matériel, accès, code portail…)" type="textarea" rows="3" :value="$intervention->notes" class="span-2" />
             </div>
         </div>
         <div class="form-actions sticky-actions">
@@ -52,31 +80,5 @@
     </form>
 
     <script type="application/json" id="planning-worksites">@json($worksites)</script>
-    <script>
-        (function () {
-            var client = document.querySelector('[data-planning-client]');
-            var site = document.querySelector('[data-planning-worksite]');
-            var quote = document.querySelector('[data-planning-quote]');
-            var title = document.getElementById('title');
-            var data = JSON.parse(document.getElementById('planning-worksites').textContent || '{}');
-            function fill() {
-                var keep = site.getAttribute('data-selected');
-                site.length = 1;
-                (data[client.value] || []).forEach(function (w, i) {
-                    var o = new Option(w.label, w.id);
-                    if (String(w.id) === keep || (!keep && i === 0)) { o.selected = true; }
-                    site.add(o);
-                });
-                Array.prototype.forEach.call(quote.options, function (o) { o.hidden = o.value && client.value && o.getAttribute('data-client') !== client.value; });
-            }
-            client.addEventListener('change', function () { site.setAttribute('data-selected', ''); if (quote.selectedOptions[0] && quote.selectedOptions[0].hidden) { quote.value = ''; } fill(); });
-            quote.addEventListener('change', function () {
-                var o = quote.selectedOptions[0];
-                if (!o || !o.value) { return; }
-                if (client.value !== o.getAttribute('data-client')) { client.value = o.getAttribute('data-client'); site.setAttribute('data-selected', ''); fill(); }
-                if (!title.value && o.getAttribute('data-title')) { title.value = o.getAttribute('data-title'); }
-            });
-            fill();
-        })();
-    </script>
+    <script src="{{ asset('js/planning.js') }}?v={{ filemtime(public_path('js/planning.js')) }}" defer></script>
 @endsection

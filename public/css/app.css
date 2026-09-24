@@ -716,3 +716,5 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .offline-item { padding: .625rem 0; border-bottom: 1px solid var(--border); }
 .offline-item p { margin: .25rem 0 .5rem; }
 .offline-item .error { color: var(--danger, #c0392b); }
+.planning-item.kind-rdv { background: color-mix(in srgb, #7B61FF 12%, transparent); border-left-color: #7B61FF; }
+[data-kind-only][hidden] { display: none !important; }

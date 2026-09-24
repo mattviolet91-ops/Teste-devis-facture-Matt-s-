@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Planning des chantiers : semaine par semaine, avec les devis acceptés à planifier. */
+/** Planning des chantiers et rendez-vous : semaine par semaine, avec les devis acceptés à planifier. */
 class PlanningController extends Controller
 {
     public function index(Request $request): View
@@ -31,7 +31,7 @@ class PlanningController extends Controller
             ? [$date->copy()->startOfMonth(), $date->copy()->endOfMonth()->startOfDay()]
             : [$date->copy()->startOfWeek(), $date->copy()->endOfWeek()->startOfDay()];
 
-        $interventions = Intervention::query()->between($from, $to)->with(['client', 'worksite'])
+        $interventions = Intervention::query()->between($from, $to)->visible()->with(['client', 'worksite'])
             ->orderBy('starts_on')->orderBy('start_time')->get();
 
         $days = [];
@@ -51,17 +51,28 @@ class PlanningController extends Controller
             'next' => ($mode === 'mois' ? $from->copy()->addMonth() : $from->copy()->addWeek())->toDateString(),
             // Devis acceptés sans intervention prévue : à planifier.
             'toPlan' => Quote::query()->where('status', 'accepted')
-                ->whereDoesntHave('interventions', fn ($q) => $q->active())
+                ->whereDoesntHave('interventions', fn ($q) => $q->active()->where('kind', 'chantier'))
                 ->whereHas('client')->with('client')->latest('accepted_at')->limit(20)->get(),
         ]);
     }
 
     public function create(Request $request): View
     {
-        $intervention = new Intervention(['starts_on' => today(), 'start_time' => '08:00', 'status' => 'planned']);
+        $appointment = $request->query('type') === 'rdv';
+        $intervention = new Intervention([
+            'kind' => $appointment ? 'rdv' : 'chantier',
+            'starts_on' => today(),
+            'start_time' => $appointment ? '09:00' : '08:00',
+            'end_time' => $appointment ? '10:00' : null,
+            'title' => $appointment ? Intervention::APPOINTMENT_TITLES[0] : null,
+            'status' => 'planned',
+        ]);
 
         if ($quote = Quote::query()->find($request->integer('devis'))) {
-            $intervention->fill(['client_id' => $quote->client_id, 'worksite_id' => $quote->worksite_id, 'quote_id' => $quote->id, 'title' => $quote->title ?: 'Travaux devis '.$quote->number]);
+            $intervention->fill(['client_id' => $quote->client_id, 'worksite_id' => $quote->worksite_id, 'quote_id' => $quote->id]);
+            if (! $appointment) {
+                $intervention->title = $quote->title ?: 'Travaux devis '.$quote->number;
+            }
         } elseif ($client = Client::query()->find($request->integer('client'))) {
             $intervention->client_id = $client->id;
         }
@@ -80,17 +91,19 @@ class PlanningController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $intervention = Intervention::query()->create($this->validated($request));
-        ActivityLogger::log('planning.created', "Intervention planifiée {$intervention->whenLabel()} : {$intervention->title}", $intervention->client);
+        $what = $intervention->isAppointment() ? 'Rendez-vous' : 'Intervention';
+        ActivityLogger::log('planning.created', "$what planifié(e) {$intervention->whenLabel()} : {$intervention->title}", $intervention->client);
 
-        return redirect()->route('planning.show', $intervention)->with('status', 'Intervention planifiée. Prévenez le client ci-dessous.');
+        return redirect()->route('planning.show', $intervention)
+            ->with('status', $what.' ajouté'.($intervention->isAppointment() ? '' : 'e').' au planning.'.($intervention->client ? ' Prévenez le client ci-dessous.' : ''));
     }
 
     public function show(Intervention $intervention): View
     {
-        abort_unless($intervention->client, 404);
+        abort_if($intervention->client_id && ! $intervention->client, 404);
         $intervention->load(['client', 'worksite', 'quote']);
 
-        return view('planning.show', ['intervention' => $intervention, 'message' => $this->message($intervention)]);
+        return view('planning.show', ['intervention' => $intervention, 'message' => $intervention->client ? $this->message($intervention) : null]);
     }
 
     public function edit(Intervention $intervention): View
@@ -102,7 +115,7 @@ class PlanningController extends Controller
     {
         $intervention->update($this->validated($request));
 
-        return redirect()->route('planning.show', $intervention)->with('status', 'Intervention enregistrée.');
+        return redirect()->route('planning.show', $intervention)->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Intervention').' enregistré'.($intervention->isAppointment() ? '' : 'e').'.');
     }
 
     public function destroy(Intervention $intervention): RedirectResponse
@@ -110,7 +123,7 @@ class PlanningController extends Controller
         $date = $intervention->starts_on->toDateString();
         $intervention->delete();
 
-        return redirect()->route('planning.index', ['date' => $date])->with('status', 'Intervention supprimée du planning.');
+        return redirect()->route('planning.index', ['date' => $date])->with('status', 'Supprimé du planning.');
     }
 
     /** Fichier agenda (.ics) pour l'ajouter au calendrier du téléphone. */
@@ -122,7 +135,9 @@ class PlanningController extends Controller
         if ($intervention->start_time) {
             $start = Carbon::parse($intervention->starts_on->toDateString().' '.$intervention->start_time, config('app.timezone'));
             $dates = 'DTSTART;TZID=Europe/Paris:'.$start->format('Ymd\THis')."\r\n"
-                .'DTEND;TZID=Europe/Paris:'.$intervention->ends_on->copy()->setTime(17, 0)->format('Ymd\THis');
+                .'DTEND;TZID=Europe/Paris:'.($intervention->end_time
+                    ? Carbon::parse($intervention->ends_on->toDateString().' '.$intervention->end_time, config('app.timezone'))
+                    : ($intervention->isAppointment() ? $start->copy()->addHour() : $intervention->ends_on->copy()->setTime(17, 0)))->format('Ymd\THis');
         } else {
             $dates = 'DTSTART;VALUE=DATE:'.$intervention->starts_on->format('Ymd')."\r\n"
                 .'DTEND;VALUE=DATE:'.$intervention->ends_on->copy()->addDay()->format('Ymd');
@@ -131,7 +146,7 @@ class PlanningController extends Controller
         $body = implode("\r\n", [
             'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//'.$escape($settings->get('company.trade_name')).'//Planning//FR', 'BEGIN:VEVENT',
             'UID:'.$uid, 'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'), $dates,
-            'SUMMARY:'.$escape($intervention->title.' – '.$intervention->client?->displayName()),
+            'SUMMARY:'.$escape($intervention->title.($intervention->client ? ' – '.$intervention->client->displayName() : '')),
             'LOCATION:'.$escape($intervention->address()),
             'DESCRIPTION:'.$escape(trim(($intervention->client?->phone ? 'Tél. '.$intervention->client->phone."\n" : '').$intervention->notes)),
             'END:VEVENT', 'END:VCALENDAR',
@@ -160,21 +175,36 @@ class PlanningController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'client_id' => ['required', 'integer', Rule::exists('clients', 'id')->whereNull('deleted_at')],
+            'kind' => ['nullable', Rule::in(array_keys(Intervention::KINDS))],
+            // Un chantier est toujours chez un client ; un rendez-vous peut être sans client.
+            'client_id' => [Rule::requiredIf($request->input('kind') !== 'rdv'), 'nullable', 'integer', Rule::exists('clients', 'id')->whereNull('deleted_at')],
+            'location' => ['nullable', 'string', 'max:200'],
             'worksite_id' => ['nullable', 'integer', Rule::exists('worksites', 'id')->where('client_id', $request->integer('client_id'))],
             'quote_id' => ['nullable', 'integer', Rule::exists('quotes', 'id')->where('client_id', $request->integer('client_id'))],
             'title' => ['required', 'string', 'max:200'],
             'starts_on' => ['required', 'date'],
             'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
-            'start_time' => ['nullable', 'date_format:H:i'],
+            'start_time' => [Rule::requiredIf($request->input('kind') === 'rdv'), 'nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'status' => ['nullable', Rule::in(array_keys(Intervention::STATUSES))],
             'notes' => ['nullable', 'string', 'max:2000'],
         ], [
             'ends_on.after_or_equal' => 'La date de fin doit être après la date de début.',
             'quote_id.exists' => 'Ce devis n\'appartient pas à ce client.',
             'worksite_id.exists' => 'Ce chantier n\'appartient pas à ce client.',
-        ], ['client_id' => 'client', 'title' => 'intitulé', 'starts_on' => 'date de début']);
+            'start_time.required' => 'Indiquez l\'heure du rendez-vous.',
+        ], ['client_id' => 'client', 'title' => 'objet', 'starts_on' => 'date', 'start_time' => 'heure', 'end_time' => 'heure de fin']);
 
+        $data['kind'] ??= 'chantier';
+        if ($data['kind'] === 'rdv') {
+            // Un rendez-vous tient sur une journée ; heure de fin par défaut : 1 heure après.
+            $data['ends_on'] = $data['starts_on'];
+            if (empty($data['end_time']) || $data['end_time'] <= $data['start_time']) {
+                $data['end_time'] = Carbon::createFromFormat('H:i', $data['start_time'])->addHour()->format('H:i');
+            }
+        } else {
+            $data['end_time'] = null;
+        }
         $data['ends_on'] = $data['ends_on'] ?? $data['starts_on'];
         $data['status'] = $data['status'] ?? 'planned';
 
@@ -183,8 +213,11 @@ class PlanningController extends Controller
 
     private function message(Intervention $intervention): string
     {
-        $text = strtr((string) app(Settings::class)->get('mail.intervention'), [
+        $template = $intervention->isAppointment() ? 'mail.appointment' : 'mail.intervention';
+        $text = strtr((string) app(Settings::class)->get($template), [
             '{date_intervention}' => ($intervention->days() > 1 ? '' : 'le ').$intervention->whenLabel(),
+            '{date_rdv}' => 'le '.$intervention->whenLabel(),
+            '{objet_rdv}' => mb_strtolower(mb_substr($intervention->title, 0, 1)).mb_substr($intervention->title, 1),
             '{adresse_chantier}' => (string) $intervention->address(),
         ]);
 

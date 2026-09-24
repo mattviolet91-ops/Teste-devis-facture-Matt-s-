@@ -6,7 +6,10 @@
             <h1>Planning</h1>
             <p>{{ $mode === 'mois' ? ucfirst($from->locale('fr')->isoFormat('MMMM YYYY')) : 'Semaine du '.$from->locale('fr')->isoFormat('D MMMM').' au '.$to->locale('fr')->isoFormat('D MMMM YYYY') }}</p>
         </div>
-        <a class="btn" href="{{ route('planning.create') }}"><x-icon name="plus" /> Planifier</a>
+        <div class="action-bar" style="margin:0">
+            <a class="btn" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="plus" /> Rendez-vous</a>
+            <a class="btn btn-secondary" href="{{ route('planning.create') }}"><x-icon name="plus" /> Chantier</a>
+        </div>
     </div>
 
     <div class="period-bar">
@@ -24,20 +27,20 @@
             <section class="planning-day {{ $day['date']->isToday() ? 'is-today' : '' }} {{ $day['date']->isWeekend() && $day['items']->isEmpty() ? 'is-weekend' : '' }}">
                 <div class="planning-date">
                     <strong>{{ ucfirst($day['date']->locale('fr')->isoFormat('ddd D')) }}</strong>
-                    <a class="small" href="{{ route('planning.create', ['date' => $day['date']->toDateString()]) }}" aria-label="Planifier ce jour">+</a>
+                    <a class="small" href="{{ route('planning.create', ['date' => $day['date']->toDateString(), 'type' => 'rdv']) }}" aria-label="Ajouter un rendez-vous ce jour">+</a>
                 </div>
                 <div class="planning-items">
                     @foreach ($day['items'] as $item)
-                        <a class="planning-item status-{{ $item->status }}" href="{{ route('planning.show', $item) }}">
-                            <strong>{{ $item->start_time && $item->starts_on->isSameDay($day['date']) ? $item->timeLabel().' · ' : '' }}{{ $item->client?->displayName() }}</strong>
-                            <span class="small">{{ $item->title }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
-                            @if ($item->address())<span class="small muted">{{ $item->worksite?->city ?? $item->client?->city }}</span>@endif
+                        <a class="planning-item kind-{{ $item->kind }} status-{{ $item->status }}" href="{{ route('planning.show', $item) }}">
+                            <strong>{{ $item->start_time && $item->starts_on->isSameDay($day['date']) ? ($item->isAppointment() ? $item->timeRange() : $item->timeLabel()).' · ' : '' }}{{ $item->heading() }}</strong>
+                            <span class="small">{{ $item->isAppointment() ? 'RDV · ' : '' }}{{ $item->client ? $item->title : '' }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
+                            @if ($item->address())<span class="small muted">{{ $item->location ?: ($item->worksite?->city ?? $item->client?->city) }}</span>@endif
                         </a>
                     @endforeach
                 </div>
             </section>
         @empty
-            <div class="card empty"><x-icon name="calendar" /><h2>Aucune intervention ce mois-ci</h2></div>
+            <div class="card empty"><x-icon name="calendar" /><h2>Rien de prévu ce mois-ci</h2></div>
         @endforelse
     </div>
 
