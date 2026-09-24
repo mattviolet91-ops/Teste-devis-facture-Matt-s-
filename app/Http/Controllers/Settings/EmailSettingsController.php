@@ -68,8 +68,10 @@ class EmailSettingsController extends Controller
             'maintenance' => ['required', 'string', 'max:1000'],
             'intervention' => ['required', 'string', 'max:1000'],
             'appointment' => ['required', 'string', 'max:1000'],
+            'visit_reminder_subject' => ['required', 'string', 'max:200'],
+            'visit_reminder' => ['required', 'string', 'max:1000'],
         ], [], [
-            'maintenance' => 'relance d\'entretien', 'intervention' => 'confirmation d\'intervention', 'appointment' => 'confirmation de rendez-vous',
+            'maintenance' => 'relance d\'entretien', 'intervention' => 'confirmation d\'intervention', 'appointment' => 'confirmation de rendez-vous', 'visit_reminder' => 'rappel au client', 'visit_reminder_subject' => 'objet du rappel',
             'sms_quote' => 'message pour les devis', 'sms_invoice' => 'message pour les factures',
             'reminder_before' => 'rappel avant échéance', 'reminder_after' => 'relance en retard',
         ]);
@@ -80,6 +82,8 @@ class EmailSettingsController extends Controller
             'mail.maintenance' => $data['maintenance'],
             'mail.intervention' => $data['intervention'],
             'mail.appointment' => $data['appointment'],
+            'mail.visit_reminder_subject' => $data['visit_reminder_subject'],
+            'mail.visit_reminder' => $data['visit_reminder'],
         ]);
 
         return back()->with('status', 'Messages SMS / WhatsApp enregistrés.');

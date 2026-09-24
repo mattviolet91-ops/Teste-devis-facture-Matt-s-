@@ -79,6 +79,12 @@
                 @if ($intervention->exists)
                     <x-select name="status" label="Statut" :options="\App\Models\Intervention::STATUSES" :value="$intervention->status" :placeholder="false" />
                 @endif
+                <x-select name="remind_days" label="Me rappeler" :options="\App\Models\Intervention::REMINDERS" :value="$intervention->remind_days ?? 1" :placeholder="false"
+                    hint="Notification sur votre téléphone le matin, à 9 h." />
+                <label class="check" style="align-self:end">
+                    <input type="checkbox" name="remind_client" value="1" @checked(old('remind_client', $intervention->remind_client))>
+                    <span>Envoyer aussi un rappel au client par email<br><span class="muted small">Si le client a une adresse email.</span></span>
+                </label>
                 <x-field name="notes" label="Notes (matériel, accès, code portail…)" type="textarea" rows="3" :value="$intervention->notes" class="span-2" />
             </div>
         </div>

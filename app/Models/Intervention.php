@@ -30,11 +30,18 @@ class Intervention extends Model
         'cancelled' => 'Annulée',
     ];
 
-    protected $fillable = ['kind', 'client_id', 'worksite_id', 'quote_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes'];
+    protected $fillable = ['kind', 'client_id', 'worksite_id', 'quote_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes', 'remind_days', 'remind_client'];
+
+    /** Rappel avant l'intervention ou le rendez-vous. */
+    public const REMINDERS = [
+        0 => 'Pas de rappel',
+        1 => '1 jour avant',
+        2 => '2 jours avant',
+    ];
 
     protected function casts(): array
     {
-        return ['starts_on' => 'date', 'ends_on' => 'date', 'reminded_at' => 'datetime'];
+        return ['starts_on' => 'date', 'ends_on' => 'date', 'reminded_at' => 'datetime', 'reminder_sent_at' => 'datetime', 'remind_days' => 'integer', 'remind_client' => 'boolean'];
     }
 
     public function client(): BelongsTo

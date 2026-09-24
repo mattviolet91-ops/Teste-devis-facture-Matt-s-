@@ -103,6 +103,9 @@ CGV,
         // Demande d'avis Google ({lien_avis}).
         'review_subject' => 'Votre avis compte pour nous – {entreprise}',
         'review' => "{salutation}\nMerci encore pour votre confiance ! Si vous êtes satisfait de notre travail, pourriez-vous prendre une minute pour laisser un avis sur Google ? Cela nous aide beaucoup.\n{lien_avis}\nBien cordialement,\n{entreprise} – {telephone}",
+        // Rappel envoyé au client 1 ou 2 jours avant ({date_rdv}, {objet_rdv}).
+        'visit_reminder_subject' => 'Rappel : notre passage {date_rdv}',
+        'visit_reminder' => "{salutation}\nPetit rappel : nous passerons {date_rdv} au {adresse_chantier} ({objet_rdv}).\nEn cas d'empêchement, merci de nous prévenir au {telephone}.\nBien cordialement,\n{entreprise}",
         'sms_invoice' => "{salutation}\nVoici {document} n° {numero} de {entreprise} d'un montant de {montant}, {echeance}.\nConsultez-la et téléchargez-la ici :\n{lien}\nMerci pour votre confiance !\n{entreprise} – {telephone}",
     ],
 

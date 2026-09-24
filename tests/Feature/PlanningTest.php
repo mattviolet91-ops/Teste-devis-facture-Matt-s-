@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ClientMessage;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Quote;
@@ -9,6 +10,7 @@ use App\Models\Worksite;
 use App\Services\PushService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Mockery;
 use Tests\TestCase;
 
@@ -157,5 +159,38 @@ class PlanningTest extends TestCase
         $this->post(route('planning.store'), ['kind' => 'chantier', 'client_id' => $this->client->id, 'title' => 'Toiture', 'starts_on' => '2026-10-20', 'ends_on' => '2026-10-22'])
             ->assertSessionHasNoErrors();
         $this->assertSame('2026-10-22', Intervention::query()->latest('id')->first()->ends_on->toDateString());
+    }
+
+    public function test_reminder_one_or_two_days_before_with_optional_client_email(): void
+    {
+        Mail::fake();
+        $this->put(route('settings.emails'), ['username' => 'mv.entreprise91@gmail.com', 'password' => 'abcdabcdabcdabcd']);
+        $this->client->update(['email' => 'leroy@example.com']);
+
+        // Chantier le vendredi 9, rappel 2 jours avant avec email au client ; RDV le jeudi 8, rappel 1 jour avant, sans email.
+        $this->post(route('planning.store'), ['kind' => 'chantier', 'client_id' => $this->client->id, 'worksite_id' => $this->worksite->id,
+            'title' => 'Démoussage', 'starts_on' => '2026-10-09', 'start_time' => '08:00', 'remind_days' => 2, 'remind_client' => '1'])->assertSessionHasNoErrors();
+        $this->post(route('planning.store'), ['kind' => 'rdv', 'client_id' => $this->client->id, 'title' => 'Visite pour devis (métré)',
+            'starts_on' => '2026-10-08', 'start_time' => '10:00', 'remind_days' => 1])->assertSessionHasNoErrors();
+        [$work, $rdv] = Intervention::query()->orderBy('id')->get()->all();
+        $this->get(route('planning.show', $work))->assertSee('2 jours avant · email au client');
+
+        $push = Mockery::mock(PushService::class);
+        $this->app->instance(PushService::class, $push);
+        $push->shouldReceive('send')->once()->withArgs(fn ($title, $body) => str_starts_with($title, 'Dans 2 jours : ') && str_contains($body, 'Rappel envoyé au client'));
+        $push->shouldReceive('send')->once()->withArgs(fn ($title, $body) => str_starts_with($title, 'Demain : RDV') && str_contains($body, 'Appuyez pour prévenir le client'));
+
+        // Mercredi 7, 9 h : les deux rappels partent, une seule fois.
+        $this->artisan('app:planning-notifications --rappels')->expectsOutputToContain('2 rappel(s)');
+        $this->artisan('app:planning-notifications --rappels')->expectsOutputToContain('0 rappel(s)');
+        Mail::assertSent(ClientMessage::class, fn ($m) => $m->hasTo('leroy@example.com')
+            && str_contains($m->text, 'Petit rappel : nous passerons le vendredi 9 octobre à 8h00 au 3 rue des Lilas'));
+        Mail::assertSentCount(1);
+        $this->assertNotNull($work->fresh()->reminder_sent_at);
+
+        // Date changée : le rappel repartira.
+        $this->put(route('planning.update', $work), ['kind' => 'chantier', 'client_id' => $this->client->id, 'title' => 'Démoussage',
+            'starts_on' => '2026-10-16', 'start_time' => '08:00', 'remind_days' => 2, 'remind_client' => '1', 'status' => 'planned']);
+        $this->assertNull($work->fresh()->reminder_sent_at);
     }
 }

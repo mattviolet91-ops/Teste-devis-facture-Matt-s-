@@ -6,7 +6,7 @@ use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Quote;
 use App\Services\ActivityLogger;
-use App\Services\EmailComposer;
+use App\Services\PlanningMessages;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -113,7 +113,13 @@ class PlanningController extends Controller
 
     public function update(Request $request, Intervention $intervention): RedirectResponse
     {
-        $intervention->update($this->validated($request));
+        $intervention->fill($this->validated($request));
+        // Date ou rappel changé : le rappel repartira.
+        if ($intervention->isDirty(['starts_on', 'start_time', 'remind_days'])) {
+            $intervention->reminder_sent_at = null;
+            $intervention->reminded_at = null;
+        }
+        $intervention->save();
 
         return redirect()->route('planning.show', $intervention)->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Intervention').' enregistré'.($intervention->isAppointment() ? '' : 'e').'.');
     }
@@ -196,6 +202,7 @@ class PlanningController extends Controller
             'end_time' => ['nullable', 'date_format:H:i'],
             'status' => ['nullable', Rule::in(array_keys(Intervention::STATUSES))],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'remind_days' => ['nullable', 'integer', Rule::in(array_keys(Intervention::REMINDERS))],
         ], [
             'ends_on.after_or_equal' => 'La date de fin doit être après la date de début.',
             'quote_id.exists' => 'Ce devis n\'appartient pas à ce client.',
@@ -214,6 +221,8 @@ class PlanningController extends Controller
             $data['end_time'] = null;
         }
         $data['ends_on'] = $data['ends_on'] ?? $data['starts_on'];
+        $data['remind_days'] = (int) ($data['remind_days'] ?? 1);
+        $data['remind_client'] = $request->boolean('remind_client') && ! empty($data['client_id']);
         $data['status'] = $data['status'] ?? 'planned';
 
         return $data;
@@ -221,14 +230,6 @@ class PlanningController extends Controller
 
     private function message(Intervention $intervention): string
     {
-        $template = $intervention->isAppointment() ? 'mail.appointment' : 'mail.intervention';
-        $text = strtr((string) app(Settings::class)->get($template), [
-            '{date_intervention}' => ($intervention->days() > 1 ? '' : 'le ').$intervention->whenLabel(),
-            '{date_rdv}' => 'le '.$intervention->whenLabel(),
-            '{objet_rdv}' => mb_strtolower(mb_substr($intervention->title, 0, 1)).mb_substr($intervention->title, 1),
-            '{adresse_chantier}' => (string) $intervention->address(),
-        ]);
-
-        return app(EmailComposer::class)->renderText($text, $intervention->client, $intervention->quote);
+        return app(PlanningMessages::class)->confirmation($intervention);
     }
 }
