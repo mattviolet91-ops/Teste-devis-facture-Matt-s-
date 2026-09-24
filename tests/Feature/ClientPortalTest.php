@@ -117,6 +117,33 @@ class ClientPortalTest extends TestCase
         $this->get(route('quotes.signature', $quote))->assertOk();
     }
 
+    public function test_draft_is_numbered_and_signed_on_site_without_notification(): void
+    {
+        $this->actingAs($this->admin());
+        $this->post(route('quotes.store'), [
+            'client_id' => $this->client->id, 'title' => 'Démoussage', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Démoussage', 'quantity' => '1', 'unit_price' => '900']],
+        ]);
+        $quote = Quote::query()->latest('id')->firstOrFail();
+
+        $this->get(route('quotes.show', $quote))->assertSee('Faire signer sur place');
+        $this->get(route('quotes.on-site', $quote))->assertOk()
+            ->assertSee('J\'accepte le devis', false)->assertDontSee('Se déconnecter');
+
+        $this->post(route('quotes.on-site.sign', $quote), ['name' => 'Hélène Dupont', 'signature' => $this->signature(), 'agree' => '1'])
+            ->assertSessionHasNoErrors()->assertRedirect(route('quotes.show', $quote));
+
+        $quote->refresh();
+        $this->assertSame('DEV-2026-0001', $quote->number);
+        $this->assertSame('accepted', $quote->status);
+        $this->assertTrue($quote->signed_on_site);
+        Mail::assertNotSent(ClientMessage::class);
+
+        $this->get(route('quotes.show', $quote))->assertSee('Signé sur place par')->assertDontSee('Faire signer sur place');
+        $this->get(route('quotes.on-site', $quote))->assertForbidden();
+        $this->post(route('quotes.on-site.sign', $quote), ['name' => 'X', 'signature' => $this->signature(), 'agree' => '1'])->assertForbidden();
+    }
+
     public function test_signature_name_and_agreement_are_required(): void
     {
         $quote = $this->sentQuote();

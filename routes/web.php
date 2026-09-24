@@ -87,6 +87,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/facturer', [InvoiceController::class, 'fromQuote'])->name('invoice');
         Route::get('/pdf', [PdfController::class, 'quote'])->name('pdf');
         Route::get('/signature', [QuoteController::class, 'signature'])->name('signature');
+        Route::get('/signer-sur-place', [QuoteController::class, 'onSite'])->name('on-site');
+        Route::post('/signer-sur-place', [QuoteController::class, 'signOnSite'])->middleware('throttle:10,1')->name('on-site.sign');
     });
 
     Route::resource('factures', InvoiceController::class)

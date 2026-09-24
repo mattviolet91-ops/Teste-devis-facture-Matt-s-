@@ -41,6 +41,9 @@
             <a class="btn" href="{{ route('emails.create', ['devis' => $quote->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
         @endif
         <a class="btn btn-secondary" href="{{ route('quotes.pdf', $quote) }}" target="_blank" rel="noopener"><x-icon name="file" /> PDF</a>
+        @if ($quote->isDraft() || $quote->canBeSignedOnline())
+            <a class="btn" href="{{ route('quotes.on-site', $quote) }}"><x-icon name="check" /> Faire signer sur place</a>
+        @endif
         @if ($quote->isDraft())
             <a class="btn" href="{{ route('quotes.edit', $quote) }}"><x-icon name="file" /> Modifier</a>
             <form method="POST" action="{{ route('quotes.send', $quote) }}" data-confirm="Marquer ce devis comme envoyé ? Il recevra son numéro définitif et ne sera plus modifiable.">

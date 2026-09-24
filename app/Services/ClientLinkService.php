@@ -46,11 +46,11 @@ class ClientLinkService
      * Acceptation en ligne : nom, signature (image PNG), date, heure et adresse IP.
      * Le PDF est figé de nouveau avec la signature.
      */
-    public function sign(Quote $quote, string $name, string $signatureDataUrl, ?string $ip, ?string $userAgent): Quote
+    public function sign(Quote $quote, string $name, string $signatureDataUrl, ?string $ip, ?string $userAgent, bool $onSite = false): Quote
     {
         $png = $this->decodeSignature($signatureDataUrl);
 
-        return DB::transaction(function () use ($quote, $name, $png, $ip, $userAgent) {
+        return DB::transaction(function () use ($quote, $name, $png, $ip, $userAgent, $onSite) {
             $path = 'signatures/'.$quote->number.'-'.Str::random(8).'.png';
             Storage::disk('local')->put($path, $png);
 
@@ -60,12 +60,18 @@ class ClientLinkService
                 'signed_at' => now(),
                 'signed_ip' => $ip,
                 'signed_user_agent' => $userAgent ? mb_substr($userAgent, 0, 255) : null,
+                'signed_on_site' => $onSite,
             ])->save();
             $this->quotes->accept($quote);
-            ActivityLogger::log('link.signed', "Devis {$quote->number} signé en ligne par $name", $quote, ['ip' => $ip]);
+            ActivityLogger::log('link.signed', "Devis {$quote->number} signé ".($onSite ? 'sur place' : 'en ligne')." par $name", $quote, ['ip' => $ip]);
 
             // Version signée du PDF, avec son empreinte : c'est elle qui est servie désormais.
             $this->pdf->freeze($quote->fresh());
+
+            // Signé devant l'artisan : inutile de le prévenir.
+            if ($onSite) {
+                return $quote;
+            }
 
             $this->notify(
                 "Devis {$quote->number} accepté",

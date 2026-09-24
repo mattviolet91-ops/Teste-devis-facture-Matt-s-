@@ -10,13 +10,16 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\TextTemplate;
 use App\Services\ActivityLogger;
+use App\Services\ClientLinkService;
 use App\Services\QuoteService;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
 class QuoteController extends Controller
@@ -142,6 +145,49 @@ class QuoteController extends Controller
         $this->quotes->send($quote);
 
         return redirect()->route('quotes.show', $quote)->with('status', "Devis {$quote->number} marqué comme envoyé.");
+    }
+
+    /** Écran à tendre au client pendant le rendez-vous : il signe sur le téléphone de l'artisan. */
+    public function onSite(Quote $quote): View
+    {
+        abort_unless($quote->isDraft() || $quote->canBeSignedOnline(), 403, 'Ce devis ne peut plus être signé.');
+        $quote->load(['client', 'worksite', 'lines']);
+
+        return view('quotes.on-site', [
+            'quote' => $quote,
+            'totals' => $this->quotes->breakdown($quote),
+        ]);
+    }
+
+    public function signOnSite(Request $request, Quote $quote, ClientLinkService $links): RedirectResponse
+    {
+        abort_unless($quote->isDraft() || $quote->canBeSignedOnline(), 403, 'Ce devis ne peut plus être signé.');
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:160'],
+            'signature' => ['required', 'string', 'max:800000'],
+            'agree' => ['accepted'],
+        ], [
+            'name.required' => 'Indiquez le nom et prénom du client.',
+            'signature.required' => 'Le client doit signer dans le cadre avec le doigt.',
+            'agree.accepted' => 'Cochez la case « Bon pour accord ».',
+        ]);
+
+        if ($quote->isDraft()) {
+            if ($quote->lines()->where('type', 'item')->doesntExist()) {
+                return back()->withErrors(['signature' => 'Ajoutez au moins une prestation avant de faire signer le devis.']);
+            }
+            // Le brouillon reçoit son numéro définitif avant la signature.
+            $this->quotes->send($quote);
+        }
+
+        try {
+            $links->sign($quote->fresh(), trim($data['name']), $data['signature'], $request->ip(), $request->userAgent(), onSite: true);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['signature' => 'La signature n\'a pas pu être lue. Effacez et signez de nouveau.']);
+        }
+
+        return redirect()->route('quotes.show', $quote)->with('status', "Devis {$quote->fresh()->number} signé sur place. Vous pouvez l'envoyer au client par email.");
     }
 
     /** Image de la signature du client (espace de gestion uniquement). */

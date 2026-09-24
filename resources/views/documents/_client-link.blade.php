@@ -41,7 +41,7 @@
     @if ($isQuote && $document->isSigned())
         <div class="signature-proof">
             <img src="{{ route('quotes.signature', $document) }}" alt="Signature du client">
-            <p class="small">Signé en ligne par <strong>{{ $document->signed_name }}</strong> le {{ $document->signed_at->format('d/m/Y à H:i:s') }} — IP {{ $document->signed_ip }}</p>
+            <p class="small">Signé {{ $document->signed_on_site ? 'sur place' : 'en ligne' }} par <strong>{{ $document->signed_name }}</strong> le {{ $document->signed_at->format('d/m/Y à H:i:s') }}{{ $document->signed_on_site ? '' : ' — IP '.$document->signed_ip }}</p>
         </div>
     @endif
     @if ($isQuote && $document->change_requested_at)
