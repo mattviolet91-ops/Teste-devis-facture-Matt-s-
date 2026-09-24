@@ -64,6 +64,8 @@
     table.lines th { background: {{ $primary }}; color: #fff; font-size: 7.5pt; text-transform: uppercase; padding: 5pt 5pt; text-align: left; font-weight: bold; }
     table.lines td { padding: 5pt 5pt; border-bottom: 0.5pt solid #E5EAEC; vertical-align: top; }
     .num { text-align: right; white-space: nowrap; }
+    /* Titres des colonnes de chiffres alignés sur les montants (la règle « th » ci-dessus les mettait à gauche). */
+    table.lines th.num, table.lines td.num, table.totals td.num { text-align: right; }
     tr.section td { background: #EEF7FB; font-family: montserrat; font-weight: bold; text-transform: uppercase; font-size: 8.5pt; }
     tr.optional td { color: #5F6F7D; font-style: italic; }
     .steps { color: #5F6F7D; font-size: 8pt; margin-top: 2pt; }
