@@ -72,6 +72,11 @@ class Client extends Model
         return $this->hasMany(Attachment::class)->latest('id');
     }
 
+    public function wixArchives(): HasMany
+    {
+        return $this->hasMany(WixArchive::class)->orderByDesc('issue_date');
+    }
+
     /**
      * Recherche sur la fiche et sur ses chantiers : chaque mot doit se trouver
      * dans l'un ou l'autre (« dupont massy » trouve Mme Dupont dont le chantier est à Massy).
