@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ $worksite->exists ? route('worksites.update', $worksite) : route('worksites.store', $client) }}">
+    <form method="POST" action="{{ $worksite->exists ? route('worksites.update', $worksite) : route('worksites.store', $client) }}" data-offline="Chantier">
         @csrf
         @if ($worksite->exists) @method('PUT') @endif
 

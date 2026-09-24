@@ -5,7 +5,7 @@
         <h1>{{ $intervention->exists ? 'Modifier l\'intervention' : 'Planifier une intervention' }}</h1>
     </div>
 
-    <form method="POST" action="{{ $intervention->exists ? route('planning.update', $intervention) : route('planning.store') }}">
+    <form method="POST" action="{{ $intervention->exists ? route('planning.update', $intervention) : route('planning.store') }}" data-offline="Intervention">
         @csrf
         @if ($intervention->exists) @method('PUT') @endif
         <div class="card">

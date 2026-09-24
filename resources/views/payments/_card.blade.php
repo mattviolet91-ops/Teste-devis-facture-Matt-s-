@@ -39,7 +39,7 @@
             @endif
             <details @if ($errors->hasAny(['amount', 'paid_at', 'method', 'method_detail']) || request('encaisser')) open @endif>
                 <summary class="btn"><x-icon name="wallet" /> Encaisser un paiement</summary>
-                <form method="POST" action="{{ route('payments.store', $invoice) }}" style="margin-top:1rem">
+                <form method="POST" action="{{ route('payments.store', $invoice) }}" style="margin-top:1rem" data-offline="Paiement">
                     @csrf
                     <div class="form-grid cols-2">
                         <x-field name="amount" label="Montant (€)" :value="\App\Support\LineInput::money($invoice->balance())" inputmode="decimal" required />

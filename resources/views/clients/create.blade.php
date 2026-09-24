@@ -4,7 +4,7 @@
     <div class="page-head">
         <h1>Nouveau client</h1>
     </div>
-    <form method="POST" action="{{ route('clients.store') }}">
+    <form method="POST" action="{{ route('clients.store') }}" data-offline="Nouveau client">
         @csrf
         @if (session('duplicates'))
             <div class="alert alert-warning" role="alert">

@@ -4,7 +4,7 @@
     <div class="page-head">
         <h1>Modifier la fiche</h1>
     </div>
-    <form method="POST" action="{{ route('clients.update', $client) }}">
+    <form method="POST" action="{{ route('clients.update', $client) }}" data-offline="Fiche client">
         @csrf
         @method('PUT')
         @include('clients._form')

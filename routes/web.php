@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
@@ -32,6 +33,9 @@ Route::resourceVerbs(['create' => 'nouveau', 'edit' => 'modifier']);
 Route::get('/marque/{kind}', [BrandingAssetController::class, 'show'])
     ->whereIn('kind', array_keys(BrandingAssetController::KINDS))
     ->name('branding.image');
+
+// Page de secours du mode hors connexion (mise en cache par le service worker).
+Route::get('/hors-ligne', [OfflineController::class, 'page'])->name('offline');
 
 // Espace client (lien secret, sans compte).
 Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->group(function () {
@@ -59,6 +63,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/recherche', SearchController::class)->name('search');
+    Route::get('/hors-ligne/jeton', [OfflineController::class, 'token'])->name('offline.token');
+    Route::get('/hors-ligne/pages', [OfflineController::class, 'pages'])->name('offline.pages');
     Route::get('/statistiques', StatisticsController::class)->name('statistics');
 
     Route::get('/clients/importer', [ClientImportController::class, 'create'])->name('clients.import');

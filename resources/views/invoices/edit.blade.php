@@ -23,7 +23,7 @@
 
     @include('documents._errors')
 
-    <form method="POST" action="{{ $invoice->exists ? route('invoices.update', $invoice) : route('invoices.store') }}" id="invoice-form" data-quote-editor novalidate>
+    <form method="POST" action="{{ $invoice->exists ? route('invoices.update', $invoice) : route('invoices.store') }}" id="invoice-form" data-quote-editor data-offline="Facture" novalidate>
         @csrf
         @if ($invoice->exists) @method('PUT') @endif
 

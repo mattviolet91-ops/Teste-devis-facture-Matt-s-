@@ -19,6 +19,15 @@
 </div>
 <script src="{{ asset('js/push.js') }}?v={{ filemtime(public_path('js/push.js')) }}" defer></script>
 
+<div class="card">
+    <h2>Hors connexion</h2>
+    <p class="muted small">Les pages ouvertes restent consultables sans réseau. Pour emporter toutes vos fiches clients, devis, factures et le planning,
+        téléchargez-les ici (de préférence en Wi-Fi). Devis, clients, paiements et interventions saisis sans réseau sont envoyés automatiquement au retour du réseau.
+        À la déconnexion, tout est effacé du téléphone.</p>
+    <p class="small" data-offline-status role="status"></p>
+    <button class="btn btn-secondary" type="button" data-offline-download>Télécharger pour le hors connexion</button>
+</div>
+
 <form method="POST" action="{{ route('settings.account.profile') }}" class="card">
     @csrf
     @method('PUT')

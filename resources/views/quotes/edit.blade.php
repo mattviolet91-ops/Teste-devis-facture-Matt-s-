@@ -18,7 +18,7 @@
 
     @include('documents._errors')
 
-    <form method="POST" action="{{ $quote->exists ? route('quotes.update', $quote) : route('quotes.store') }}" id="quote-form" data-quote-editor novalidate>
+    <form method="POST" action="{{ $quote->exists ? route('quotes.update', $quote) : route('quotes.store') }}" id="quote-form" data-quote-editor data-offline="Devis" novalidate>
         @csrf
         @if ($quote->exists) @method('PUT') @endif
 

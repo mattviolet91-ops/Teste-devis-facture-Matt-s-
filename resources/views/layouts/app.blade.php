@@ -33,7 +33,7 @@
 @endphp
 
 @section('body')
-<div class="app">
+<div class="app" data-offline-root data-token-url="{{ route('offline.token') }}" data-pages-url="{{ route('offline.pages') }}">
     <header class="topbar">
         <a class="brand" href="{{ route('dashboard') }}">
             <x-brand-logo />
@@ -75,6 +75,10 @@
 
         <main class="main">
             <div class="container">
+                <div class="offline-bar" data-offline-bar hidden role="status">
+                    <span data-offline-text></span>
+                    <button class="btn btn-sm btn-secondary" type="button" data-offline-open hidden>Voir</button>
+                </div>
                 @if (session('status'))
                     <div class="alert alert-success" role="status">{{ session('status') }}</div>
                 @endif
@@ -133,5 +137,15 @@
             </form>
         </div>
     </dialog>
+    <dialog class="sheet" id="offline-dialog" aria-labelledby="offline-title">
+        <div class="card-head">
+            <h2 id="offline-title">Envois en attente</h2>
+            <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
+        </div>
+        <p class="small muted">Saisis sans réseau et gardés sur ce téléphone. Ils partent tout seuls dès que le réseau revient.</p>
+        <div data-offline-list></div>
+        <div class="form-actions"><button class="btn" type="button" data-offline-send>Envoyer maintenant</button></div>
+    </dialog>
+    <script src="{{ asset('js/offline.js') }}?v={{ filemtime(public_path('js/offline.js')) }}" defer></script>
 </div>
 @endsection
