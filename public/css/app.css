@@ -697,3 +697,15 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .roof-pan { border: 1px solid var(--border); border-radius: .75rem; padding: .5rem .75rem .25rem; margin: 0 0 .75rem; }
 .roof-pan legend { padding: 0 .25rem; font-weight: 600; }
 .roof-result { font-size: 1.125rem; margin: .75rem 0; }
+
+/* Planning */
+.planning { display: grid; gap: .5rem; }
+.planning-day { display: grid; grid-template-columns: 4.5rem 1fr; gap: .75rem; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: .75rem; padding: .625rem .75rem; min-height: 3rem; }
+.planning-day.is-today { border-color: var(--brand-accent); box-shadow: inset 4px 0 0 var(--brand-accent); }
+.planning-day.is-weekend { opacity: .6; }
+.planning-date { display: flex; flex-direction: column; gap: .25rem; text-transform: capitalize; }
+.planning-date a { text-decoration: none; font-size: 1.25rem; line-height: 1; }
+.planning-items { display: grid; gap: .375rem; }
+.planning-item { display: flex; flex-direction: column; padding: .375rem .625rem; border-radius: .5rem; background: color-mix(in srgb, var(--brand-accent) 12%, transparent); color: inherit; text-decoration: none; border-left: 3px solid var(--brand-accent); }
+.planning-item.status-done { opacity: .6; border-left-color: var(--success, #2E7D32); }
+.planning-item.status-cancelled { opacity: .45; text-decoration: line-through; }

@@ -64,6 +64,9 @@
                 <button class="btn btn-secondary" type="submit"><x-icon name="file" /> Nouvelle version</button>
             </form>
         @endif
+        @if ($quote->status === 'accepted')
+            <a class="btn btn-secondary" href="{{ route('planning.create', ['devis' => $quote->id]) }}"><x-icon name="calendar" /> Planifier</a>
+        @endif
         @if ($quote->isInvoiceable())
             <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
         @endif

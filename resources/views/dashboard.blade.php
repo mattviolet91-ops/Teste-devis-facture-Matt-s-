@@ -106,6 +106,20 @@
         </div>
     </div>
 
+    @if ($nextInterventions->isNotEmpty())
+        <div class="card" style="margin-top:1rem">
+            <div class="card-head"><h2>Prochaines interventions</h2><a class="small" href="{{ route('planning.index') }}">Planning</a></div>
+            <ul class="stat-list">
+                @foreach ($nextInterventions as $item)
+                    <li>
+                        <a href="{{ route('planning.show', $item) }}">{{ $item->client->displayName() }} <span class="muted small">· {{ $item->title }}</span></a>
+                        <span class="small">{{ $item->starts_on->isToday() ? 'aujourd\'hui' : ($item->starts_on->isTomorrow() ? 'demain' : $item->starts_on->locale('fr')->isoFormat('ddd D MMM')) }}{{ $item->start_time ? ' · '.$item->timeLabel() : '' }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     @if ($lastPayments->isNotEmpty())
         <div class="card" style="margin-top:1rem">
             <div class="card-head"><h2>Derniers paiements</h2><a class="small" href="{{ route('payments.index') }}">Tout voir</a></div>

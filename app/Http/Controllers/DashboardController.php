@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesPeriod;
 use App\Models\ActivityLog;
+use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
@@ -59,6 +60,9 @@ class DashboardController extends Controller
             ],
             'overdue' => Invoice::query()->overdue()->with('client')->orderBy('due_date')->limit(5)->get(),
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
+            'nextInterventions' => Intervention::query()->active()->where('status', 'planned')
+                ->whereDate('ends_on', '>=', today())->whereHas('client')->with(['client', 'worksite'])
+                ->orderBy('starts_on')->orderBy('start_time')->limit(5)->get(),
             'lastPayments' => Payment::query()->counted()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
         ]);
     }

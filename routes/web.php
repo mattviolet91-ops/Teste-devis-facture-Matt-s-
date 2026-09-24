@@ -15,6 +15,7 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReminderController;
@@ -118,6 +119,12 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/relances', [ReminderController::class, 'index'])->name('reminders.index');
     Route::get('/factures/{invoice}/relancer', [ReminderController::class, 'show'])->whereNumber('invoice')->name('reminders.show');
     Route::post('/factures/{invoice}/relance', [ReminderController::class, 'track'])->whereNumber('invoice')->middleware('throttle:30,1')->name('reminders.track');
+
+    Route::resource('planning', PlanningController::class)
+        ->parameters(['planning' => 'intervention'])
+        ->names('planning')
+        ->whereNumber('intervention');
+    Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
 
     Route::get('/entretiens', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::post('/entretiens/analyser', [MaintenanceController::class, 'scan'])->middleware('throttle:5,1')->name('maintenance.scan');

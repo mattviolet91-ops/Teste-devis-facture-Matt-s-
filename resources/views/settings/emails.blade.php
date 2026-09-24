@@ -51,6 +51,7 @@
             <x-field name="reminder_before" label="Relance : rappel avant l'échéance" type="textarea" rows="6" :value="$mail['reminder_before']" required />
             <x-field name="reminder_after" label="Relance : facture en retard ({retard} = « en retard de 5 jours »)" type="textarea" rows="7" :value="$mail['reminder_after']" required />
             <x-field name="maintenance" label="Relance d'entretien ({prestation}, {anciennete} = « 3 ans », {date_travaux})" type="textarea" rows="7" :value="$mail['maintenance']" required />
+            <x-field name="intervention" label="Confirmation d'intervention ({date_intervention} = « le lundi 12 octobre à 8h00 »)" type="textarea" rows="6" :value="$mail['intervention']" required />
         </div>
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>

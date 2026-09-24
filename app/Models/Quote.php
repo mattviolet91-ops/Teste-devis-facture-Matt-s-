@@ -90,6 +90,11 @@ class Quote extends Model
     }
 
     /** Photos imprimées en annexe du PDF. */
+    public function interventions(): HasMany
+    {
+        return $this->hasMany(Intervention::class)->orderBy('starts_on');
+    }
+
     public function photos(): MorphToMany
     {
         return $this->morphToMany(Photo::class, 'document', 'document_photo')->withPivot('position')->orderByPivot('position');
