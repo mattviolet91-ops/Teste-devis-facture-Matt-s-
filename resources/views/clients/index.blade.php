@@ -28,6 +28,12 @@
                     <option value="{{ $key }}" @selected(($filters['status'] ?? '') === $key)>{{ $label }}s</option>
                 @endforeach
             </select>
+            <select name="source" aria-label="Provenance">
+                <option value="">Toutes provenances</option>
+                @foreach (\App\Models\Client::SOURCES as $key => $label)
+                    <option value="{{ $key }}" @selected(($filters['source'] ?? '') === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
             <button class="btn btn-secondary" type="submit">Filtrer</button>
         </div>
         <div class="chips" role="group" aria-label="Tri">

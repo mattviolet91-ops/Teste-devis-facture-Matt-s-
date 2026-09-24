@@ -8,6 +8,7 @@
         ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('payments.index')],
         ['relances', 'Relances', 'send', route('reminders.index')],
+        ['statistiques', 'Statistiques', 'chart', route('statistics')],
         ['photos', 'Photos', 'camera', route('photos.index')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
         ['emails', 'Emails', 'mail', route('emails.index')],
@@ -22,6 +23,7 @@
         'photos' => request()->routeIs('photos.*'),
         'paiements' => request()->routeIs('payments.*'),
         'relances' => request()->routeIs('reminders.*'),
+        'statistiques' => request()->routeIs('statistics'),
         default => false,
     };
 @endphp
@@ -111,6 +113,7 @@
             <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiements</a>
             <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>
+            <a href="{{ route('statistics') }}"><x-icon name="chart" /> Statistiques</a>
             <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
             <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>

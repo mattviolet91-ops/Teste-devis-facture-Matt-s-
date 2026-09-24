@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesPeriod;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    use ResolvesPeriod;
+
     public const PERIODS = [
         'jour' => 'Aujourd\'hui',
         'semaine' => 'Semaine',
@@ -58,31 +61,6 @@ class DashboardController extends Controller
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
             'lastPayments' => Payment::query()->counted()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
         ]);
-    }
-
-    /** @return array{0: string, 1: Carbon, 2: Carbon} */
-    private function period(Request $request): array
-    {
-        $period = (string) $request->query('periode', 'mois');
-
-        if ($period === 'perso' && $request->filled('du') && $request->filled('au')) {
-            try {
-                $from = Carbon::parse($request->query('du'))->startOfDay();
-                $to = Carbon::parse($request->query('au'))->startOfDay();
-                if ($from->lte($to)) {
-                    return ['perso', $from, $to];
-                }
-            } catch (\Throwable) {
-                // Dates invalides : période par défaut.
-            }
-        }
-
-        return match ($period) {
-            'jour' => ['jour', today(), today()],
-            'semaine' => ['semaine', today()->startOfWeek(), today()],
-            'annee' => ['annee', today()->startOfYear(), today()],
-            default => ['mois', today()->startOfMonth(), today()],
-        };
     }
 
     /**

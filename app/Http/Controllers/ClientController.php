@@ -21,6 +21,7 @@ class ClientController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'type' => ['nullable', Rule::in(array_keys(Client::TYPES))],
             'status' => ['nullable', Rule::in(array_keys(Client::STATUSES))],
+            'source' => ['nullable', Rule::in(array_keys(Client::SOURCES))],
             'sort' => ['nullable', Rule::in(['recent', 'az'])],
         ]);
         $filters['sort'] ??= 'recent';
@@ -30,6 +31,7 @@ class ClientController extends Controller
             ->when($filters['q'] ?? null, fn ($query, $q) => $query->searchWithWorksites($q))
             ->when($filters['type'] ?? null, fn ($query, $type) => $query->where('type', $type))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['source'] ?? null, fn ($query, $source) => $query->where('source', $source))
             ->when($filters['sort'] === 'az', fn ($query) => $query->alphabetical(), fn ($query) => $query->latest('updated_at'))
             ->paginate(25)
             ->withQueryString();

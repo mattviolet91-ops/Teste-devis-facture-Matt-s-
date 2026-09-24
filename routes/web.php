@@ -19,6 +19,7 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WixArchiveController;
 use App\Http\Controllers\WorksiteController;
@@ -56,6 +57,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/recherche', SearchController::class)->name('search');
+    Route::get('/statistiques', StatisticsController::class)->name('statistics');
 
     Route::get('/clients/importer', [ClientImportController::class, 'create'])->name('clients.import');
     Route::post('/clients/importer/apercu', [ClientImportController::class, 'preview'])->middleware('throttle:20,1')->name('clients.import.preview');

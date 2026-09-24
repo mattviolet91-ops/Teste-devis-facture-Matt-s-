@@ -63,7 +63,7 @@
 
     <div class="grid grid-2">
         <div class="card">
-            <div class="card-head"><h2>Activité {{ $periodLabel }}</h2></div>
+            <div class="card-head"><h2>Activité {{ $periodLabel }}</h2><a class="small" href="{{ route('statistics') }}">Provenance</a></div>
             <ul class="stat-list">
                 <li><span>CA facturé (HT)</span><strong>{{ Money::format($kpis['revenue']) }}</strong></li>
                 <li><span>Encaissé</span><strong>{{ Money::format($kpis['collected']) }}</strong></li>
