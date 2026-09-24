@@ -333,6 +333,7 @@ class QuoteTest extends TestCase
     {
         $this->actingAs($this->admin())->get(route('quotes.create', ['client' => $this->client->id]))
             ->assertOk()
+            ->assertSee('Surface de toiture')
             ->assertSee('Traitement de la toiture (Dalep 2100)', false)
             ->assertSee('Acompte de 40 %', false)
             ->assertSee('Ces travaux sont effectués pour un prix global et forfaitaire.', false)

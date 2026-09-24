@@ -27,7 +27,7 @@
             @endforeach
         </select>
         <div class="line-grid">
-            <div class="field"><label>Quantité</label><input type="text" inputmode="decimal" name="{{ $n }}[quantity]" value="{{ $l['quantity'] }}" data-calc></div>
+            <div class="field"><label>Quantité <button type="button" class="link-btn small" data-roof-calc title="Calculer une surface de toiture">📐 m²</button></label><input type="text" inputmode="decimal" name="{{ $n }}[quantity]" value="{{ $l['quantity'] }}" data-calc></div>
             <div class="field"><label>Unité</label>
                 <select name="{{ $n }}[unit]">
                     @foreach ($units as $code => $label)

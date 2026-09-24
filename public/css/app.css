@@ -691,3 +691,9 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .share-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .share-buttons .btn { justify-content: center; }
 .share-buttons [aria-disabled="true"] { opacity: .5; pointer-events: none; }
+
+/* Calcul de surface de toiture */
+.link-btn { background: none; border: 0; padding: 0; color: var(--brand-accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.roof-pan { border: 1px solid var(--border); border-radius: .75rem; padding: .5rem .75rem .25rem; margin: 0 0 .75rem; }
+.roof-pan legend { padding: 0 .25rem; font-weight: 600; }
+.roof-result { font-size: 1.125rem; margin: .75rem 0; }
