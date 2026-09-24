@@ -9,6 +9,7 @@
         'settings.documents' => 'Documents PDF',
         'settings.insurance' => 'Assurance',
         'settings.emails' => 'Emails',
+        'settings.payments' => 'Paiement en ligne',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
         'settings.backups' => 'Sauvegardes',

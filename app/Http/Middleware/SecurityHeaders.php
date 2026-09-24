@@ -25,7 +25,8 @@ class SecurityHeaders
                 "font-src 'self'",
                 // Suggestions d'adresses : Base Adresse Nationale (Géoplateforme de l'État).
                 "connect-src 'self' https://data.geopf.fr",
-                "form-action 'self'",
+                // Paiement par carte : envoi du formulaire signé vers myPOS.
+                "form-action 'self' https://www.mypos.com",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "object-src 'none'",

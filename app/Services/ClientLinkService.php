@@ -125,7 +125,7 @@ class ClientLinkService
         return $png;
     }
 
-    private function notify(string $subject, string $text, Quote|Invoice $document): void
+    public function notify(string $subject, string $text, Quote|Invoice $document): void
     {
         // Notification sur le téléphone (si activée), puis email.
         $this->push->send($subject, $text, $document instanceof Quote ? route('quotes.show', $document) : route('invoices.show', $document));

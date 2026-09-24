@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             before: AuthenticatesRequests::class,
             prepend: ClientHostOnly::class,
         );
+        // Appels venant de myPOS : pas de jeton CSRF (la notification est vérifiée par signature).
+        $middleware->validateCsrfTokens(except: ['mypos/notification', 'f/*/paiement-ok', 'f/*/paiement-annule']);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })

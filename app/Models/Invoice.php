@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Searchable;
+use App\Services\MyposGateway;
 use App\Services\Settings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -197,6 +198,11 @@ class Invoice extends Model
     {
         if ($this->isCredit() || ! $this->acceptsPayments() || $this->balance() <= 0) {
             return null;
+        }
+
+        // myPOS branché : paiement du montant exact, enregistré automatiquement.
+        if ($this->public_token && app(MyposGateway::class)->isEnabled()) {
+            return route('portal.invoice.pay', $this->public_token);
         }
 
         return $this->payment_link ?: (app(Settings::class)->get('bank.card_link') ?: null);

@@ -59,6 +59,9 @@
                     <div class="form-actions"><button class="btn" type="submit">Enregistrer le paiement</button></div>
                 </form>
             </details>
+            @if (app(\App\Services\MyposGateway::class)->isEnabled())
+                <p class="small muted" style="margin-top:.75rem">💳 Paiement par carte myPOS activé : le client peut payer {{ Money::format($invoice->balance()) }} depuis sa facture en ligne, le paiement s'enregistre tout seul.</p>
+            @else
             <details style="margin-top:.75rem" @if ($errors->has('payment_link')) open @endif>
                 <summary class="small">Paiement par carte en ligne{{ $invoice->cardPaymentUrl() ? ' : proposé au client' : '' }}</summary>
                 <form method="POST" action="{{ route('invoices.payment-link', $invoice) }}" style="margin-top:.5rem">
@@ -70,6 +73,7 @@
                     <div class="form-actions"><button class="btn btn-secondary btn-sm" type="submit">Enregistrer le lien</button></div>
                 </form>
             </details>
+            @endif
         @endif
     </div>
 @endif

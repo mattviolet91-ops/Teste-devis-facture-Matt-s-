@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MyposNotificationController;
 use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
@@ -46,7 +47,14 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::post('/d/{token}/modification', [ClientPortalController::class, 'requestChange'])->middleware('throttle:10,1')->name('portal.quote.change');
     Route::get('/f/{token}', [ClientPortalController::class, 'invoice'])->name('portal.invoice');
     Route::get('/f/{token}/pdf', [ClientPortalController::class, 'invoicePdf'])->name('portal.invoice.pdf');
+    Route::get('/f/{token}/payer', [ClientPortalController::class, 'pay'])->middleware('throttle:10,1')->name('portal.invoice.pay');
+    // Retours du navigateur depuis la page myPOS (POST sans jeton CSRF, voir bootstrap/app.php).
+    Route::match(['get', 'post'], '/f/{token}/paiement-ok', [ClientPortalController::class, 'paid'])->name('portal.invoice.paid');
+    Route::match(['get', 'post'], '/f/{token}/paiement-annule', [ClientPortalController::class, 'payCancelled'])->name('portal.invoice.pay-cancel');
 });
+
+// Notification de paiement envoyée par myPOS (serveur à serveur, signée).
+Route::post('/mypos/notification', MyposNotificationController::class)->middleware('throttle:60,1')->name('portal.mypos.notify');
 
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [LoginController::class, 'create'])->name('login');
@@ -209,6 +217,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');
         Route::put('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'updateTemplate'])->name('emails.templates.update');
         Route::delete('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'destroyTemplate'])->name('emails.templates.destroy');
+
+        Route::get('/paiement', [Settings\PaymentController::class, 'edit'])->name('payments');
+        Route::put('/paiement', [Settings\PaymentController::class, 'update']);
 
         Route::get('/numerotation', [Settings\NumberingController::class, 'edit'])->name('numbering');
         Route::put('/numerotation', [Settings\NumberingController::class, 'update']);

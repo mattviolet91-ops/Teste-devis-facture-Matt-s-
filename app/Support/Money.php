@@ -16,6 +16,12 @@ final class Money
         return $sign.$formatted.($withSymbol ? "\u{00A0}€" : '');
     }
 
+    /** Pour les SMS, notifications et emails texte : espaces ordinaires. */
+    public static function plain(int $cents): string
+    {
+        return str_replace(["\u{202F}", "\u{00A0}"], ' ', self::format($cents));
+    }
+
     /** « 1 234,56 » ou « 1234.5 » → 123456. Retourne null si la saisie est invalide. */
     public static function parse(string|int|float|null $input): ?int
     {

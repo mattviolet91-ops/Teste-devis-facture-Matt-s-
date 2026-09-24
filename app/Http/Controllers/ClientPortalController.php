@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\OnlinePayment;
 use App\Models\Quote;
 use App\Services\ClientLinkService;
 use App\Services\DocumentCalculator;
+use App\Services\MyposGateway;
 use App\Services\PdfService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -106,6 +108,40 @@ class ClientPortalController extends Controller
             'invoice' => $invoice->load(['client', 'worksite', 'lines', 'quote']),
             'totals' => $this->totals($invoice),
         ]);
+    }
+
+    /** Paiement par carte : formulaire signé envoyé automatiquement à myPOS. */
+    public function pay(string $token, MyposGateway $mypos): View|RedirectResponse
+    {
+        $invoice = Invoice::query()->where('public_token', $token)->whereNotNull('number')->firstOrFail();
+        if (! $mypos->isEnabled() || ! $invoice->acceptsPayments() || $invoice->balance() <= 0) {
+            return redirect()->route('portal.invoice', $token);
+        }
+
+        $attempt = $mypos->start($invoice);
+        $form = $mypos->purchaseForm(
+            $attempt,
+            route('portal.invoice.paid', $token),
+            route('portal.invoice.pay-cancel', $token),
+            route('portal.mypos.notify'),
+        );
+
+        return view('portal.pay', ['invoice' => $invoice, 'form' => $form, 'test' => $attempt->test]);
+    }
+
+    /** Retour du client après paiement (la confirmation fiable arrive par la notification myPOS). */
+    public function paid(string $token): RedirectResponse
+    {
+        return redirect()->route('portal.invoice', $token)->with('status', 'Merci ! Votre paiement a bien été transmis. La facture sera marquée réglée dès sa confirmation.');
+    }
+
+    public function payCancelled(Request $request, string $token): RedirectResponse
+    {
+        if ($order = $request->input('OrderID')) {
+            OnlinePayment::query()->where('order_id', (string) $order)->where('status', 'pending')->update(['status' => 'cancelled']);
+        }
+
+        return redirect()->route('portal.invoice', $token)->with('status', 'Paiement annulé : aucun montant n\'a été débité.');
     }
 
     public function invoicePdf(string $token): Response

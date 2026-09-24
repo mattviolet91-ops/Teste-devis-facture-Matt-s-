@@ -111,6 +111,14 @@ CGV,
         'max' => 3,
     ],
 
+    // Paiement par carte avec myPOS Checkout (Réglages → Paiement en ligne).
+    // Le pack de configuration est enregistré chiffré.
+    'mypos' => [
+        'enabled' => false,
+        'test' => true,
+        'package' => '',
+    ],
+
     'backups' => [
         'last_download_at' => null,
     ],
