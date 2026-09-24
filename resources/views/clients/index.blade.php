@@ -3,7 +3,10 @@
 @section('content')
     <div class="page-head">
         <h1>Clients</h1>
-        <a class="btn" href="{{ route('clients.create') }}"><x-icon name="plus" /> Nouveau client</a>
+        <div class="action-bar" style="margin:0">
+            <a class="btn btn-secondary" href="{{ route('clients.import') }}">Importer</a>
+            <a class="btn" href="{{ route('clients.create') }}"><x-icon name="plus" /> Nouveau client</a>
+        </div>
     </div>
 
     <form method="GET" action="{{ route('clients.index') }}" class="card filters">

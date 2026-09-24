@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
@@ -53,6 +54,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/recherche', SearchController::class)->name('search');
+
+    Route::get('/clients/importer', [ClientImportController::class, 'create'])->name('clients.import');
+    Route::post('/clients/importer/apercu', [ClientImportController::class, 'preview'])->middleware('throttle:20,1')->name('clients.import.preview');
+    Route::post('/clients/importer', [ClientImportController::class, 'store'])->name('clients.import.store');
 
     Route::resource('clients', ClientController::class)
         ->parameters(['clients' => 'client'])
