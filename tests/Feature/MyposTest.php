@@ -40,7 +40,8 @@ class MyposTest extends TestCase
         ]));
 
         $this->actingAs($this->admin());
-        $this->put(route('settings.payments'), ['enabled' => '1', 'test' => '1', 'package' => $package])->assertSessionHasNoErrors();
+        // Vrais paiements, avec un faux « myPOS » dont on détient la clé.
+        $this->put(route('settings.payments'), ['enabled' => '1', 'package' => $package])->assertSessionHasNoErrors();
 
         $client = Client::factory()->create(['last_name' => 'Petit', 'email' => 'petit@example.com']);
         $this->post(route('invoices.store'), [
@@ -71,7 +72,7 @@ class MyposTest extends TestCase
         $token = $this->invoice->public_token;
         $this->get(route('portal.invoice', $token))->assertSee('Payer par carte bancaire')->assertSee(route('portal.invoice.pay', $token), false);
 
-        $response = $this->get(route('portal.invoice.pay', $token))->assertOk()->assertSee(MyposGateway::TEST_URL, false)->assertSee('Mode TEST');
+        $response = $this->get(route('portal.invoice.pay', $token))->assertOk()->assertSee('action="'.MyposGateway::URL.'"', false)->assertDontSee('Mode TEST');
         $form = $response->viewData('form');
         $this->assertSame('350.00', $form['fields']['Amount']);
         $this->assertSame(route('portal.mypos.notify'), $form['fields']['URL_Notify']);
@@ -134,11 +135,39 @@ class MyposTest extends TestCase
 
         $this->put(route('settings.payments'), ['enabled' => '1', 'package' => 'nimportequoi'])->assertSessionHasErrors('package');
         $this->put(route('settings.payments'), ['enabled' => '1', 'test' => '1', 'forget' => '1'])->assertSessionHasNoErrors();
+        $this->get(route('settings.payments'))->assertSee('Faire un essai')->assertSee($this->invoice->publicUrl().'?essai=1');
         $this->put(route('settings.payments'), ['enabled' => '1'])->assertSessionHasErrors('package');
 
         // Désactivé : retour au lien manuel (ou rien).
         $this->put(route('settings.payments'), [])->assertSessionHasNoErrors();
         auth()->logout();
         $this->get(route('portal.invoice', $this->invoice->public_token))->assertDontSee('Payer par carte bancaire');
+    }
+
+    public function test_test_mode_is_hidden_from_clients_and_never_touches_the_invoice(): void
+    {
+        $token = $this->invoice->public_token;
+
+        // Test : accès de test public de myPOS, bouton seulement avec le lien d'essai.
+        $this->put(route('settings.payments'), ['enabled' => '1', 'test' => '1'])->assertSessionHasNoErrors();
+        auth()->logout();
+        $this->get(route('portal.invoice', $token))->assertDontSee('Payer par carte bancaire');
+        $this->get(route('portal.invoice.pay', $token))->assertRedirect(route('portal.invoice', $token));
+        $this->get(route('portal.invoice', ['token' => $token, 'essai' => 1]))->assertSee('Payer par carte bancaire')
+            ->assertSee(route('portal.invoice.pay', ['token' => $token, 'essai' => 1]), false);
+        $response = $this->get(route('portal.invoice.pay', ['token' => $token, 'essai' => 1]))->assertOk()
+            ->assertSee('action="'.MyposGateway::TEST_URL.'"', false)->assertSee('Mode TEST');
+        $this->assertSame('000000000000010', $response->viewData('form')['fields']['SID']);
+
+        // Notification d'un paiement d'essai (signée par notre faux myPOS en mode réel) : facture intacte.
+        $this->actingAs($this->admin())->put(route('settings.payments'), ['enabled' => '1']);
+        $attempt = OnlinePayment::query()->sole();
+        $this->assertTrue($attempt->test);
+        $this->post(route('portal.mypos.notify'), $this->signed([
+            'IPCmethod' => 'IPCPurchaseNotify', 'Amount' => '350.00', 'Currency' => 'EUR', 'OrderID' => $attempt->order_id, 'IPC_Trnref' => '999',
+        ]))->assertOk();
+        $this->assertSame('paid', $attempt->fresh()->status);
+        $this->assertSame(0, $this->invoice->payments()->count());
+        $this->assertSame('sent', $this->invoice->fresh()->status);
     }
 }

@@ -13,14 +13,15 @@
     <label class="check"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $enabled))>
         <span><strong>Proposer le paiement par carte</strong> sur les factures en ligne</span></label>
     <label class="check"><input type="checkbox" name="test" value="1" @checked(old('test', $test))>
-        <span><strong>Mode test</strong> — aucun argent réel. Carte de test myPOS, voir la documentation myPOS.</span></label>
+        <span><strong>Mode test</strong> — aucun argent réel, rien n'est enregistré sur les factures, et vos clients ne voient pas le bouton.
+            Décochez quand myPOS a validé votre boutique : votre pack sera alors utilisé.</span></label>
 
     <div class="field" style="margin-top:1rem">
         <label for="package">Pack de configuration myPOS</label>
         @if ($hasPackage)
             <p class="small">✅ Enregistré (boutique {{ $sid }}). Collez-en un nouveau seulement pour le remplacer.</p>
         @else
-            <p class="small muted">Pas encore enregistré{{ $test ? ' : le mode test utilise l\'accès de test public de myPOS.' : '.' }}</p>
+            <p class="small muted">Pas encore enregistré. Le mode test fonctionne sans pack (accès de test public de myPOS).</p>
         @endif
         <textarea id="package" name="package" rows="4" autocomplete="off" spellcheck="false" placeholder="eyJzaWQiOi…"></textarea>
         @error('package')<span class="error">{{ $message }}</span>@enderror
@@ -31,6 +32,22 @@
     @endif
     <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
 </form>
+
+@if ($enabled && $test)
+    <div class="card">
+        <h2>Faire un essai</h2>
+        @if ($trialUrl)
+            <p class="small">Ouvrez ce lien (c'est la dernière facture en attente, vue comme par le client), appuyez sur « Payer par carte » et utilisez la carte de test myPOS.
+                Aucun argent n'est débité et la facture n'est pas modifiée. Vous recevez une notification « [TEST] » si tout fonctionne.</p>
+            <div class="copy-field">
+                <input type="text" value="{{ $trialUrl }}" readonly aria-label="Lien d'essai" data-copy-source>
+                <a class="btn btn-sm" href="{{ $trialUrl }}" target="_blank" rel="noopener">Ouvrir</a>
+            </div>
+        @else
+            <p class="small muted">Il faut une facture envoyée et pas encore réglée pour faire l'essai.</p>
+        @endif
+    </div>
+@endif
 
 @if ($attempts->isNotEmpty())
     <div class="card">

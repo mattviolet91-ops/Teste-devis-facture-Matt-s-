@@ -201,8 +201,9 @@ class Invoice extends Model
         }
 
         // myPOS branché : paiement du montant exact, enregistré automatiquement.
-        if ($this->public_token && app(MyposGateway::class)->isEnabled()) {
-            return route('portal.invoice.pay', $this->public_token);
+        $mypos = app(MyposGateway::class);
+        if ($this->public_token && $mypos->visibleTo(request())) {
+            return route('portal.invoice.pay', array_filter(['token' => $this->public_token, 'essai' => $mypos->isTest() ? 1 : null]));
         }
 
         return $this->payment_link ?: (app(Settings::class)->get('bank.card_link') ?: null);

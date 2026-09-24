@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
 use App\Support\Money;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -39,26 +40,38 @@ class MyposGateway
     }
 
     /**
-     * Identifiants myPOS : « pack de configuration » (base64 d'un JSON sid, cn, pk, pc, idx)
-     * enregistré chiffré. En mode test sans pack, l'accès de test public de myPOS.
+     * Identifiants utilisés : en mode test, l'accès de test public de myPOS (le serveur
+     * de test ne connaît pas les vraies boutiques) ; sinon le pack de la boutique.
      *
      * @return array{sid: string, wallet: string, private_key: string, certificate: string, key_index: int}|null
      */
     public function credentials(): ?array
     {
-        $package = null;
-        if ($stored = $this->settings->get('mypos.package')) {
-            try {
-                $package = Crypt::decryptString($stored);
-            } catch (Throwable) {
-                $package = null;
-            }
-        }
-        if (! $package && $this->isTest()) {
-            $package = self::TEST_PACKAGE;
-        }
+        return $this->isTest() ? self::parsePackage(self::TEST_PACKAGE) : $this->storedCredentials();
+    }
 
-        return $package ? self::parsePackage($package) : null;
+    /**
+     * « Pack de configuration » de la boutique (base64 d'un JSON sid, cn, pk, pc, idx), enregistré chiffré.
+     *
+     * @return array{sid: string, wallet: string, private_key: string, certificate: string, key_index: int}|null
+     */
+    public function storedCredentials(): ?array
+    {
+        $stored = $this->settings->get('mypos.package');
+        if (! $stored) {
+            return null;
+        }
+        try {
+            return self::parsePackage(Crypt::decryptString($stored));
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /** Mode test : le bouton n'est montré qu'avec le lien d'essai, jamais aux clients. */
+    public function visibleTo(Request $request): bool
+    {
+        return $this->isEnabled() && (! $this->isTest() || $request->boolean('essai'));
     }
 
     /** @return array{sid: string, wallet: string, private_key: string, certificate: string, key_index: int}|null */
@@ -200,6 +213,15 @@ class MyposGateway
             $attempt->forceFill(['status' => 'paid', 'transaction_ref' => mb_substr((string) ($post['IPC_Trnref'] ?? ''), 0, 80) ?: null])->save();
 
             $invoice = $attempt->invoice;
+
+            // Essai : rien n'est enregistré sur la vraie facture.
+            if ($attempt->test) {
+                app(ClientLinkService::class)->notify("[TEST] Paiement par carte réussi : {$invoice->number}",
+                    'Essai réussi : myPOS a bien confirmé un paiement de test de '.Money::plain($amount).". Rien n'a été enregistré sur la facture. Vous pouvez passer aux vrais paiements.", $invoice);
+
+                return $attempt;
+            }
+
             try {
                 $payment = app(PaymentService::class)->record($invoice, [
                     'paid_at' => today()->toDateString(),
@@ -207,7 +229,7 @@ class MyposGateway
                     'method' => 'mypos',
                     'method_detail' => 'Carte en ligne',
                     'reference' => $attempt->transaction_ref ?? $attempt->order_id,
-                    'notes' => $attempt->test ? 'Paiement de TEST myPOS (aucun argent réel)' : 'Payé en ligne par le client',
+                    'notes' => 'Payé en ligne par le client',
                 ]);
                 $attempt->forceFill(['payment_id' => $payment->id])->save();
                 $message = "{$invoice->client?->displayName()} a payé ".Money::plain($amount)." par carte en ligne pour la facture {$invoice->number}. Le paiement est enregistré.";
@@ -217,7 +239,7 @@ class MyposGateway
                 $message = 'Paiement par carte de '.Money::plain($amount)." reçu pour la facture {$invoice->number}, mais il n'a pas pu être enregistré ({$e->getMessage()}). Vérifiez dans myPOS.";
             }
 
-            app(ClientLinkService::class)->notify(($attempt->test ? '[TEST] ' : '')."Paiement reçu : {$invoice->number}", $message, $invoice);
+            app(ClientLinkService::class)->notify("Paiement reçu : {$invoice->number}", $message, $invoice);
 
             return $attempt;
         });

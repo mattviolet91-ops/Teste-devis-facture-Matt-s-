@@ -21,8 +21,8 @@
         <div class="card portal-pay">
             <h2>Payer par carte bancaire</h2>
             <p>Reste à régler : <strong>{{ Money::format($invoice->balance()) }}</strong>. Paiement sécurisé chez notre prestataire de paiement.
-                @unless ($invoice->payment_link || $cardUrl === route('portal.invoice.pay', $invoice->public_token)) Indiquez le montant et la référence <strong>{{ $invoice->number }}</strong>.@endunless</p>
-            <a class="btn" href="{{ $cardUrl }}" @if ($cardUrl !== route('portal.invoice.pay', $invoice->public_token)) target="_blank" rel="noopener noreferrer" @endif><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
+                @unless ($invoice->payment_link || $cardUrl === route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) Indiquez le montant et la référence <strong>{{ $invoice->number }}</strong>.@endunless</p>
+            <a class="btn" href="{{ $cardUrl }}" @if ($cardUrl !== route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) target="_blank" rel="noopener noreferrer" @endif><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
         </div>
     @endif
 

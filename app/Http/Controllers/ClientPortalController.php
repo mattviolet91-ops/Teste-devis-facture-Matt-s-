@@ -111,10 +111,10 @@ class ClientPortalController extends Controller
     }
 
     /** Paiement par carte : formulaire signé envoyé automatiquement à myPOS. */
-    public function pay(string $token, MyposGateway $mypos): View|RedirectResponse
+    public function pay(Request $request, string $token, MyposGateway $mypos): View|RedirectResponse
     {
         $invoice = Invoice::query()->where('public_token', $token)->whereNotNull('number')->firstOrFail();
-        if (! $mypos->isEnabled() || ! $invoice->acceptsPayments() || $invoice->balance() <= 0) {
+        if (! $mypos->visibleTo($request) || ! $invoice->acceptsPayments() || $invoice->balance() <= 0) {
             return redirect()->route('portal.invoice', $token);
         }
 

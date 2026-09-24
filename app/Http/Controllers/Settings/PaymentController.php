@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Models\OnlinePayment;
 use App\Services\ActivityLogger;
 use App\Services\MyposGateway;
@@ -23,7 +24,10 @@ class PaymentController extends Controller
             'enabled' => (bool) $settings->get('mypos.enabled'),
             'test' => $mypos->isTest(),
             'hasPackage' => $stored,
-            'sid' => $stored ? ($mypos->credentials()['sid'] ?? null) : null,
+            'sid' => $mypos->storedCredentials()['sid'] ?? null,
+            // Lien d'essai : une facture en attente de paiement, ouverte comme un client.
+            'trialUrl' => ($invoice = Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->whereNotNull('public_token')->latest('id')->first())
+                ? $invoice->publicUrl().'?essai=1' : null,
             'attempts' => OnlinePayment::query()->with('invoice.client')->latest('id')->limit(15)->get(),
         ]);
     }
