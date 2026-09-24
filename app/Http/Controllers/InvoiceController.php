@@ -164,6 +164,19 @@ class InvoiceController extends Controller
     }
 
     /** Facturation d'un devis accepté (acompte, situation, solde, facture complète). */
+    /** Lien de paiement par carte propre à cette facture (ex. lien myPOS à montant fixe). */
+    public function paymentLink(Request $request, Invoice $invoice): RedirectResponse
+    {
+        abort_unless($invoice->acceptsPayments(), 403);
+        $data = $request->validate(
+            ['payment_link' => ['nullable', 'url:https', 'max:500']],
+            ['payment_link.url' => 'Collez le lien complet, commençant par https://'],
+        );
+        $invoice->forceFill(['payment_link' => $data['payment_link'] ?? null])->save();
+
+        return back()->with('status', $invoice->payment_link ? 'Lien de paiement enregistré : le client peut payer par carte depuis sa facture en ligne.' : 'Lien de paiement retiré.');
+    }
+
     public function fromQuote(Request $request, Quote $quote): RedirectResponse
     {
         abort_unless($quote->isInvoiceable(), 403, 'Seul un devis accepté peut être facturé.');

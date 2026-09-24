@@ -34,6 +34,8 @@ return [
         'iban' => '',
         'bic' => '',
         'show_by_default' => false,
+        // Lien de paiement par carte (myPOS, SumUp…) affiché au client sur sa facture en ligne.
+        'card_link' => '',
     ],
 
     'vat' => [

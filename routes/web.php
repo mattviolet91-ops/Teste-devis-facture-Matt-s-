@@ -107,6 +107,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/envoyee', [InvoiceController::class, 'send'])->name('send');
         Route::post('/corriger', [InvoiceController::class, 'correct'])->name('correct');
         Route::post('/annuler', [InvoiceController::class, 'cancel'])->name('cancel');
+        Route::put('/lien-paiement', [InvoiceController::class, 'paymentLink'])->name('payment-link');
         Route::get('/pdf', [PdfController::class, 'invoice'])->name('pdf');
     });
 

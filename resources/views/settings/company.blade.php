@@ -52,6 +52,7 @@
                 <x-field name="bank.holder" label="Titulaire du compte" :value="$bank['holder']" />
                 <x-field name="bank.bic" label="BIC" :value="$bank['bic']" />
                 <x-field name="bank.iban" label="IBAN" :value="$bank['iban']" class="span-2" />
+                <x-field name="bank.card_link" label="Lien de paiement par carte (myPOS, SumUp…)" :value="$bank['card_link'] ?? ''" class="span-2" placeholder="https://…" hint="Créez un lien de paiement « montant libre » dans votre application myPOS et collez-le ici : un bouton « Payer par carte » apparaîtra sur les factures en ligne de vos clients. Laissez vide pour ne pas proposer le paiement par carte." />
                 <label class="check span-2">
                     <input type="checkbox" name="bank[show_by_default]" value="1" @checked(old('bank.show_by_default', $bank['show_by_default']))>
                     <span>Afficher l'IBAN par défaut sur les nouvelles factures<br><span class="muted small">Modifiable sur chaque facture.</span></span>

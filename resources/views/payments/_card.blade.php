@@ -59,6 +59,17 @@
                     <div class="form-actions"><button class="btn" type="submit">Enregistrer le paiement</button></div>
                 </form>
             </details>
+            <details style="margin-top:.75rem" @if ($errors->has('payment_link')) open @endif>
+                <summary class="small">Paiement par carte en ligne{{ $invoice->cardPaymentUrl() ? ' : proposé au client' : '' }}</summary>
+                <form method="POST" action="{{ route('invoices.payment-link', $invoice) }}" style="margin-top:.5rem">
+                    @csrf
+                    @method('PUT')
+                    <x-field name="payment_link" label="Lien de paiement pour cette facture (montant fixe)" :value="$invoice->payment_link" placeholder="https://…"
+                        :hint="$settings->get('bank.card_link') ? 'Vide = lien général de Réglages → Entreprise.' : 'Aucun lien général : ajoutez-en un dans Réglages → Entreprise, ou collez ici un lien créé dans l\'application myPOS.'" />
+                    <p class="small muted">Quand le client a payé, enregistrez le paiement ci-dessus avec le moyen « myPOS ».</p>
+                    <div class="form-actions"><button class="btn btn-secondary btn-sm" type="submit">Enregistrer le lien</button></div>
+                </form>
+            </details>
         @endif
     </div>
 @endif

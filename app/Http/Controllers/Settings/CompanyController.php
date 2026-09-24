@@ -48,7 +48,9 @@ class CompanyController extends Controller
             'bank.holder' => ['nullable', 'string', 'max:120'],
             'bank.iban' => ['nullable', 'string', 'max:40'],
             'bank.bic' => ['nullable', 'string', 'max:11'],
+            'bank.card_link' => ['nullable', 'url:https', 'max:500'],
         ], [
+            'bank.card_link.url' => 'Collez le lien de paiement complet, commençant par https://',
             'company.siret.regex' => 'Le SIRET doit comporter 14 chiffres.',
             'company.vat_number.regex' => 'Format attendu : FR suivi de 11 caractères (ex. FR12981708167).',
         ]);

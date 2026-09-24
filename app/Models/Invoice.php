@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Searchable;
+use App\Services\Settings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -189,6 +190,16 @@ class Invoice extends Model
     public function balance(): int
     {
         return max(0, $this->total_ttc - $this->amount_paid);
+    }
+
+    /** Lien de paiement par carte proposé au client (celui de la facture, sinon le lien général). */
+    public function cardPaymentUrl(): ?string
+    {
+        if ($this->isCredit() || ! $this->acceptsPayments() || $this->balance() <= 0) {
+            return null;
+        }
+
+        return $this->payment_link ?: (app(Settings::class)->get('bank.card_link') ?: null);
     }
 
     public function kindLabel(): string

@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Snapshot;
+use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -222,6 +223,33 @@ class ClientPortalTest extends TestCase
         $this->get(route('portal.invoice', $token))->assertOk()->assertSee('Facture FAC-2026-0001')->assertSee('Réparation');
         $this->get(route('portal.invoice.pdf', $token))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertNotNull($invoice->fresh()->viewed_at);
+    }
+
+    public function test_client_can_pay_by_card_with_the_payment_link(): void
+    {
+        $this->actingAs($this->admin());
+        $this->post(route('invoices.store'), [
+            'client_id' => $this->client->id, 'due_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Réparation', 'quantity' => '1', 'unit_price' => '250']],
+        ]);
+        $invoice = Invoice::query()->firstOrFail();
+        $this->post(route('invoices.send', $invoice));
+        $token = basename($invoice->fresh()->publicUrl());
+
+        // Sans lien : pas de bouton.
+        $this->get(route('portal.invoice', $token))->assertDontSee('Payer par carte bancaire');
+
+        app(Settings::class)->set(['bank.card_link' => 'https://mypos.com/@mattscouverture']);
+        $this->get(route('portal.invoice', $token))->assertSee('Payer par carte bancaire')
+            ->assertSee('https://mypos.com/@mattscouverture', false)->assertSee('référence <strong>FAC-2026-0001</strong>', false);
+
+        $this->put(route('invoices.payment-link', $invoice), ['payment_link' => 'http://pas-securise.fr'])->assertSessionHasErrors('payment_link');
+        $this->put(route('invoices.payment-link', $invoice), ['payment_link' => 'https://mypos.com/pay/abc123'])->assertSessionHasNoErrors();
+        $this->get(route('portal.invoice', $token))->assertSee('https://mypos.com/pay/abc123', false)->assertDontSee('mattscouverture');
+
+        // Facture réglée : plus de bouton.
+        $this->post(route('payments.store', $invoice), ['amount' => '250', 'paid_at' => today()->toDateString(), 'method' => 'mypos']);
+        $this->get(route('portal.invoice', $token))->assertSee('Facture réglée')->assertDontSee('Payer par carte bancaire');
     }
 
     public function test_client_address_only_serves_client_pages(): void

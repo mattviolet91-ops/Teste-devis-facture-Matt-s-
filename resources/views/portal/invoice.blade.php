@@ -17,6 +17,15 @@
         <div class="card portal-status portal-ok"><h2><x-icon name="check" /> Facture réglée</h2><p>Merci pour votre règlement.</p></div>
     @endif
 
+    @if ($cardUrl = $invoice->cardPaymentUrl())
+        <div class="card portal-pay">
+            <h2>Payer par carte bancaire</h2>
+            <p>Reste à régler : <strong>{{ Money::format($invoice->balance()) }}</strong>. Paiement sécurisé chez notre prestataire de paiement.
+                @unless ($invoice->payment_link) Indiquez le montant et la référence <strong>{{ $invoice->number }}</strong>.@endunless</p>
+            <a class="btn" href="{{ $cardUrl }}" target="_blank" rel="noopener noreferrer"><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
+        </div>
+    @endif
+
     <article class="doc">
         @include('documents._preview', [
             'document' => $invoice,
