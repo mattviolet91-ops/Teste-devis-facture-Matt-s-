@@ -70,7 +70,7 @@ class MailSettings
         return Crypt::encryptString(preg_replace('/\s+/', '', $password));
     }
 
-    private function password(): ?string
+    public function password(): ?string
     {
         $stored = $this->settings->get('mail.password');
         if (! $stored) {

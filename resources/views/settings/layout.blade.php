@@ -10,6 +10,7 @@
         'settings.insurance' => 'Assurance',
         'settings.emails' => 'Emails',
         'settings.payments' => 'Paiement en ligne',
+        'settings.site-form' => 'Formulaire du site',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
         'settings.backups' => 'Sauvegardes',

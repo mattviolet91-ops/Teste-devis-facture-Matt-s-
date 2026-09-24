@@ -135,6 +135,16 @@ CGV,
         'delay_days' => 2,
     ],
 
+    // Formulaire du site WordPress : ses emails de notification sont lus dans Gmail.
+    'site_form' => [
+        'enabled' => false,
+        'enabled_at' => null,
+        'from' => '',
+        'subject' => '',
+        'last_check_at' => null,
+        'last_error' => '',
+    ],
+
     'backups' => [
         'last_download_at' => null,
     ],

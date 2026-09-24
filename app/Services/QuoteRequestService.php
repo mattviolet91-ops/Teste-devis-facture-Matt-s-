@@ -22,9 +22,9 @@ class QuoteRequestService
      * @param  array<string, mixed>  $data
      * @param  list<UploadedFile>  $files
      */
-    public function receive(array $data, array $files, ?string $ip): QuoteRequest
+    public function receive(array $data, array $files, ?string $ip, string $origin = 'Formulaire de demande de devis'): QuoteRequest
     {
-        $request = DB::transaction(function () use ($data, $ip) {
+        $request = DB::transaction(function () use ($data, $ip, $origin) {
             $client = Client::findDuplicates($data['phone'] ?? null, $data['email'] ?? null)->first();
             if (! $client) {
                 $client = Client::query()->create([
@@ -32,14 +32,14 @@ class QuoteRequestService
                     'status' => 'prospect',
                     'civility' => $data['civility'] ?? null,
                     'first_name' => $data['first_name'] ?? null,
-                    'last_name' => $data['last_name'],
+                    'last_name' => $data['last_name'] ?: 'Prospect du site',
                     'email' => $data['email'] ?? null,
-                    'phone' => Phone::format($data['phone']),
+                    'phone' => Phone::format($data['phone'] ?? null),
                     'address' => $data['address'] ?? null,
                     'postal_code' => $data['postal_code'] ?? null,
                     'city' => $data['city'] ?? null,
                     'source' => 'site',
-                    'source_detail' => 'Formulaire de demande de devis',
+                    'source_detail' => $origin,
                 ]);
                 ActivityLogger::log('client.created', "Prospect créé depuis le site : {$client->displayName()}", $client);
             }

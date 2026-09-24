@@ -27,7 +27,8 @@
 
     <div class="card">
         <h2>Lien du formulaire</h2>
-        <p class="small muted">À mettre sur votre site internet (bouton « Demander un devis »), sur Google, Facebook ou dans vos SMS.</p>
+        <p class="small muted">Votre site a déjà un formulaire ? Reliez-le dans <a href="{{ route('settings.site-form') }}">Réglages → Formulaire du site</a>.</p>
+        <p class="small muted">Sinon, ce lien est à mettre sur votre site internet (bouton « Demander un devis »), sur Google, Facebook ou dans vos SMS.</p>
         <div class="copy-field">
             <input type="text" value="{{ $formUrl }}" readonly aria-label="Lien du formulaire" data-copy-source>
             <button class="btn btn-secondary btn-sm" type="button" data-copy>Copier</button>

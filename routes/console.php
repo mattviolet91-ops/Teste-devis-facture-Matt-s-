@@ -14,3 +14,4 @@ Schedule::command('app:planning-notifications')->dailyAt('19:00');
 Schedule::command('app:planning-notifications --bientot')->everyFiveMinutes();
 Schedule::command('app:review-requests')->dailyAt('10:00');
 Schedule::command('app:planning-notifications --rappels')->dailyAt('09:00');
+Schedule::command('app:import-site-requests')->everyFiveMinutes()->withoutOverlapping();
