@@ -81,7 +81,7 @@ class PlanningTest extends TestCase
 
         $this->post(route('planning.store'), [
             'client_id' => $other->id, 'quote_id' => $quote->id, 'title' => 'X', 'starts_on' => '2026-10-12', 'ends_on' => '2026-10-10',
-        ])->assertSessionHasErrors(['quote_id', 'ends_on']);
+        ])->assertSessionHasErrors('quote_id')->assertSessionDoesntHaveErrors('ends_on');
         $this->assertSame(0, Intervention::query()->count());
     }
 
@@ -138,5 +138,24 @@ class PlanningTest extends TestCase
         $push->shouldReceive('send')->once()->withArgs(fn ($title) => str_starts_with($title, 'Rendez-vous à 14h00'));
         $this->artisan('app:planning-notifications --bientot')->assertSuccessful();
         $this->artisan('app:planning-notifications --bientot')->assertSuccessful();
+    }
+
+    public function test_appointment_on_a_later_day_ignores_the_hidden_end_date(): void
+    {
+        // Le formulaire envoie aussi le champ « Fin » (caché, resté à la date du jour).
+        $this->post(route('planning.store'), [
+            'kind' => 'rdv', 'client_id' => $this->client->id, 'title' => 'Visite pour devis (métré) nettoyage toiture',
+            'starts_on' => '2026-10-15', 'ends_on' => '2026-10-07', 'start_time' => '14:00', 'end_time' => '',
+        ])->assertSessionHasNoErrors();
+        $rdv = Intervention::query()->sole();
+        $this->assertSame(['2026-10-15', '2026-10-15', '15:00'], [$rdv->starts_on->toDateString(), $rdv->ends_on->toDateString(), $rdv->end_time]);
+
+        // Chantier : une fin vide ou antérieure est ramenée au jour de début ; une fin plus tardive est gardée.
+        $this->post(route('planning.store'), ['kind' => 'chantier', 'client_id' => $this->client->id, 'title' => 'Toiture', 'starts_on' => '2026-10-20', 'ends_on' => ''])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('2026-10-20', Intervention::query()->latest('id')->first()->ends_on->toDateString());
+        $this->post(route('planning.store'), ['kind' => 'chantier', 'client_id' => $this->client->id, 'title' => 'Toiture', 'starts_on' => '2026-10-20', 'ends_on' => '2026-10-22'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('2026-10-22', Intervention::query()->latest('id')->first()->ends_on->toDateString());
     }
 }

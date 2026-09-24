@@ -18,7 +18,11 @@
 
   function applyKind() {
     var k = kind();
-    form.querySelectorAll('[data-kind-only]').forEach(function (el) { el.hidden = el.getAttribute('data-kind-only') !== k; });
+    form.querySelectorAll('[data-kind-only]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-kind-only') !== k;
+      // Un champ caché n'est pas envoyé.
+      el.querySelectorAll('input, select, textarea').forEach(function (f) { f.disabled = el.hidden; });
+    });
     client.required = k !== 'rdv';
     client.options[0].textContent = k === 'rdv' ? 'Aucun client (fournisseur, comptable…)' : 'Choisir un client…';
     // Les objets types ne sont proposés que pour les rendez-vous.
@@ -91,6 +95,17 @@
     });
     // Entrée dans la recherche : ne pas envoyer le formulaire.
     search.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); } });
+  }
+
+  // La fin ne peut pas précéder le début.
+  var starts = form.querySelector('[name="starts_on"]');
+  var ends = form.querySelector('[name="ends_on"]');
+  if (starts && ends) {
+    starts.addEventListener('change', function () {
+      if (ends.value && ends.value < starts.value) { ends.value = ''; }
+      ends.min = starts.value;
+    });
+    ends.min = starts.value;
   }
 
   fill();

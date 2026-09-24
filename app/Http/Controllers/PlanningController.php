@@ -174,6 +174,14 @@ class PlanningController extends Controller
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
+        // Rendez-vous : le champ « Fin (si plusieurs jours) », caché, est ignoré.
+        // Chantier : une fin antérieure au début (date de début changée après coup) est ramenée au début.
+        $starts = $request->input('starts_on');
+        if ($request->input('kind') === 'rdv' || ! $request->filled('ends_on')
+            || (is_string($starts) && strtotime((string) $request->input('ends_on')) < strtotime($starts))) {
+            $request->merge(['ends_on' => null]);
+        }
+
         $data = $request->validate([
             'kind' => ['nullable', Rule::in(array_keys(Intervention::KINDS))],
             // Un chantier est toujours chez un client ; un rendez-vous peut être sans client.

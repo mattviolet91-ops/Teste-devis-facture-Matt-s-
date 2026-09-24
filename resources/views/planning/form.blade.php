@@ -10,6 +10,10 @@
         <h1>{{ $heading }}</h1>
     </div>
 
+    @if ($errors->any())
+        <div class="alert alert-error" role="alert"><ul class="error-list">@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>
+    @endif
+
     <form method="POST" action="{{ $intervention->exists ? route('planning.update', $intervention) : route('planning.store') }}" data-offline="Planning" data-planning-form>
         @csrf
         @if ($intervention->exists) @method('PUT') @endif
@@ -70,7 +74,7 @@
                     <x-field name="end_time" label="Heure de fin" type="time" :value="$intervention->end_time" hint="Vide = 1 heure." />
                 </div>
                 <div data-kind-only="chantier">
-                    <x-field name="ends_on" label="Fin (si plusieurs jours)" type="date" :value="$intervention->ends_on?->toDateString()" />
+                    <x-field name="ends_on" label="Fin (si plusieurs jours)" type="date" :value="$intervention->exists && $intervention->days() > 1 ? $intervention->ends_on->toDateString() : ''" />
                 </div>
                 @if ($intervention->exists)
                     <x-select name="status" label="Statut" :options="\App\Models\Intervention::STATUSES" :value="$intervention->status" :placeholder="false" />
