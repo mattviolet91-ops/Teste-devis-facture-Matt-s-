@@ -5,6 +5,7 @@
         ['dashboard', 'Accueil', 'home', route('dashboard')],
         ['clients', 'Clients', 'users', route('clients.index')],
         ['devis', 'Devis', 'file', route('quotes.index')],
+        ['demandes', 'Demandes', 'mail', route('requests.index')],
         ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('payments.index')],
         ['relances', 'Relances', 'send', route('reminders.index')],
@@ -19,6 +20,7 @@
         'dashboard' => request()->routeIs('dashboard'),
         'clients' => request()->routeIs('clients.*', 'worksites.*'),
         'devis' => request()->routeIs('quotes.*'),
+        'demandes' => request()->routeIs('requests.*'),
         'factures' => request()->routeIs('invoices.*'),
         'prestations' => request()->routeIs('catalog.*'),
         'emails' => request()->routeIs('emails.*'),
@@ -119,6 +121,7 @@
             <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
         </div>
         <div class="sheet-list">
+            <a href="{{ route('requests.index') }}"><x-icon name="mail" /> Demandes de devis</a>
             <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiements</a>
             <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>

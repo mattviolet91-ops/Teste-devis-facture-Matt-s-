@@ -127,15 +127,27 @@ class ClientLinkService
 
     public function notify(string $subject, string $text, Quote|Invoice $document): void
     {
-        // Notification sur le téléphone (si activée), puis email.
-        $this->push->send($subject, $text, $document instanceof Quote ? route('quotes.show', $document) : route('invoices.show', $document));
+        $this->notifyText($subject, $text, self::adminUrl($document instanceof Quote ? 'quotes.show' : 'invoices.show', $document));
+    }
+
+    /**
+     * Lien vers l'espace de gestion, même quand l'action vient de l'adresse client
+     * (devis.…) : sinon le lien de la notification ouvrirait une page introuvable.
+     */
+    public static function adminUrl(string $name, mixed $parameters = []): string
+    {
+        return rtrim((string) config('app.url'), '/').route($name, $parameters, false);
+    }
+
+    /** Notification sur le téléphone (si activée), puis email. */
+    public function notifyText(string $subject, string $text, string $url): void
+    {
+        $this->push->send($subject, $text, $url);
 
         $to = $this->settings->get('company.email');
         if (! $to || ! $this->mail->isConfigured()) {
             return;
         }
-
-        $url = $document instanceof Quote ? route('quotes.show', $document) : route('invoices.show', $document);
 
         try {
             Mail::to($to)->send(new ClientMessage($subject, "Bonjour,\n\n$text", buttonUrl: $url, buttonLabel: 'Ouvrir dans l\'application'));

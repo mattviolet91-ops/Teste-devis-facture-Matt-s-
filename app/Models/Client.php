@@ -74,6 +74,16 @@ class Client extends Model
         return $this->hasMany(Attachment::class)->latest('id');
     }
 
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class)->latest('id');
+    }
+
+    public function quoteRequests(): HasMany
+    {
+        return $this->hasMany(QuoteRequest::class)->latest('id');
+    }
+
     public function reviewRequests(): HasMany
     {
         return $this->hasMany(ReviewRequest::class);

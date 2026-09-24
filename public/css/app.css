@@ -718,3 +718,6 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .offline-item .error { color: var(--danger, #c0392b); }
 .planning-item.kind-rdv { background: color-mix(in srgb, #7B61FF 12%, transparent); border-left-color: #7B61FF; }
 [data-kind-only][hidden] { display: none !important; }
+.request-works { display: grid; gap: .25rem; margin-bottom: .75rem; }
+@media (min-width: 640px) { .request-works { grid-template-columns: 1fr 1fr; } }
+.card fieldset + fieldset { margin-top: 1.25rem; }

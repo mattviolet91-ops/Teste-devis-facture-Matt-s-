@@ -8,6 +8,7 @@ use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
+use App\Models\QuoteRequest;
 use App\Services\InsuranceService;
 use App\Services\Settings;
 use Illuminate\Http\Request;
@@ -60,6 +61,7 @@ class DashboardController extends Controller
             ],
             'overdue' => Invoice::query()->overdue()->with('client')->orderBy('due_date')->limit(5)->get(),
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
+            'newRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->count(),
             'nextInterventions' => Intervention::query()->active()->where('status', 'planned')
                 ->whereDate('ends_on', '>=', today())->visible()->with(['client', 'worksite'])
                 ->orderBy('starts_on')->orderBy('start_time')->limit(5)->get(),

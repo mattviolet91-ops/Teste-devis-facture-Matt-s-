@@ -25,6 +25,10 @@
         </div>
     @endif
 
+    @if ($newRequests)
+        <a class="alert alert-info kpi-link" href="{{ route('requests.index') }}" style="display:block"><strong>{{ $newRequests }} nouvelle{{ $newRequests > 1 ? 's' : '' }} demande{{ $newRequests > 1 ? 's' : '' }} de devis</strong> reçue{{ $newRequests > 1 ? 's' : '' }} depuis votre site. Voir →</a>
+    @endif
+
     @if ($backupReminder)
         <div class="alert alert-info" role="status">Pensez à télécharger une copie de votre sauvegarde (une fois par semaine). <a href="{{ route('settings.backups') }}">Télécharger ma sauvegarde</a></div>
     @endif

@@ -20,6 +20,8 @@ use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteRequestController;
+use App\Http\Controllers\QuoteRequestFormController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
@@ -53,6 +55,11 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::match(['get', 'post'], '/f/{token}/paiement-ok', [ClientPortalController::class, 'paid'])->name('portal.invoice.paid');
     Route::match(['get', 'post'], '/f/{token}/paiement-annule', [ClientPortalController::class, 'payCancelled'])->name('portal.invoice.pay-cancel');
 });
+
+// Demande de devis depuis le site internet (page publique, adresse client).
+Route::get('/demande-de-devis', [QuoteRequestFormController::class, 'create'])->name('portal.request');
+Route::post('/demande-de-devis', [QuoteRequestFormController::class, 'store'])->middleware('throttle:5,1')->name('portal.request.store');
+Route::get('/demande-de-devis/merci', [QuoteRequestFormController::class, 'thanks'])->name('portal.request.thanks');
 
 // Notification de paiement envoyée par myPOS (serveur à serveur, signée).
 Route::post('/mypos/notification', MyposNotificationController::class)->middleware('throttle:60,1')->name('portal.mypos.notify');
@@ -141,6 +148,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->names('planning')
         ->whereNumber('intervention');
     Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
+
+    Route::get('/demandes', [QuoteRequestController::class, 'index'])->name('requests.index');
+    Route::get('/demandes/{quoteRequest}', [QuoteRequestController::class, 'show'])->whereNumber('quoteRequest')->name('requests.show');
+    Route::post('/demandes/{quoteRequest}/traitee', [QuoteRequestController::class, 'toggle'])->whereNumber('quoteRequest')->name('requests.toggle');
 
     Route::get('/avis', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/avis/{review}', [ReviewController::class, 'show'])->whereNumber('review')->name('reviews.show');
