@@ -21,6 +21,7 @@ use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\StatisticsController;
@@ -141,6 +142,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->whereNumber('intervention');
     Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
 
+    Route::get('/avis', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/avis/{review}', [ReviewController::class, 'show'])->whereNumber('review')->name('reviews.show');
+    Route::post('/avis/{review}/email', [ReviewController::class, 'email'])->whereNumber('review')->middleware('throttle:10,1')->name('reviews.email');
+    Route::post('/avis/{review}/envoye', [ReviewController::class, 'track'])->whereNumber('review')->middleware('throttle:30,1')->name('reviews.track');
+    Route::post('/avis/{review}/ignorer', [ReviewController::class, 'skip'])->whereNumber('review')->name('reviews.skip');
+    Route::post('/factures/{invoice}/avis', [ReviewController::class, 'store'])->whereNumber('invoice')->name('reviews.store');
+
     Route::get('/entretiens', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::post('/entretiens/analyser', [MaintenanceController::class, 'scan'])->middleware('throttle:5,1')->name('maintenance.scan');
     Route::get('/entretiens/{reminder}', [MaintenanceController::class, 'show'])->whereNumber('reminder')->name('maintenance.show');
@@ -212,6 +220,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::get('/emails', [Settings\EmailSettingsController::class, 'edit'])->name('emails');
         Route::put('/emails', [Settings\EmailSettingsController::class, 'update']);
         Route::put('/emails/messages', [Settings\EmailSettingsController::class, 'updateShareTexts'])->name('emails.share');
+        Route::put('/emails/avis', [Settings\EmailSettingsController::class, 'updateReviews'])->name('emails.reviews');
         Route::put('/emails/relances', [Settings\EmailSettingsController::class, 'updateReminders'])->name('emails.reminders');
         Route::post('/emails/test', [Settings\EmailSettingsController::class, 'test'])->middleware('throttle:5,1')->name('emails.test');
         Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');

@@ -26,7 +26,7 @@ class EmailService
      * @param  list<string>  $to
      * @param  list<string>  $cc
      */
-    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf, bool $attachInsurance = false): SentEmail
+    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf, bool $attachInsurance = false, ?string $buttonUrl = null, ?string $buttonLabel = null): SentEmail
     {
         // Un brouillon envoyé par email reçoit son numéro définitif.
         if ($document && $document->isDraft()) {
@@ -64,7 +64,7 @@ class EmailService
             }
             $message->send(new ClientMessage(
                 $subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment, $files,
-                $document?->publicUrl(), $document ? $this->buttonLabel($document) : null,
+                $buttonUrl ?? $document?->publicUrl(), $buttonLabel ?? ($document ? $this->buttonLabel($document) : null),
             ));
             $log->status = 'sent';
         } catch (Throwable $e) {

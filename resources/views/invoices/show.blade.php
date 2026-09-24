@@ -76,6 +76,12 @@
         @if (session('thank') && $invoice->client?->email)
             <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'modele' => 'merci']) }}"><x-icon name="mail" /> Envoyer un remerciement</a>
         @endif
+        @if ($invoice->status === 'paid' && $invoice->client && $settings->get('reviews.google_url'))
+            <form method="POST" action="{{ route('reviews.store', $invoice) }}">
+                @csrf
+                <button class="btn btn-secondary" type="submit"><x-icon name="check" /> Demander un avis Google</button>
+            </form>
+        @endif
         @if ($invoice->isCorrectable())
             <form method="POST" action="{{ route('invoices.correct', $invoice) }}" data-confirm="Modifier cette facture ? Un avoir sera émis pour l'annuler (obligation légale) et une copie modifiable sera préparée ; elle recevra un nouveau numéro à l'envoi.">
                 @csrf

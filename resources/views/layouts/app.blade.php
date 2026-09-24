@@ -125,6 +125,7 @@
             <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>
             <a href="{{ route('planning.index') }}"><x-icon name="calendar" /> Planning</a>
             <a href="{{ route('maintenance.index') }}"><x-icon name="tool" /> Entretiens</a>
+            <a href="{{ route('reviews.index') }}"><x-icon name="check" /> Avis Google</a>
             <a href="{{ route('statistics') }}"><x-icon name="chart" /> Statistiques</a>
             <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
             <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>

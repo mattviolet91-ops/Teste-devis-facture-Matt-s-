@@ -12,3 +12,4 @@ Schedule::command('app:reminder-notifications')->dailyAt('08:30');
 Schedule::command('app:maintenance-notifications')->dailyAt('08:40');
 Schedule::command('app:planning-notifications')->dailyAt('19:00');
 Schedule::command('app:planning-notifications --bientot')->everyFiveMinutes();
+Schedule::command('app:review-requests')->dailyAt('10:00');

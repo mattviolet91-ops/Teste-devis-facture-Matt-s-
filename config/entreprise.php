@@ -100,6 +100,9 @@ CGV,
         'intervention' => "{salutation}\nNous vous confirmons notre intervention {date_intervention} au {adresse_chantier} pour {objet}.\nEn cas d'empêchement, merci de nous prévenir.\nBien cordialement,\n{entreprise} – {telephone}",
         // Confirmation de rendez-vous ({date_rdv}, {objet_rdv}).
         'appointment' => "{salutation}\nNous vous confirmons notre rendez-vous {date_rdv} au {adresse_chantier} ({objet_rdv}).\nEn cas d'empêchement, merci de nous prévenir.\nBien cordialement,\n{entreprise} – {telephone}",
+        // Demande d'avis Google ({lien_avis}).
+        'review_subject' => 'Votre avis compte pour nous – {entreprise}',
+        'review' => "{salutation}\nMerci encore pour votre confiance ! Si vous êtes satisfait de notre travail, pourriez-vous prendre une minute pour laisser un avis sur Google ? Cela nous aide beaucoup.\n{lien_avis}\nBien cordialement,\n{entreprise} – {telephone}",
         'sms_invoice' => "{salutation}\nVoici {document} n° {numero} de {entreprise} d'un montant de {montant}, {echeance}.\nConsultez-la et téléchargez-la ici :\n{lien}\nMerci pour votre confiance !\n{entreprise} – {telephone}",
     ],
 
@@ -119,6 +122,14 @@ CGV,
         'enabled' => false,
         'test' => true,
         'package' => '',
+    ],
+
+    // Demande d'avis Google après un chantier payé (Réglages → Emails).
+    'reviews' => [
+        'enabled' => false,
+        'enabled_at' => null,
+        'google_url' => '',
+        'delay_days' => 2,
     ],
 
     'backups' => [

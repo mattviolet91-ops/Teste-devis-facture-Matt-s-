@@ -74,6 +74,11 @@ class Client extends Model
         return $this->hasMany(Attachment::class)->latest('id');
     }
 
+    public function reviewRequests(): HasMany
+    {
+        return $this->hasMany(ReviewRequest::class);
+    }
+
     public function maintenanceReminders(): HasMany
     {
         return $this->hasMany(MaintenanceReminder::class)->orderBy('due_on');

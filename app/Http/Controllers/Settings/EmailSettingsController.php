@@ -28,6 +28,7 @@ class EmailSettingsController extends Controller
             'configured' => $mail->isConfigured(),
             'templates' => EmailTemplate::query()->ordered()->get(),
             'reminders' => $settings->group('reminders'),
+            'reviews' => $settings->group('reviews'),
             'variables' => EmailComposer::VARIABLES,
         ]);
     }
@@ -82,6 +83,30 @@ class EmailSettingsController extends Controller
         ]);
 
         return back()->with('status', 'Messages SMS / WhatsApp enregistrés.');
+    }
+
+    /** Demande d'avis Google après un chantier payé. */
+    public function updateReviews(Request $request, Settings $settings): RedirectResponse
+    {
+        $data = $request->validate([
+            'google_url' => [Rule::requiredIf($request->boolean('enabled')), 'nullable', 'url:https', 'max:300'],
+            'delay_days' => ['required', 'integer', 'min:0', 'max:30'],
+            'review_subject' => ['required', 'string', 'max:200'],
+            'review' => ['required', 'string', 'max:1000'],
+        ], ['google_url.required' => 'Collez votre lien d\'avis Google pour activer la demande automatique.'], ['google_url' => 'lien d\'avis Google', 'review' => 'message']);
+
+        $enabled = $request->boolean('enabled');
+        $settings->set([
+            'reviews.enabled' => $enabled,
+            // Seuls les chantiers payés après l'activation sont concernés.
+            'reviews.enabled_at' => $enabled ? ($settings->get('reviews.enabled') ? $settings->get('reviews.enabled_at') : now()->toDateTimeString()) : null,
+            'reviews.google_url' => (string) ($data['google_url'] ?? ''),
+            'reviews.delay_days' => (int) $data['delay_days'],
+            'mail.review_subject' => $data['review_subject'],
+            'mail.review' => $data['review'],
+        ]);
+
+        return redirect()->to(route('settings.emails').'#avis')->with('status', 'Demande d\'avis Google enregistrée.');
     }
 
     public function updateReminders(Request $request, Settings $settings): RedirectResponse

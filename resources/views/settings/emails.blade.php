@@ -57,6 +57,24 @@
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>
 
+    <form method="POST" action="{{ route('settings.emails.reviews') }}" class="card" id="avis">
+        @csrf
+        @method('PUT')
+        <h2>Avis Google</h2>
+        <p class="muted small">Quelques jours après le paiement d'un chantier, le client reçoit un email avec un bouton « Laisser un avis Google ».
+            S'il n'a pas d'email, vous recevez une notification pour lui envoyer le lien par SMS ou WhatsApp. Un client n'est sollicité qu'une fois par an,
+            et seuls les chantiers payés après l'activation sont concernés.</p>
+        <label class="check"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $reviews['enabled']))> <span><strong>Demander un avis automatiquement</strong></span></label>
+        <div class="form-grid cols-2" style="margin-top:1rem">
+            <x-field name="google_url" label="Lien d'avis Google" :value="$reviews['google_url']" class="span-2" placeholder="https://g.page/r/…/review"
+                hint="Dans votre fiche Google (Google Business Profile) : « Demander des avis » → copier le lien." />
+            <x-select name="delay_days" label="Envoyer" :options="[0 => 'Le jour du paiement', 1 => '1 jour après', 2 => '2 jours après', 3 => '3 jours après', 7 => '1 semaine après']" :value="$reviews['delay_days']" :placeholder="false" />
+            <x-field name="review_subject" label="Objet de l'email" :value="$mail['review_subject']" class="span-2" required />
+            <x-field name="review" label="Message ({lien_avis} = votre lien Google)" type="textarea" rows="6" :value="$mail['review']" class="span-2" required />
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
+    </form>
+
     <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
         @csrf
         @method('PUT')

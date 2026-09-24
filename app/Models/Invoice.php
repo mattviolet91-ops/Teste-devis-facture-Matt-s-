@@ -209,6 +209,11 @@ class Invoice extends Model
         return $this->payment_link ?: (app(Settings::class)->get('bank.card_link') ?: null);
     }
 
+    public function reviewRequest(): HasOne
+    {
+        return $this->hasOne(ReviewRequest::class);
+    }
+
     public function kindLabel(): string
     {
         return self::KINDS[$this->kind] ?? 'Facture';
