@@ -17,8 +17,31 @@ self.addEventListener('activate', function (event) {
 var SKIP = [/^\/d\//, /^\/f\//, /^\/deconnexion/, /^\/reglages\/sauvegardes\//, /^\/hors-ligne\/(jeton|pages)/, /^\/connexion/, /^\/photos\/\d+\/original/];
 var STATIC_PATH = /^\/(css|js|fonts|icons|marque)\/|\.(css|js|png|svg|woff2?|webmanifest)$/;
 
+// Réseau mobile instable : une demande qui échoue est retentée une fois (ou deux)
+// avant d'abandonner, au lieu d'afficher « connexion échouée ».
+function fetchRetry(request, tries) {
+  return fetch(request).catch(function (error) {
+    if (tries <= 0) { throw error; }
+    return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () {
+      return fetchRetry(request, tries - 1);
+    });
+  });
+}
+
+// Page de secours si rien n'est disponible (jamais d'écran d'erreur du navigateur).
+function offlineResponse() {
+  return caches.match(OFFLINE_URL).then(function (page) {
+    return page || new Response(
+      '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>Pas de réseau</title><body style="font-family:sans-serif;padding:2rem;text-align:center">' +
+      '<h1>Pas de réseau</h1><p>La connexion au serveur a été interrompue.</p><p><a href="" onclick="location.reload();return false">Réessayer</a></p>',
+      { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  });
+}
+
 function fromNetwork(request, cacheName) {
-  return fetch(request).then(function (response) {
+  return fetchRetry(request, 2).then(function (response) {
     // Pas de page de connexion (session expirée) ni d'erreur dans le cache.
     if (response.ok && !response.redirected && response.type === 'basic') {
       var copy = response.clone();
@@ -55,7 +78,7 @@ self.addEventListener('fetch', function (event) {
   if (STATIC_PATH.test(url.pathname) && !/^\/photos\//.test(url.pathname)) {
     // Fichiers de l'application : cache d'abord, mis à jour en arrière-plan.
     event.respondWith(caches.match(request).then(function (cached) {
-      var network = fromNetwork(request, STATIC).catch(function () { return cached; });
+      var network = fromNetwork(request, STATIC).catch(function () { return cached || Response.error(); });
       return cached || network;
     }));
     return;
@@ -65,7 +88,7 @@ self.addEventListener('fetch', function (event) {
   event.respondWith(networkFirst(request).catch(function () {
     return caches.match(request, { cacheName: PAGES }).then(function (cached) {
       if (cached) { return cached; }
-      if (request.mode === 'navigate') { return caches.match(OFFLINE_URL); }
+      if (request.mode === 'navigate') { return offlineResponse(); }
       return Response.error();
     });
   }));
