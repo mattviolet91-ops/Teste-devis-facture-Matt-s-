@@ -13,6 +13,7 @@
             <h2>Photos dans le PDF</h2>
             <span class="muted small">{{ count($chosen) }} photo(s) en annexe</span>
         </div>
+        <p class="small muted" style="margin-top:0">Astuce : les photos « Avant » et « Après » (ou « Problème » et « Réparation ») sont présentées côte à côte dans le PDF, dans l'ordre.</p>
         @error('photos')<div class="alert alert-error">{{ $message }}</div>@enderror
         @error('photos.*')<div class="alert alert-error">{{ $message }}</div>@enderror
 

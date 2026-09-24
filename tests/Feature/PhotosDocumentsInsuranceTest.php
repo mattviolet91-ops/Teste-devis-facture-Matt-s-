@@ -152,6 +152,29 @@ class PhotosDocumentsInsuranceTest extends TestCase
         $this->post(route('quotes.photos', $quote), ['photos' => []])->assertForbidden();
     }
 
+    public function test_before_and_after_photos_are_paired_side_by_side_in_the_pdf(): void
+    {
+        $this->upload(2, 'avant');
+        $this->upload(1, 'apres');
+        $this->upload(1, 'pendant');
+        $this->post(route('quotes.store'), [
+            'client_id' => $this->client->id, 'worksite_id' => $this->worksite->id, 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Démoussage', 'quantity' => '1', 'unit_price' => '500']],
+        ]);
+        $quote = Quote::query()->firstOrFail();
+        $this->post(route('quotes.photos', $quote), ['photos' => Photo::query()->pluck('id')->all()])->assertSessionHasNoErrors();
+
+        $groups = Photo::pairBeforeAfter($quote->fresh()->photos);
+        $this->assertCount(1, $groups['pairs']);
+        $this->assertSame(['avant', 'apres'], [$groups['pairs'][0][0]->category, $groups['pairs'][0][1]->category]);
+        $this->assertSame(['avant', 'pendant'], $groups['others']->pluck('category')->sort()->values()->all());
+
+        $view = (new \ReflectionMethod(PdfService::class, 'viewData'))->invoke(app(PdfService::class), $quote->fresh());
+        $html = view('pdf.document', $view)->render();
+        $this->assertStringContainsString('APRÈS', $html);
+        $this->assertStringStartsWith('%PDF-', app(PdfService::class)->render($quote->fresh()));
+    }
+
     public function test_photos_can_be_taken_directly_from_a_quote_without_worksite(): void
     {
         $this->post(route('quotes.store'), [

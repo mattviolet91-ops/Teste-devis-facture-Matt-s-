@@ -301,21 +301,39 @@
 </div>
 
 @if ($document->photos->isNotEmpty())
+    @php $photoGroups = \App\Models\Photo::pairBeforeAfter($document->photos); @endphp
     <pagebreak />
     <div class="annex-title">Photos du chantier</div>
-    <table width="100%">
-        @foreach ($document->photos->chunk(2) as $row)
-            <tr>
-                @foreach ($row as $photo)
-                    <td width="50%" style="vertical-align: top; padding: 0 4pt 10pt; page-break-inside: avoid;">
-                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($photo->displayPath()) }}" style="width: 86mm; border: 0.5pt solid #D5DDE1;" />
-                        <div class="small" style="margin-top: 3pt;"><b>{{ $photo->categoryLabel() }}</b>{{ $photo->caption ? ' — '.$photo->caption : '' }}</div>
-                    </td>
-                @endforeach
-                @if ($row->count() === 1)<td width="50%"></td>@endif
-            </tr>
-        @endforeach
-    </table>
+    @if ($photoGroups['pairs'])
+        <table width="100%">
+            @foreach ($photoGroups['pairs'] as $pair)
+                <tr>
+                    @foreach ($pair as $photo)
+                        <td width="50%" style="vertical-align: top; padding: 0 4pt 10pt; page-break-inside: avoid;">
+                            <div class="label" style="margin-bottom: 3pt;">{{ mb_strtoupper($photo->categoryLabel()) }}</div>
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($photo->displayPath()) }}" style="width: 86mm; border: 0.5pt solid #D5DDE1;" />
+                            @if ($photo->caption)<div class="small" style="margin-top: 3pt;">{{ $photo->caption }}</div>@endif
+                        </td>
+                    @endforeach
+                </tr>
+            @endforeach
+        </table>
+    @endif
+    @if ($photoGroups['others']->isNotEmpty())
+        <table width="100%">
+            @foreach ($photoGroups['others']->chunk(2) as $row)
+                <tr>
+                    @foreach ($row as $photo)
+                        <td width="50%" style="vertical-align: top; padding: 0 4pt 10pt; page-break-inside: avoid;">
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($photo->displayPath()) }}" style="width: 86mm; border: 0.5pt solid #D5DDE1;" />
+                            <div class="small" style="margin-top: 3pt;"><b>{{ $photo->categoryLabel() }}</b>{{ $photo->caption ? ' — '.$photo->caption : '' }}</div>
+                        </td>
+                    @endforeach
+                    @if ($row->count() === 1)<td width="50%"></td>@endif
+                </tr>
+            @endforeach
+        </table>
+    @endif
 @endif
 
 @if ($annexes['cgv'])

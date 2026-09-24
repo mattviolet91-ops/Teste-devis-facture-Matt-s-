@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class Photo extends Model
 {
@@ -21,6 +22,36 @@ class Photo extends Model
     protected function casts(): array
     {
         return ['taken_at' => 'datetime', 'width' => 'integer', 'height' => 'integer', 'size' => 'integer'];
+    }
+
+    /** Catégories présentées côte à côte dans le PDF (la première à gauche). */
+    public const PAIRS = [
+        ['avant', 'apres'],
+        ['probleme', 'reparation'],
+    ];
+
+    /**
+     * Associe dans l'ordre chaque photo « Avant » à une photo « Après » (et
+     * « Problème » à « Réparation ») ; les autres restent seules.
+     *
+     * @param  Collection<int, Photo>  $photos
+     * @return array{pairs: list<array{0: Photo, 1: Photo}>, others: Collection<int, Photo>}
+     */
+    public static function pairBeforeAfter(Collection $photos): array
+    {
+        $pairs = [];
+        $paired = [];
+        foreach (self::PAIRS as [$left, $right]) {
+            $lefts = $photos->where('category', $left)->values();
+            $rights = $photos->where('category', $right)->values();
+            for ($i = 0; $i < min($lefts->count(), $rights->count()); $i++) {
+                $pairs[] = [$lefts[$i], $rights[$i]];
+                $paired[] = $lefts[$i]->id;
+                $paired[] = $rights[$i]->id;
+            }
+        }
+
+        return ['pairs' => $pairs, 'others' => $photos->reject(fn (Photo $p) => in_array($p->id, $paired, true))->values()];
     }
 
     public function client(): BelongsTo
