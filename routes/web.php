@@ -20,6 +20,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\WixArchiveController;
 use App\Http\Controllers\WorksiteController;
 use Illuminate\Support\Facades\Route;
 
@@ -104,6 +105,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->whereNumber('item');
     Route::post('/prestations/categories', [CatalogController::class, 'storeCategory'])->name('catalog.categories.store');
     Route::put('/prestations/categories/{category}', [CatalogController::class, 'updateCategory'])->name('catalog.categories.update');
+
+    Route::get('/archives-wix', [WixArchiveController::class, 'index'])->name('archives.index');
+    Route::post('/archives-wix', [WixArchiveController::class, 'store'])->middleware('throttle:10,1')->name('archives.store');
+    Route::get('/archives-wix/{archive}', [WixArchiveController::class, 'show'])->whereNumber('archive')->name('archives.show');
 
     Route::get('/relances', [ReminderController::class, 'index'])->name('reminders.index');
     Route::get('/factures/{invoice}/relancer', [ReminderController::class, 'show'])->whereNumber('invoice')->name('reminders.show');

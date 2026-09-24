@@ -111,6 +111,7 @@
             <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
             <a href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiements</a>
             <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>
+            <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
             <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>
             <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>
             <a href="{{ route('emails.index') }}"><x-icon name="mail" /> Emails</a>

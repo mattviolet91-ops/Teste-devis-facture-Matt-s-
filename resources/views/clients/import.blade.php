@@ -19,4 +19,10 @@
         </div>
         <div class="form-actions"><button class="btn" type="submit">Voir l'aperçu</button></div>
     </form>
+
+    <div class="card">
+        <h2>Devis et factures Wix</h2>
+        <p class="muted small">Pour importer les PDF de vos anciens devis et factures Wix (avec leur numéro d'origine) :</p>
+        <a class="btn btn-secondary" href="{{ route('archives.index') }}">Archives Wix</a>
+    </div>
 @endsection

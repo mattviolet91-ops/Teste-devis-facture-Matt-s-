@@ -43,6 +43,8 @@ class Client extends Model
         'recommandation' => 'Recommandation',
         'reseaux' => 'Réseaux sociaux',
         'passage' => 'Passage / véhicule',
+        'publicite' => 'Publicité',
+        'stand' => 'Stand en magasin',
         'autre' => 'Autre',
     ];
 

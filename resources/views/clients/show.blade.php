@@ -136,6 +136,20 @@
         @endif
     </div>
 
+    @if ($client->wixArchives->isNotEmpty())
+        <div class="card">
+            <div class="card-head"><h2>Historique Wix</h2><a class="small" href="{{ route('archives.index') }}">Archives</a></div>
+            <ul class="stat-list">
+                @foreach ($client->wixArchives as $archive)
+                    <li>
+                        <a href="{{ route('archives.show', $archive) }}" target="_blank" rel="noopener">{{ $archive->label() }}{{ $archive->issue_date ? ' — '.$archive->issue_date->format('d/m/Y') : '' }}</a>
+                        <span>@if ($archive->status)<span class="badge">{{ $archive->status }}</span>@endif <strong>{{ \App\Support\Money::format($archive->total) }}</strong></span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-head"><h2>Documents</h2></div>
         @error('files')<div class="alert alert-error">{{ $message }}</div>@enderror
