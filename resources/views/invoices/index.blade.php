@@ -3,6 +3,7 @@
 @php use App\Support\Money; @endphp
 
 @section('content')
+    @include('documents._switch', ['current' => 'invoices'])
     <div class="page-head">
         <h1>Factures</h1>
         <a class="btn" href="{{ route('invoices.create') }}"><x-icon name="plus" /> Nouvelle facture</a>

@@ -24,7 +24,7 @@
                     <label for="bottom-{{ $i }}">{{ $label }}</label>
                     <select id="bottom-{{ $i }}" name="bottom[{{ $i }}]" data-bottom-slot="{{ $i }}">
                         @foreach (Navigation::ITEMS as $key => [$itemLabel, $icon])
-                            <option value="{{ $key }}" data-icon="{{ $icon }}" @selected(old('bottom.'.$i, $bottom[$i]) === $key)>{{ $itemLabel }}</option>
+                            <option value="{{ $key }}" data-icon="{{ $icon }}" @selected(old('bottom.'.$i, $bottom[$i]) === $key)>{{ $key === 'documents' ? 'Devis et factures (un seul bouton)' : $itemLabel }}</option>
                         @endforeach
                     </select>
                 </div>

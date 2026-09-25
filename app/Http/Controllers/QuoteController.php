@@ -36,8 +36,15 @@ class QuoteController extends Controller
 
     public function __construct(private readonly QuoteService $quotes) {}
 
+    /** Bouton « Documents » de la barre du bas : dernière liste consultée (devis ou factures). */
+    public function documents(Request $request): RedirectResponse
+    {
+        return redirect()->route($request->session()->get('documents_tab') === 'invoices' ? 'invoices.index' : 'quotes.index');
+    }
+
     public function index(Request $request): View
     {
+        $request->session()->put('documents_tab', 'quotes');
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', Rule::in(array_keys(self::FILTERS))],

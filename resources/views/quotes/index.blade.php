@@ -3,6 +3,7 @@
 @php use App\Support\Money; @endphp
 
 @section('content')
+    @include('documents._switch', ['current' => 'quotes'])
     <div class="page-head">
         <h1>Devis</h1>
         <a class="btn" href="{{ route('quotes.create') }}"><x-icon name="plus" /> Nouveau devis</a>

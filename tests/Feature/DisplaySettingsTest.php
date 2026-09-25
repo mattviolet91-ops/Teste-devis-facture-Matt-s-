@@ -43,4 +43,19 @@ class DisplaySettingsTest extends TestCase
         $this->post(route('settings.display.reset'));
         $this->get(route('dashboard'))->assertSee('Montant à encaisser')->assertSee('CA facturé (HT)');
     }
+
+    public function test_documents_button_groups_quotes_and_invoices_with_a_switch(): void
+    {
+        $this->actingAs($this->admin());
+
+        // Par défaut, un seul bouton « Documents » pour les devis et les factures.
+        $html = $this->get(route('dashboard'))->getContent();
+        $this->assertStringContainsString(route('documents'), substr($html, strpos($html, 'class="bottom-nav"')));
+
+        $this->get(route('documents'))->assertRedirect(route('quotes.index'));
+        $this->get(route('quotes.index'))->assertOk()->assertSee('class="segmented"', false)->assertSee(route('invoices.index'), false);
+        $this->get(route('invoices.index'))->assertOk()->assertSee('class="segmented"', false);
+        // La dernière liste consultée est réouverte.
+        $this->get(route('documents'))->assertRedirect(route('invoices.index'));
+    }
 }

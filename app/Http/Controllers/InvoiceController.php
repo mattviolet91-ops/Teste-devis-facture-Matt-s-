@@ -35,6 +35,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request): View
     {
+        $request->session()->put('documents_tab', 'invoices');
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', Rule::in(array_keys(self::FILTERS))],

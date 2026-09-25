@@ -11,6 +11,8 @@ final class Navigation
     public const ITEMS = [
         'dashboard' => ['Accueil', 'home', 'dashboard', ['dashboard']],
         'clients' => ['Clients', 'users', 'clients.index', ['clients.*', 'worksites.*']],
+        // Devis et factures réunis : un sélecteur en haut de la page permet de passer de l'un à l'autre.
+        'documents' => ['Documents', 'file', 'documents', ['documents', 'quotes.*', 'invoices.*']],
         'devis' => ['Devis', 'file', 'quotes.index', ['quotes.*']],
         'factures' => ['Factures', 'receipt', 'invoices.index', ['invoices.*']],
         'planning' => ['Planning', 'calendar', 'planning.index', ['planning.*']],
@@ -26,7 +28,7 @@ final class Navigation
         'recherche' => ['Recherche', 'search', 'search', ['search']],
     ];
 
-    public const DEFAULT_BOTTOM = ['dashboard', 'clients', 'devis'];
+    public const DEFAULT_BOTTOM = ['dashboard', 'clients', 'documents'];
 
     /** Blocs de la page d'accueil : clé => libellé. */
     public const HOME_BLOCKS = [
