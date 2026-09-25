@@ -738,3 +738,6 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .segmented a { display: flex; align-items: center; justify-content: center; gap: .375rem; padding: .5rem .75rem; border-radius: 999px; color: inherit; text-decoration: none; font-weight: 600; }
 .segmented a.is-active { background: var(--brand-accent); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .segmented .icon { width: 1.125rem; height: 1.125rem; }
+.segmented-3 { grid-template-columns: repeat(3, 1fr); }
+.segmented-3 a { padding: .5rem .25rem; font-size: .875rem; gap: .25rem; }
+.count-badge { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem; border-radius: 999px; background: var(--danger, #c0392b); color: #fff; font-size: .7rem; font-weight: 700; }

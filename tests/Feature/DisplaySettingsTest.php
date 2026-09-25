@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Client;
+use App\Models\QuoteRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -53,9 +55,21 @@ class DisplaySettingsTest extends TestCase
         $this->assertStringContainsString(route('documents'), substr($html, strpos($html, 'class="bottom-nav"')));
 
         $this->get(route('documents'))->assertRedirect(route('quotes.index'));
-        $this->get(route('quotes.index'))->assertOk()->assertSee('class="segmented"', false)->assertSee(route('invoices.index'), false);
-        $this->get(route('invoices.index'))->assertOk()->assertSee('class="segmented"', false);
+        $this->get(route('quotes.index'))->assertOk()->assertSee('class="segmented', false)->assertSee(route('invoices.index'), false)->assertSee(route('requests.index'), false);
+        $this->get(route('invoices.index'))->assertOk()->assertSee('class="segmented', false);
         // La dernière liste consultée est réouverte.
         $this->get(route('documents'))->assertRedirect(route('invoices.index'));
+    }
+
+    public function test_quote_requests_are_highlighted_in_the_switch_and_on_the_home_page(): void
+    {
+        $this->actingAs($this->admin());
+        $client = Client::factory()->create(['last_name' => 'Nouveau', 'city' => 'Orsay']);
+        QuoteRequest::query()->create(['client_id' => $client->id, 'works' => ['demoussage'], 'status' => 'new']);
+
+        $this->get(route('dashboard'))->assertSee('Demandes de devis (1)')->assertSee('Démoussage / nettoyage de toiture')->assertSee('Orsay');
+        $this->get(route('quotes.index'))->assertSee('<span class="count-badge">1</span>', false);
+        $this->get(route('requests.index'))->assertOk()->assertSee('class="segmented', false);
+        $this->get(route('documents'))->assertRedirect(route('requests.index'));
     }
 }

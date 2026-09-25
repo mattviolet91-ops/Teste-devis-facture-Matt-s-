@@ -12,7 +12,7 @@ final class Navigation
         'dashboard' => ['Accueil', 'home', 'dashboard', ['dashboard']],
         'clients' => ['Clients', 'users', 'clients.index', ['clients.*', 'worksites.*']],
         // Devis et factures réunis : un sélecteur en haut de la page permet de passer de l'un à l'autre.
-        'documents' => ['Documents', 'file', 'documents', ['documents', 'quotes.*', 'invoices.*']],
+        'documents' => ['Documents', 'file', 'documents', ['documents', 'quotes.*', 'invoices.*', 'requests.*']],
         'devis' => ['Devis', 'file', 'quotes.index', ['quotes.*']],
         'factures' => ['Factures', 'receipt', 'invoices.index', ['invoices.*']],
         'planning' => ['Planning', 'calendar', 'planning.index', ['planning.*']],
@@ -33,6 +33,7 @@ final class Navigation
     /** Blocs de la page d'accueil : clé => libellé. */
     public const HOME_BLOCKS = [
         'kpis' => 'Chiffres clés (à encaisser, devis en attente, encaissé)',
+        'requests' => 'Demandes de devis reçues (site internet)',
         'activity' => 'Activité de la période',
         'todo' => 'À faire (factures en retard, devis sans réponse)',
         'planning' => 'Prochains rendez-vous et chantiers',
@@ -40,7 +41,7 @@ final class Navigation
         'payments' => 'Derniers paiements',
     ];
 
-    public const DEFAULT_HOME = ['kpis', 'planning', 'todo', 'activity', 'payments'];
+    public const DEFAULT_HOME = ['requests', 'kpis', 'planning', 'todo', 'activity', 'payments'];
 
     /** @return list<string> */
     public static function bottom(): array

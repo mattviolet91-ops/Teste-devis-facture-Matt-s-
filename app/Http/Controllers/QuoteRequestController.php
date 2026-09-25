@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\QuoteRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /** Demandes de devis reçues du site internet. */
 class QuoteRequestController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $request->session()->put('documents_tab', 'requests');
+
         return view('requests.index', [
             'new' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->with(['client', 'worksite'])->latest('id')->get(),
             'handled' => QuoteRequest::query()->where('status', 'handled')->whereHas('client')->with('client')->latest('updated_at')->limit(30)->get(),

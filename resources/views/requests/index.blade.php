@@ -1,6 +1,7 @@
 @extends('layouts.app', ['title' => 'Demandes de devis'])
 
 @section('content')
+    @include('documents._switch', ['current' => 'requests'])
     <div class="page-head">
         <div>
             <h1>Demandes de devis</h1>

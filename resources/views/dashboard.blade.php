@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    @if ($newRequests)
+    @if ($newRequests && ! in_array('requests', \App\Support\Navigation::home(), true))
         <a class="alert alert-info kpi-link" href="{{ route('requests.index') }}" style="display:block"><strong>{{ $newRequests }} nouvelle{{ $newRequests > 1 ? 's' : '' }} demande{{ $newRequests > 1 ? 's' : '' }} de devis</strong> reçue{{ $newRequests > 1 ? 's' : '' }} depuis votre site. Voir →</a>
     @endif
 
@@ -131,6 +131,25 @@
                     </ul>
                 </div>
             @endif
+                @break
+            @case('requests')
+                <div class="card">
+                    <div class="card-head"><h2>Demandes de devis{{ $newRequests ? ' ('.$newRequests.')' : '' }}</h2><a class="small" href="{{ route('requests.index') }}">Tout voir</a></div>
+                    @if ($latestRequests->isEmpty())
+                        <p class="muted" style="margin:0">Aucune nouvelle demande.</p>
+                    @else
+                        <ul class="stat-list">
+                            @foreach ($latestRequests as $item)
+                                @php $city = $item->worksite?->city ?? $item->client->city; @endphp
+                                <li>
+                                    <a href="{{ route('requests.show', $item) }}"><strong>{{ $item->client->displayName() }}</strong>
+                                        <span class="muted small">· {{ $item->worksLabel() ?: 'voir le message' }}{{ $city ? ' · '.$city : '' }}</span></a>
+                                    <span class="small muted">{{ $item->created_at->isToday() ? $item->created_at->format('H:i') : $item->created_at->format('d/m') }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
                 @break
             @case('shortcuts')
             <div class="card">

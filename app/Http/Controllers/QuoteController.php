@@ -39,7 +39,11 @@ class QuoteController extends Controller
     /** Bouton « Documents » de la barre du bas : dernière liste consultée (devis ou factures). */
     public function documents(Request $request): RedirectResponse
     {
-        return redirect()->route($request->session()->get('documents_tab') === 'invoices' ? 'invoices.index' : 'quotes.index');
+        return redirect()->route(match ($request->session()->get('documents_tab')) {
+            'invoices' => 'invoices.index',
+            'requests' => 'requests.index',
+            default => 'quotes.index',
+        });
     }
 
     public function index(Request $request): View

@@ -62,7 +62,7 @@ class QuoteRequestTest extends TestCase
         $this->assertSame(1, Photo::query()->where('client_id', $client->id)->count());
 
         $this->actingAs($this->admin());
-        $this->get('https://test.matts-couverture.fr/')->assertSee('1 nouvelle demande de devis');
+        $this->get('https://test.matts-couverture.fr/')->assertSee('Demandes de devis (1)');
         $this->get(route('requests.index'))->assertOk()->assertSee('Garnier')->assertSee('https://devis.matts-couverture.fr/demande-de-devis');
         $this->get(route('requests.show', $request))->assertOk()->assertSee('Mousse sur le pan nord')->assertSee('Samedi matin');
         $this->post(route('requests.toggle', $request));
