@@ -127,4 +127,29 @@ TXT;
         $this->assertFalse($importer->matches($this->message('Votre facture est disponible', ['from' => 'facture@edf.fr', 'subject' => 'Facture'])));
         $this->assertFalse($importer->matches($this->message(self::JETPACK_TEXT, ['subject' => 'Re: Demande de devis'])), 'Une réponse n\'est pas une nouvelle demande.');
     }
+
+    public function test_elementor_email_from_the_real_site_form(): void
+    {
+        // Email envoyé par le formulaire Elementor de matts-couverture.fr (libellés réels).
+        $html = 'Nom et prénom: Marie Dupont<br>Numéro de téléphone: 06 78 90 12 34<br>Email: mariedupont@example.fr<br>'
+            .'Type de travaux: Rénovation de toiture<br>Votre commune: Palaiseau<br>Décrivez-nous votre demande: Tuiles cassées après la tempête, possible fuite<br>'
+            .'<br>---<br>Date: 25 septembre 2026<br>Heure: 10 h 12<br>URL de la page: https://matts-couverture.fr/contact-2/<br>'
+            .'Agent utilisateur: Mozilla/5.0<br>IP distante: 203.0.113.4<br>Propulsé par: Elementor<br>';
+
+        app(Settings::class)->set(['site_form.enabled' => true, 'site_form.from' => '', 'site_form.subject' => '']);
+        $importer = app(SiteFormImporter::class);
+        $message = $this->message($html, ['from' => 'wordpress@matts-couverture.fr', 'subject' => 'Nouveau message de « Matt\'s Couverture »']);
+        $this->assertTrue($importer->matches($message));
+
+        $data = $importer->parse($html);
+        $this->assertSame(['Marie', 'Dupont', '06 78 90 12 34', 'mariedupont@example.fr', 'Palaiseau'],
+            [$data['first_name'], $data['last_name'], $data['phone'], $data['email'], $data['city']]);
+        $this->assertEqualsCanonicalizing(['couverture', 'fuite'], $data['works']);
+        $this->assertStringContainsString('Tuiles cassées après la tempête', $data['message']);
+        $this->assertStringNotContainsString('203.0.113.4', $data['message']);
+        $this->assertStringNotContainsString('Mozilla', $data['message']);
+
+        $this->assertCount(1, $importer->import([$message]));
+        $this->assertSame('Palaiseau', Client::query()->where('last_name', 'Dupont')->sole()->city);
+    }
 }

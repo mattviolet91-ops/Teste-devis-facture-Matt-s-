@@ -17,6 +17,7 @@ class QuoteRequest extends Model
         'zinguerie' => 'Gouttières / zinguerie',
         'isolation' => 'Isolation',
         'velux' => 'Fenêtre de toit',
+        'charpente' => 'Charpente',
         'autre' => 'Autre',
     ];
 

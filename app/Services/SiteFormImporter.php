@@ -22,23 +22,34 @@ class SiteFormImporter
         'phone' => ['telephone', 'tel', 'phone', 'portable', 'mobile', 'numero de telephone', 'numero'],
         'email' => ['e-mail', 'email', 'courriel', 'adresse e-mail', 'adresse email', 'mail', 'votre email', 'votre e-mail'],
         'postal_code' => ['code postal', 'cp', 'zip', 'code'],
-        'city' => ['ville', 'commune', 'city', 'localite'],
+        'city' => ['ville', 'commune', 'city', 'localite', 'votre commune', 'votre ville'],
         'address' => ['adresse', 'address', 'adresse du chantier', 'adresse des travaux', 'rue'],
         'works' => ['type de travaux', 'travaux', 'prestation', 'prestations', 'service', 'services', 'type de prestation', 'objet', 'sujet'],
-        'message' => ['message', 'votre message', 'commentaire', 'commentaires', 'demande', 'votre demande', 'description', 'projet', 'precisions', 'details'],
+        'message' => ['message', 'votre message', 'commentaire', 'commentaires', 'demande', 'votre demande', 'description', 'projet', 'precisions', 'details',
+            'decrivez-nous votre demande', 'decrivez votre demande', 'decrivez votre projet'],
         'last_name' => ['nom', 'name', 'votre nom', 'nom complet', 'nom et prenom', 'nom prenom', 'nom / prenom'],
     ];
 
     /** Lignes techniques ajoutées par WordPress / Jetpack : ignorées. */
     private const IGNORED = ['time', 'heure', 'date', 'ip address', 'adresse ip', 'ip', 'contact form url', 'url du formulaire',
-        'source url', 'sent by', 'envoye par', 'user agent', 'consentement', 'consent', 'rgpd', 'page'];
+        'source url', 'sent by', 'envoye par', 'user agent', 'consentement', 'consent', 'rgpd', 'page',
+        // Elementor (en français et en anglais).
+        'url de la page', 'page url', 'agent utilisateur', 'ip distante', 'remote ip', 'propulse par', 'powered by'];
+
+    /** Libellé inconnu : mots qu'il contient → champ (ex. « Votre numéro de portable »). */
+    private const LABEL_WORDS = [
+        'first_name' => ['prenom'], 'phone' => ['telephone', 'portable', 'mobile'], 'email' => ['mail', 'courriel'],
+        'postal_code' => ['code postal'], 'city' => ['commune', 'ville'], 'address' => ['adresse'],
+        'works' => ['travaux', 'prestation'], 'message' => ['message', 'demande', 'decri', 'projet', 'precision'], 'last_name' => ['nom'],
+    ];
 
     /** Mots des travaux → cases de la demande. */
     private const WORK_WORDS = [
         'demoussage' => ['demouss', 'mousse', 'nettoyage de toit', 'nettoyage toiture', 'nettoyage'],
         'traitement' => ['hydrofuge', 'traitement'],
         'fuite' => ['fuite', 'infiltration', 'reparation'],
-        'couverture' => ['couverture', 'refection', 'toiture neuve', 'tuile', 'ardoise'],
+        'couverture' => ['couverture', 'refection', 'renovation de toiture', 'toiture neuve', 'tuile', 'ardoise'],
+        'charpente' => ['charpente'],
         'zinguerie' => ['gouttiere', 'zinguerie', 'zinc', 'cheneau'],
         'isolation' => ['isolation', 'isoler'],
         'velux' => ['velux', 'fenetre de toit'],
@@ -92,7 +103,8 @@ class SiteFormImporter
 
     /** Mentions ajoutées par WordPress / Jetpack en bas des emails de formulaire. */
     private const MARKERS = ['contact form url', 'ip address', 'adresse ip', 'url du formulaire', 'sent by an unverified visitor',
-        'sent by a verified', 'envoye par un visiteur', 'formulaire de contact', 'contact form', 'jetpack', 'wpforms', 'contact form 7'];
+        'sent by a verified', 'envoye par un visiteur', 'formulaire de contact', 'contact form', 'jetpack', 'wpforms', 'contact form 7',
+        'elementor', 'ip distante', 'remote ip', 'url de la page'];
 
     /**
      * L'email vient-il du formulaire du site ? Sans réglage : détection automatique
@@ -190,7 +202,12 @@ class SiteFormImporter
         $pendingLabel = null;
         foreach ($lines as $line) {
             // « Libellé : valeur »
-            if (preg_match('/^([^:]{1,40}?)\s*:\s*(.*)$/u', $line, $m) && ($key = $this->labelKey($m[1])) !== null) {
+            if (preg_match('/^-{3,}$/', $line)) {
+                $current = 'ignore'; // Séparateur avant les informations techniques (Elementor).
+
+                continue;
+            }
+            if (preg_match('/^([^:]{1,40}?)\s*:\s*(.*)$/u', $line, $m) && ($key = $this->labelKey($m[1], true)) !== null) {
                 $pendingLabel = null;
                 $current = $key;
                 if ($key !== 'ignore' && $m[2] !== '') {
@@ -259,7 +276,7 @@ class SiteFormImporter
         return array_filter($data, fn ($v) => $v !== null && $v !== '' && $v !== []);
     }
 
-    private function labelKey(string $label): ?string
+    private function labelKey(string $label, bool $loose = false): ?string
     {
         $normalized = trim(preg_replace('/\s+/', ' ', Str::of($label)->ascii()->lower()->replace(['*', '(obligatoire)', '(requis)', '?'], '')->toString()));
         if ($normalized === '') {
@@ -271,6 +288,15 @@ class SiteFormImporter
         foreach (self::LABELS as $key => $labels) {
             if (in_array($normalized, $labels, true)) {
                 return $key;
+            }
+        }
+        if ($loose) {
+            foreach (self::LABEL_WORDS as $key => $words) {
+                foreach ($words as $word) {
+                    if (str_contains($normalized, $word)) {
+                        return $key;
+                    }
+                }
             }
         }
 
