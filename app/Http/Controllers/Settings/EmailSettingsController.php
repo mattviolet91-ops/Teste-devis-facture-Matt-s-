@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Mail\ClientMessage;
 use App\Models\EmailTemplate;
+use App\Models\Quote;
 use App\Services\ActivityLogger;
 use App\Services\EmailComposer;
 use App\Services\MailSettings;
@@ -29,6 +30,9 @@ class EmailSettingsController extends Controller
             'templates' => EmailTemplate::query()->ordered()->get(),
             'reminders' => $settings->group('reminders'),
             'reviews' => $settings->group('reviews'),
+            'pendingQuotes' => ($pending = Quote::query()->where('status', 'sent')->whereNull('signed_at')
+                ->where(fn ($q) => $q->whereNull('valid_until')->orWhereDate('valid_until', '>=', today())))->count(),
+            'pendingWithEmail' => (clone $pending)->whereHas('client', fn ($q) => $q->whereNotNull('email')->where('email', '!=', ''))->count(),
             'variables' => EmailComposer::VARIABLES,
         ]);
     }
@@ -111,6 +115,27 @@ class EmailSettingsController extends Controller
         ]);
 
         return redirect()->to(route('settings.emails').'#avis')->with('status', 'Demande d\'avis Google enregistrée.');
+    }
+
+    /** Relance automatique des devis sans réponse. */
+    public function updateQuoteFollowUps(Request $request, Settings $settings): RedirectResponse
+    {
+        $data = $request->validate([
+            'quotes_first_days' => ['required', 'integer', 'min:1', 'max:60'],
+            'quotes_second_days' => ['required', 'integer', 'min:0', 'max:90'],
+        ]);
+        if ($data['quotes_second_days'] && $data['quotes_second_days'] <= $data['quotes_first_days']) {
+            return back()->withErrors(['quotes_second_days' => 'La 2e relance doit venir après la 1re.'])->withInput();
+        }
+
+        $settings->set([
+            'reminders.quotes_auto' => $request->boolean('quotes_auto'),
+            'reminders.quotes_first_days' => (int) $data['quotes_first_days'],
+            'reminders.quotes_second_days' => (int) $data['quotes_second_days'],
+        ]);
+        ActivityLogger::log('settings.quote_follow_ups', 'Relance automatique des devis '.($request->boolean('quotes_auto') ? 'activée' : 'désactivée'));
+
+        return redirect()->to(route('settings.emails').'#relance-devis')->with('status', 'Relance des devis enregistrée.');
     }
 
     public function updateReminders(Request $request, Settings $settings): RedirectResponse

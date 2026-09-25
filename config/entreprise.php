@@ -117,6 +117,10 @@ CGV,
         'first_after_days' => 3,
         'repeat_days' => 7,
         'max' => 3,
+        // Relance automatique des devis sans réponse (jours après l'envoi ; 0 = pas de 2e relance).
+        'quotes_auto' => false,
+        'quotes_first_days' => 7,
+        'quotes_second_days' => 15,
     ],
 
     // Paiement par carte avec myPOS Checkout (Réglages → Paiement en ligne).

@@ -232,6 +232,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/emails', [Settings\EmailSettingsController::class, 'update']);
         Route::put('/emails/messages', [Settings\EmailSettingsController::class, 'updateShareTexts'])->name('emails.share');
         Route::put('/emails/avis', [Settings\EmailSettingsController::class, 'updateReviews'])->name('emails.reviews');
+        Route::put('/emails/relance-devis', [Settings\EmailSettingsController::class, 'updateQuoteFollowUps'])->name('emails.quote-follow-ups');
         Route::put('/emails/relances', [Settings\EmailSettingsController::class, 'updateReminders'])->name('emails.reminders');
         Route::post('/emails/test', [Settings\EmailSettingsController::class, 'test'])->middleware('throttle:5,1')->name('emails.test');
         Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');

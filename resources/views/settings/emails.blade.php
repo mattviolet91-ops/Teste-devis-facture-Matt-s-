@@ -77,6 +77,23 @@
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>
 
+    <form method="POST" action="{{ route('settings.emails.quote-follow-ups') }}" class="card" id="relance-devis">
+        @csrf
+        @method('PUT')
+        <h2>Relance des devis sans réponse</h2>
+        <p class="muted small">Un email poli est envoyé au client qui n'a ni signé ni refusé son devis, avec le bouton pour l'accepter en ligne
+            (modèle « Relance du devis » ci-dessous). Jamais pour un devis signé, refusé, expiré ou remplacé, ni sans adresse email.
+            Vous recevez une notification à chaque relance.</p>
+        <label class="check"><input type="checkbox" name="quotes_auto" value="1" @checked(old('quotes_auto', $reminders['quotes_auto']))> <span><strong>Relancer automatiquement les devis</strong></span></label>
+        <div class="form-grid cols-2" style="margin-top:.75rem">
+            <x-select name="quotes_first_days" label="1re relance" :options="[3 => '3 jours après l\'envoi', 5 => '5 jours après', 7 => '7 jours après', 10 => '10 jours après', 14 => '14 jours après']" :value="$reminders['quotes_first_days']" :placeholder="false" />
+            <x-select name="quotes_second_days" label="2e relance" :options="[0 => 'Pas de 2e relance', 10 => '10 jours après l\'envoi', 15 => '15 jours après', 21 => '21 jours après', 30 => '30 jours après']" :value="$reminders['quotes_second_days']" :placeholder="false" />
+        </div>
+        <p class="small muted">Devis actuellement en attente de réponse et encore valables : <strong>{{ $pendingQuotes }}</strong> (dont {{ $pendingWithEmail }} avec une adresse email).
+            Les plus anciens seront relancés dès le lendemain de l'activation.</p>
+        <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
+    </form>
+
     <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
         @csrf
         @method('PUT')

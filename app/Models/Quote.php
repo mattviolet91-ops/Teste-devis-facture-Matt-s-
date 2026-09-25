@@ -42,6 +42,8 @@ class Quote extends Model
             'viewed_at' => 'datetime',
             'signed_at' => 'datetime',
             'signed_on_site' => 'boolean',
+            'follow_up_count' => 'integer',
+            'last_follow_up_at' => 'datetime',
             'change_requested_at' => 'datetime',
             'validity_days' => 'integer',
             'show_bank' => 'boolean',

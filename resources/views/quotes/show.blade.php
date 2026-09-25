@@ -23,6 +23,10 @@
 
     @error('send')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
 
+    @if ($quote->follow_up_count && $quote->status === 'sent')
+        <div class="alert alert-info">Relancé automatiquement {{ $quote->follow_up_count }} fois par email (dernière relance le {{ $quote->last_follow_up_at?->format('d/m/Y') }}).</div>
+    @endif
+
     @if ($quote->replacedBy)
         <div class="alert alert-warning">Ce devis a été remplacé par le devis <a href="{{ route('quotes.show', $quote->replacedBy) }}">{{ $quote->replacedBy->displayNumber() }}</a>.</div>
     @endif
