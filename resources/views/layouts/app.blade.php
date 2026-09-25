@@ -93,10 +93,13 @@
     </div>
 
     <nav class="bottom-nav" aria-label="Navigation">
-        <a href="{{ route('dashboard') }}" class="{{ $isActive('dashboard') ? 'is-active' : '' }}"><x-icon name="home" /> Accueil</a>
-        <a href="{{ route('clients.index') }}" class="{{ $isActive('clients') ? 'is-active' : '' }}"><x-icon name="users" /> Clients</a>
-        <button type="button" class="fab" data-open-sheet="sheet-new"><span class="fab-circle"><x-icon name="plus" /></span> Nouveau</button>
-        <a href="{{ route('quotes.index') }}" class="{{ $isActive('devis') || $isActive('factures') ? 'is-active' : '' }}"><x-icon name="file" /> Devis</a>
+        @foreach (\App\Support\Navigation::bottom() as $i => $key)
+            @php [$label, $icon, $route] = \App\Support\Navigation::ITEMS[$key]; @endphp
+            @if ($i === 2)
+                <button type="button" class="fab" data-open-sheet="sheet-new"><span class="fab-circle"><x-icon name="plus" /></span> Nouveau</button>
+            @endif
+            <a href="{{ route($route) }}" class="{{ \App\Support\Navigation::isActive($key) ? 'is-active' : '' }}"><x-icon :name="$icon" /> {{ $label }}</a>
+        @endforeach
         <button type="button" data-open-sheet="sheet-more" class="{{ request()->routeIs('settings.*') ? 'is-active' : '' }}"><x-icon name="menu" /> Plus</button>
     </nav>
 

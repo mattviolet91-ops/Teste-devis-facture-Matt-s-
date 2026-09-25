@@ -149,6 +149,12 @@ CGV,
         'last_error' => '',
     ],
 
+    // Personnalisation : barre du bas (3 raccourcis) et blocs de la page d'accueil.
+    'layout' => [
+        'bottom_nav' => ['dashboard', 'clients', 'devis'],
+        'home_blocks' => ['kpis', 'planning', 'todo', 'activity', 'payments'],
+    ],
+
     'backups' => [
         'last_download_at' => null,
     ],

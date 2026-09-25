@@ -4,6 +4,7 @@
     $tabs = [
         'settings.company' => 'Entreprise',
         'settings.branding' => 'Apparence',
+        'settings.display' => 'Mon affichage',
         'settings.vat' => 'TVA & unités',
         'settings.numbering' => 'Numérotation',
         'settings.documents' => 'Documents PDF',

@@ -239,6 +239,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'updateTemplate'])->name('emails.templates.update');
         Route::delete('/emails/modeles/{template}', [Settings\EmailSettingsController::class, 'destroyTemplate'])->name('emails.templates.destroy');
 
+        Route::get('/affichage', [Settings\DisplayController::class, 'edit'])->name('display');
+        Route::put('/affichage', [Settings\DisplayController::class, 'update']);
+        Route::post('/affichage/par-defaut', [Settings\DisplayController::class, 'reset'])->name('display.reset');
+
         Route::get('/formulaire-site', [Settings\SiteFormController::class, 'edit'])->name('site-form');
         Route::put('/formulaire-site', [Settings\SiteFormController::class, 'update']);
         Route::post('/formulaire-site/apercu', [Settings\SiteFormController::class, 'preview'])->middleware('throttle:10,1')->name('site-form.preview');
