@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\DescribesChanges;
 use App\Models\Concerns\Searchable;
+use App\Models\Concerns\TracksCreator;
 use App\Support\Phone;
 use App\Support\Search;
 use Database\Factories\ClientFactory;
@@ -18,7 +19,7 @@ use Illuminate\Support\Collection;
 class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
-    use DescribesChanges, HasFactory, Searchable, SoftDeletes;
+    use DescribesChanges, HasFactory, Searchable, SoftDeletes, TracksCreator;
 
     public const TYPES = [
         'particulier' => 'Particulier',

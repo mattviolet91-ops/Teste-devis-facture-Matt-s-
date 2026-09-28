@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Searchable;
+use App\Models\Concerns\TracksCreator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
 
 class Quote extends Model
 {
-    use Searchable, SoftDeletes;
+    use Searchable, SoftDeletes, TracksCreator;
 
     public const STATUSES = [
         'draft' => 'Brouillon',

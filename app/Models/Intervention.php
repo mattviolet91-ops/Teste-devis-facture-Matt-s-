@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksCreator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,8 @@ use Illuminate\Support\Carbon;
 /** Élément du planning : intervention sur un chantier (un ou plusieurs jours) ou rendez-vous. */
 class Intervention extends Model
 {
+    use TracksCreator;
+
     public const KINDS = [
         'chantier' => 'Chantier',
         'rdv' => 'Rendez-vous',

@@ -17,6 +17,7 @@
                 @if ($quote->client)
                     <a href="{{ route('clients.show', $quote->client) }}">{{ $quote->client->displayName() }}</a>
                 @endif
+                @if ($quote->creator && $quote->created_by !== auth()->id())<span class="muted small">· fait par {{ $quote->creator->name }}</span>@endif
             </p>
         </div>
     </div>

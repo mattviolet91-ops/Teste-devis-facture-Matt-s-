@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesPeriod;
 use App\Models\Client;
+use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -86,6 +89,44 @@ class StatisticsController extends Controller
             'revenue' => $rows->sum('revenue'),
         ];
 
-        return view('statistics.index', compact('period', 'from', 'to', 'rows', 'totals', 'found'));
+        $team = $this->team($from, $end);
+
+        return view('statistics.index', compact('period', 'from', 'to', 'rows', 'totals', 'found', 'team'));
+    }
+
+    /**
+     * Suivi par compte (gérant, commercial) : ce que chacun a créé et signé sur la période.
+     * Affiché seulement quand il y a plusieurs comptes.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function team(Carbon $from, Carbon $end): Collection
+    {
+        $users = User::query()->orderByRaw("CASE role WHEN 'admin' THEN 0 ELSE 1 END")->orderBy('name')->get();
+        if ($users->count() < 2) {
+            return collect();
+        }
+
+        $count = fn ($query) => $query->whereNotNull('created_by')->groupBy('created_by')->selectRaw('created_by, COUNT(*) as n')->pluck('n', 'created_by');
+        $clients = $count(Client::query()->whereBetween('created_at', [$from, $end]));
+        $appointments = $count(Intervention::query()->where('kind', 'rdv')->whereBetween('created_at', [$from, $end]));
+        $created = $count(Quote::query()->whereBetween('created_at', [$from, $end]));
+        $sent = $count(Quote::query()->whereNotNull('sent_at')->whereBetween('sent_at', [$from, $end]));
+        $accepted = Quote::query()->where('status', 'accepted')->whereBetween('accepted_at', [$from, $end]);
+        $signed = $count(clone $accepted);
+        $signedAmount = (clone $accepted)->whereNotNull('created_by')->groupBy('created_by')->selectRaw('created_by, SUM(total_ttc) as n')->pluck('n', 'created_by');
+
+        return $users->map(fn (User $user) => [
+            'name' => $user->name,
+            'role' => $user->isAdmin() ? 'Gérant' : 'Commercial',
+            'disabled' => $user->disabled_at !== null,
+            'clients' => (int) ($clients[$user->id] ?? 0),
+            'appointments' => (int) ($appointments[$user->id] ?? 0),
+            'quotes' => (int) ($created[$user->id] ?? 0),
+            'sent' => (int) ($sent[$user->id] ?? 0),
+            'signed' => (int) ($signed[$user->id] ?? 0),
+            'signed_amount' => (int) ($signedAmount[$user->id] ?? 0),
+            'rate' => ($sent[$user->id] ?? 0) ? (int) round(($signed[$user->id] ?? 0) * 100 / $sent[$user->id]) : null,
+        ]);
     }
 }

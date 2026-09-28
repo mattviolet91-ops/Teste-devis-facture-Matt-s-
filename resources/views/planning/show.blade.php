@@ -23,6 +23,7 @@
             @if ($address)<li><span>Adresse</span><a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($address) }}" target="_blank" rel="noopener">{{ $address }}</a></li>@endif
             @if ($client?->phone)<li><span>Téléphone</span><a href="tel:{{ $phone }}">{{ $client->phone }}</a></li>@endif
             <li><span>Rappel</span><strong>{{ \App\Models\Intervention::REMINDERS[$intervention->remind_days ?? 0] ?? '—' }}{{ $intervention->remind_client && $client?->email ? ' · email au client' : '' }}{{ $intervention->reminder_sent_at ? ' (envoyé le '.$intervention->reminder_sent_at->format('d/m').')' : '' }}</strong></li>
+            @if ($intervention->creator && $intervention->created_by !== auth()->id())<li><span>Ajouté par</span><strong>{{ $intervention->creator->name }}</strong></li>@endif
             @if ($intervention->quote)<li><span>Devis</span><a href="{{ route('quotes.show', $intervention->quote) }}">{{ $intervention->quote->number }}</a></li>@endif
         </ul>
         @if ($intervention->notes)<p class="pre-line">{{ $intervention->notes }}</p>@endif

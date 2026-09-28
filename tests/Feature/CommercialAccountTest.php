@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\ClientMessage;
 use App\Models\Client;
+use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\PushSubscription;
 use App\Models\Quote;
@@ -124,5 +125,35 @@ class CommercialAccountTest extends TestCase
         $this->assertSame([$admin->id], $targets(null));
         $this->assertSame([$commercial->id], $targets($commercial->id));
         $this->assertTrue(method_exists(PushService::class, 'send'));
+    }
+
+    public function test_work_of_each_account_is_tracked_in_statistics(): void
+    {
+        $admin = $this->admin();
+        $leo = $this->commercial();
+
+        $this->actingAs($leo);
+        $this->post(route('clients.store'), ['type' => 'particulier', 'last_name' => 'Prospect', 'phone' => '06 11 22 33 44'])->assertSessionHasNoErrors();
+        $client = Client::query()->where('last_name', 'Prospect')->sole();
+        $this->assertSame($leo->id, $client->created_by);
+
+        $this->post(route('planning.store'), ['kind' => 'rdv', 'client_id' => $client->id, 'title' => 'Visite', 'starts_on' => now()->addDay()->toDateString(), 'start_time' => '10:00'])->assertSessionHasNoErrors();
+        $this->assertSame($leo->id, Intervention::query()->sole()->created_by);
+
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Démoussage', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Démoussage', 'quantity' => '1', 'unit_price' => '800']]])->assertSessionHasNoErrors();
+        $quote = Quote::query()->sole();
+        $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
+
+        // Le gérant voit qui a fait quoi.
+        $this->actingAs($admin);
+        $this->get(route('clients.show', $client))->assertSee('Ajouté par')->assertSee('Léo Vendeur');
+        $team = $this->get(route('statistics'))->assertOk()->assertSee('Par compte')->viewData('team');
+        $row = $team->firstWhere('name', 'Léo Vendeur');
+        $this->assertSame(['clients' => 1, 'appointments' => 1, 'quotes' => 1, 'sent' => 1, 'signed' => 1, 'rate' => 100],
+            array_intersect_key($row, array_flip(['clients', 'appointments', 'quotes', 'sent', 'signed', 'rate'])));
+        $this->assertSame($quote->fresh()->total_ttc, $row['signed_amount']);
+        $this->assertSame(0, $team->firstWhere('role', 'Gérant')['quotes']);
     }
 }

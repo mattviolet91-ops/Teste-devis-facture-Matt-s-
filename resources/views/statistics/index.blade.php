@@ -60,6 +60,33 @@
         </div>
     @endif
 
+    @if ($team->isNotEmpty())
+        <div class="card" style="margin-top:1rem">
+            <div class="card-head"><h2>Par compte</h2><span class="small muted">{{ $periodLabel }}</span></div>
+            <div class="table-wrap">
+                <table class="table team-table">
+                    <thead>
+                        <tr><th>Compte</th><th class="num">Clients</th><th class="num">Rendez-vous</th><th class="num">Devis faits</th><th class="num">Envoyés</th><th class="num">Signés</th><th class="num">Montant signé</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($team as $member)
+                            <tr>
+                                <td><strong>{{ $member['name'] }}</strong><br><span class="small muted">{{ $member['role'] }}{{ $member['disabled'] ? ' · désactivé' : '' }}</span></td>
+                                <td class="num">{{ $member['clients'] }}</td>
+                                <td class="num">{{ $member['appointments'] }}</td>
+                                <td class="num">{{ $member['quotes'] }}</td>
+                                <td class="num">{{ $member['sent'] }}</td>
+                                <td class="num">{{ $member['signed'] }}@if ($member['rate'] !== null)<br><span class="small muted">{{ $member['rate'] }} %</span>@endif</td>
+                                <td class="num">{{ Money::format($member['signed_amount']) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <p class="muted small" style="margin:.75rem 0 0">Compté pour le compte qui a créé le client, le rendez-vous ou le devis (depuis l'arrivée de ce suivi). Taux = devis signés ÷ devis envoyés.</p>
+        </div>
+    @endif
+
     @if ($rows->isEmpty())
         <div class="card" style="margin-top:1rem"><p class="muted" style="margin:0">Aucune donnée sur cette période. Renseignez « Comment nous a-t-il connu ? » sur la fiche de chaque client.</p></div>
     @else

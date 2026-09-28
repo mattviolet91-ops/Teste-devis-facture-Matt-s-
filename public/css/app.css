@@ -305,6 +305,7 @@ legend { font-family: var(--font-heading); font-weight: 600; font-size: 1.0625re
 table.table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .table th, .table td { text-align: left; padding: .625rem .5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .table th { font-size: .8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
+.table th.num, .table td.num { text-align: right; white-space: nowrap; }
 
 .row-form { display: grid; gap: .5rem; padding: .75rem 0; border-bottom: 1px solid var(--border); align-items: end; }
 .row-form:last-child { border-bottom: 0; }

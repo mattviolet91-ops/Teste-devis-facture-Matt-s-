@@ -40,6 +40,7 @@
                 @if ($client->phone_2)<dt>Autre téléphone</dt><dd><a href="{{ Phone::href($client->phone_2) }}">{{ $client->phone_2 }}</a></dd>@endif
                 @if ($client->email)<dt>Email</dt><dd><a href="mailto:{{ $client->email }}">{{ $client->email }}</a></dd>@endif
                 @if ($client->fullAddress())<dt>Adresse</dt><dd>{{ $client->fullAddress() }}</dd>@endif
+                @if ($client->creator && $client->created_by !== auth()->id())<dt>Ajouté par</dt><dd>{{ $client->creator->name }}</dd>@endif
                 @if ($client->source)<dt>Provenance</dt><dd>{{ Client::SOURCES[$client->source] }}@if ($client->source_detail) — {{ $client->source_detail }}@endif</dd>@endif
                 <dt>Créé le</dt><dd>{{ $client->created_at->format('d/m/Y') }}</dd>
             </dl>
