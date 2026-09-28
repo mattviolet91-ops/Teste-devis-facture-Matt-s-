@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
 use App\Models\Quote;
+use App\Models\Report;
 use App\Services\ClientLinkService;
 use App\Services\DocumentCalculator;
 use App\Services\MyposGateway;
@@ -149,6 +150,19 @@ class ClientPortalController extends Controller
         $invoice = Invoice::query()->where('public_token', $token)->whereNotNull('number')->firstOrFail();
 
         return $this->pdfResponse($invoice);
+    }
+
+    /** Rapport d'intervention : le PDF, directement. */
+    public function report(string $token): Response
+    {
+        $report = Report::query()->where('public_token', $token)->whereHas('client')->firstOrFail();
+        $pdf = app(PdfService::class);
+
+        return response($pdf->renderReport($report), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$pdf->reportFilename($report).'"',
+            'X-Robots-Tag' => 'noindex',
+        ]);
     }
 
     /** Seul un devis envoyé (numéroté) est visible par le client. */

@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\User;
 use App\Services\MarginService;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -47,7 +48,7 @@ class ExpenseTest extends TestCase
         $this->get(route('expenses.receipt', $expense))->assertOk();
 
         // Devis 2 000 € (franchise de TVA) − 450,50 € d'achats = 1 549,50 €, soit 77 %.
-        $this->get(route('quotes.show', $this->quote))->assertSee(\App\Support\Money::format(154950))->assertSee('77 %');
+        $this->get(route('quotes.show', $this->quote))->assertSee(Money::format(154950))->assertSee('77 %');
         $this->get(route('expenses.index'))->assertOk()->assertSee('Marge par chantier')->assertSee('Tuiles faîtières')->assertSee('ticket joint');
 
         // Une fois facturé, la marge se calcule sur le facturé.

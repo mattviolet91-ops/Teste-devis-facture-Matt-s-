@@ -1,7 +1,8 @@
 {{-- Photos en annexe du PDF d'un devis ou d'une facture. Attend : $document, $route (nom de route de sélection). --}}
 @php
     $isQuote = $document instanceof \App\Models\Quote;
-    $uploadRoute = $isQuote ? 'quotes.photos.upload' : 'invoices.photos.upload';
+    $isReport = $document instanceof \App\Models\Report;
+    $uploadRoute = $isReport ? 'reports.photos.upload' : ($isQuote ? 'quotes.photos.upload' : 'invoices.photos.upload');
     $available = \App\Models\Photo::query()->where('client_id', $document->client_id)
         ->when($document->worksite_id, fn ($q) => $q->where(fn ($w) => $w->where('worksite_id', $document->worksite_id)->orWhereNull('worksite_id')))
         ->latest('id')->get();
@@ -57,7 +58,7 @@
             </form>
         @endif
         @if (! $document->isDraft())
-            <p class="small muted">Le PDF envoyé au client est mis à jour avec les photos.</p>
+            <p class="small muted">{{ $isReport ? 'Le rapport (PDF et lien client) est toujours à jour avec les photos cochées.' : 'Le PDF envoyé au client est mis à jour avec les photos.' }}</p>
         @endif
     </div>
     <script src="{{ asset('js/photos.js') }}?v={{ filemtime(public_path('js/photos.js')) }}" defer></script>

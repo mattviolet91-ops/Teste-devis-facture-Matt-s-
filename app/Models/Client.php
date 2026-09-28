@@ -55,6 +55,11 @@ class Client extends Model
         'source', 'source_detail', 'notes',
     ];
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class)->latest('visit_date');
+    }
+
     public function worksites(): HasMany
     {
         return $this->hasMany(Worksite::class)->orderBy('id');

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Models\Report;
 use App\Models\Snapshot;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -82,6 +83,35 @@ class PdfService
         $mpdf->WriteHTML($html);
 
         return $mpdf->Output('', 'S');
+    }
+
+    /** PDF d'un rapport d'intervention (généré à chaque ouverture). */
+    public function renderReport(Report $report): string
+    {
+        $report->loadMissing(['client', 'worksite', 'photos']);
+        $html = view('pdf.report', [
+            'report' => $report,
+            'company' => $this->settings->group('company'),
+            'insurance' => $this->settings->group('insurance'),
+            'colors' => $this->settings->group('branding'),
+            'logo' => $this->logoPath(),
+        ])->render();
+
+        $mpdf = $this->mpdf();
+        $mpdf->SetTitle(Str::beforeLast($this->reportFilename($report), '.pdf'));
+        $mpdf->SetAuthor((string) $this->settings->get('company.trade_name'));
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('', 'S');
+    }
+
+    /** « Rapport d'intervention 2026-10-08 - Dupont.pdf » */
+    public function reportFilename(Report $report): string
+    {
+        $client = $report->client?->displayName();
+
+        return Str::of('Rapport d\'intervention '.$report->visit_date->format('Y-m-d').($client ? ' - '.$client : ''))
+            ->ascii()->replaceMatches('/[^A-Za-z0-9 ._\'-]/', '')->squish().'.pdf';
     }
 
     /** @return array<string, mixed> */

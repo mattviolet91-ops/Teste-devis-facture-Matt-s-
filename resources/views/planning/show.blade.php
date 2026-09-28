@@ -97,9 +97,16 @@
         </div>
     </div>
     @endif
-    @if ($intervention->isAppointment() && $client)
+    @if ($client)
         <div class="action-bar">
-            <a class="btn" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Faire le devis</a>
+            @if ($intervention->isAppointment())
+                <a class="btn" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Faire le devis</a>
+            @endif
+            @if ($intervention->report)
+                <a class="btn btn-secondary" href="{{ route('reports.show', $intervention->report) }}"><x-icon name="file" /> Rapport d'intervention</a>
+            @else
+                <a class="btn btn-secondary" href="{{ route('reports.create', ['intervention' => $intervention->id]) }}"><x-icon name="camera" /> Faire le rapport d'intervention</a>
+            @endif
         </div>
     @endif
 @endsection

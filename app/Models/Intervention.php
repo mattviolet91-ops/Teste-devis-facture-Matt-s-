@@ -6,6 +6,7 @@ use App\Models\Concerns\TracksCreator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /** Élément du planning : intervention sur un chantier (un ou plusieurs jours) ou rendez-vous. */
@@ -50,6 +51,11 @@ class Intervention extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function report(): HasOne
+    {
+        return $this->hasOne(Report::class)->latestOfMany();
     }
 
     public function worksite(): BelongsTo

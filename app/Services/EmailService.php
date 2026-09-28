@@ -26,7 +26,7 @@ class EmailService
      * @param  list<string>  $to
      * @param  list<string>  $cc
      */
-    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf, bool $attachInsurance = false, ?string $buttonUrl = null, ?string $buttonLabel = null): SentEmail
+    public function send(Client $client, Quote|Invoice|null $document, array $to, array $cc, string $subject, string $body, bool $attachPdf, bool $attachInsurance = false, ?string $buttonUrl = null, ?string $buttonLabel = null, ?array $extraPdf = null): SentEmail
     {
         // Un brouillon envoyé par email reçoit son numéro définitif.
         if ($document && $document->isDraft()) {
@@ -39,7 +39,8 @@ class EmailService
             $body = strtr($body, $replace);
         }
 
-        $attachment = $document && $attachPdf ? $this->pdf->filename($document) : null;
+        // PDF joint : celui du document, ou un autre PDF (rapport d'intervention) ['content' => …, 'name' => …].
+        $attachment = $document && $attachPdf ? $this->pdf->filename($document) : ($extraPdf['name'] ?? null);
         $files = [];
         if ($attachInsurance && ($certificate = $this->insurance->currentCertificate())) {
             $extension = pathinfo($certificate->path, PATHINFO_EXTENSION) ?: 'pdf';
@@ -63,7 +64,7 @@ class EmailService
                 $message->bcc($bcc);
             }
             $message->send(new ClientMessage(
-                $subject, $body, $attachment ? $this->pdf->content($document) : null, $attachment, $files,
+                $subject, $body, $attachment ? ($document && $attachPdf ? $this->pdf->content($document) : $extraPdf['content']) : null, $attachment, $files,
                 $buttonUrl ?? $document?->publicUrl(), $buttonLabel ?? ($document ? $this->buttonLabel($document) : null),
             ));
             $log->status = 'sent';

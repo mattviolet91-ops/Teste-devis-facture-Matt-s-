@@ -107,7 +107,7 @@ class EmailComposer
         return $values;
     }
 
-    private function salutation(Client $client): string
+    public function salutation(Client $client): string
     {
         if ($client->isIndividual() && $client->last_name) {
             $title = match ($client->civility) {

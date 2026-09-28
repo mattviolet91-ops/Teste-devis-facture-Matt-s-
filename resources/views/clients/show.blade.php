@@ -154,6 +154,22 @@
         </div>
     @endif
 
+    <div class="card" id="rapports">
+        <div class="card-head"><h2>Rapports d'intervention</h2><a class="btn btn-secondary btn-sm" href="{{ route('reports.create', ['client' => $client->id]) }}"><x-icon name="plus" /> Rapport</a></div>
+        @if ($client->reports->isNotEmpty())
+            <ul class="stat-list">
+                @foreach ($client->reports as $report)
+                    <li>
+                        <a href="{{ route('reports.show', $report) }}">{{ $report->title }} <span class="muted small">({{ $report->visit_date->format('d/m/Y') }})</span></a>
+                        <span class="small">{{ $report->sent_at ? 'Envoyé' : 'Pas encore envoyé' }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <p class="muted small" style="margin:0">Après une urgence ou une recherche de fuite : constat, travaux et photos dans un PDF pour le client (et son assurance).</p>
+        @endif
+    </div>
+
     <div class="card" id="entretiens">
         <div class="card-head"><h2>Entretiens</h2><a class="small" href="{{ route('maintenance.index') }}">Tous les entretiens</a></div>
         @if ($client->maintenanceReminders->isNotEmpty())

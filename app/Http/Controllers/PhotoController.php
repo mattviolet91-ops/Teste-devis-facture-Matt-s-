@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Photo;
 use App\Models\Quote;
+use App\Models\Report;
 use App\Models\Worksite;
 use App\Services\ActivityLogger;
 use App\Services\PdfService;
@@ -149,7 +150,17 @@ class PhotoController extends Controller
         return $this->upload($request, $invoice);
     }
 
-    private function attach(Request $request, Quote|Invoice $document): RedirectResponse
+    public function attachToReport(Request $request, Report $report): RedirectResponse
+    {
+        return $this->attach($request, $report);
+    }
+
+    public function uploadToReport(Request $request, Report $report): JsonResponse|RedirectResponse
+    {
+        return $this->upload($request, $report);
+    }
+
+    private function attach(Request $request, Quote|Invoice|Report $document): RedirectResponse
     {
         abort_unless($document->photosEditable(), 403, 'Le document est envoyé : son PDF ne change plus.');
 
@@ -162,7 +173,7 @@ class PhotoController extends Controller
         return back()->with('status', $allowed->isEmpty() ? 'Aucune photo dans le PDF.' : $allowed->count().' photo(s) en annexe du PDF.');
     }
 
-    private function upload(Request $request, Quote|Invoice $document): JsonResponse|RedirectResponse
+    private function upload(Request $request, Quote|Invoice|Report $document): JsonResponse|RedirectResponse
     {
         abort_unless($document->photosEditable(), 403, 'Le document est envoyé : son PDF ne change plus.');
 
@@ -198,9 +209,9 @@ class PhotoController extends Controller
     }
 
     /** Devis envoyé mais pas encore accepté : son PDF est refait avec les photos. */
-    private function refreeze(Quote|Invoice $document): void
+    private function refreeze(Quote|Invoice|Report $document): void
     {
-        if (! $document->isDraft()) {
+        if (! $document instanceof Report && ! $document->isDraft()) {
             app(PdfService::class)->freeze($document->fresh());
         }
     }

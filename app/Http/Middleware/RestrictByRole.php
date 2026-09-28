@@ -21,7 +21,7 @@ class RestrictByRole
     public const COMMERCIAL_ALLOWED = [
         'dashboard', 'search', 'logout', 'documents', 'branding.image',
         'clients.*', 'worksites.*', 'quotes.*', 'planning.*', 'requests.*', 'photos.*', 'attachments.*',
-        'maintenance.*', 'emails.*', 'catalog.index', 'push.*', 'offline.*',
+        'maintenance.*', 'reports.*', 'emails.*', 'catalog.index', 'push.*', 'offline.*',
         'settings.account', 'settings.account.*',
     ];
 
