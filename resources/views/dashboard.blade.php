@@ -90,6 +90,7 @@
             @case('todo')
             <div class="card">
                 <div class="card-head"><h2>À faire</h2></div>
+                @php if (! auth()->user()->isAdmin()) { $overdue = collect(); } @endphp
                 @if ($overdue->isEmpty() && $toFollowUp->isEmpty())
                     <p class="muted" style="margin:0">Rien d'urgent. 👍</p>
                 @endif
@@ -158,7 +159,7 @@
                     <a class="quick-action" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
                     <a class="quick-action" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
                     <a class="quick-action" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
-                    <a class="quick-action" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>
+                    @if (auth()->user()->isAdmin())<a class="quick-action" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
                 </div>
             </div>
                 @break
@@ -181,5 +182,7 @@
     @endforeach
     </div>
 
-    <p class="small muted" style="margin-top:1rem;text-align:center"><a href="{{ route('settings.display') }}">Personnaliser l'accueil et la barre du bas</a></p>
+    @if (auth()->user()->isAdmin())
+        <p class="small muted" style="margin-top:1rem;text-align:center"><a href="{{ route('settings.display') }}">Personnaliser l'accueil et la barre du bas</a></p>
+    @endif
 @endsection

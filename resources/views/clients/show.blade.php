@@ -118,6 +118,7 @@
         @endif
     </div>
 
+    @if (auth()->user()->isAdmin())
     <div class="card">
         <div class="card-head">
             <h2>Factures</h2>
@@ -136,8 +137,9 @@
             </ul>
         @endif
     </div>
+    @endif
 
-    @if ($client->wixArchives->isNotEmpty())
+    @if ($client->wixArchives->isNotEmpty() && auth()->user()->isAdmin())
         <div class="card">
             <div class="card-head"><h2>Historique Wix</h2><a class="small" href="{{ route('archives.index') }}">Archives</a></div>
             <ul class="stat-list">

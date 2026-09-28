@@ -14,9 +14,12 @@
         'settings.site-form' => 'Formulaire du site',
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
+        'settings.users' => 'Comptes',
         'settings.backups' => 'Sauvegardes',
         'settings.journal' => 'Journal',
     ];
+    // Compte commercial : seulement ce qu'il peut ouvrir (Mon compte).
+    $tabs = array_filter($tabs, fn ($route) => auth()->user()->canOpen($route), ARRAY_FILTER_USE_KEY);
 @endphp
 
 @section('content')

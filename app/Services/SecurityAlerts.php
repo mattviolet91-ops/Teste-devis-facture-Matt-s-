@@ -20,7 +20,11 @@ class SecurityAlerts
         $text = 'Nouvelle connexion à votre espace de gestion depuis '.$device.' (adresse IP '.$request->ip().') le '.now()->format('d/m/Y à H:i').'. '
             .'Si ce n\'est pas vous, changez immédiatement votre mot de passe dans Réglages → Mon compte et déconnectez les autres appareils.';
 
-        $this->push->send('Nouvelle connexion', $text, route('settings.account'));
+        // Le compte concerné, et le gérant s'il s'agit d'un compte commercial.
+        $this->push->send('Nouvelle connexion', $text, route('settings.account'), $user->id);
+        if (! $user->isAdmin()) {
+            $this->push->send('Connexion de '.$user->name, 'Connexion du compte « '.$user->name.' » depuis '.$device.'.', route('settings.users'));
+        }
 
         if (! $this->mail->isConfigured()) {
             return;

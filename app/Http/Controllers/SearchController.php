@@ -23,7 +23,9 @@ class SearchController extends Controller
         $results = ['invoices' => collect(), 'quotes' => collect(), 'clients' => collect(), 'worksites' => collect()];
 
         if (Search::terms($q) !== []) {
-            $results['invoices'] = Invoice::query()->search($q)->with('client')->latest('id')->limit(self::LIMIT)->get();
+            if ($request->user()->isAdmin()) {
+                $results['invoices'] = Invoice::query()->search($q)->with('client')->latest('id')->limit(self::LIMIT)->get();
+            }
             $results['quotes'] = Quote::query()->search($q)->with('client')->latest('id')->limit(self::LIMIT)->get();
             $results['clients'] = Client::query()->searchWithWorksites($q)->alphabetical()->limit(self::LIMIT)->get();
             $results['worksites'] = Worksite::query()->search($q)->whereHas('client')->with('client')->limit(self::LIMIT)->get();

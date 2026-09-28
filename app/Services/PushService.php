@@ -50,11 +50,17 @@ class PushService
         PushSubscription::query()->where('endpoint_hash', hash('sha256', $endpoint))->delete();
     }
 
-    /** Envoie une notification à tous les appareils abonnés. Retourne le nombre d'envois réussis. */
-    public function send(string $title, string $body, ?string $url = null): int
+    /**
+     * Envoie une notification aux téléphones du gérant (les comptes commerciaux ne
+     * reçoivent pas les paiements, relances…). Avec $userId : aux appareils de ce compte.
+     * Retourne le nombre d'envois réussis.
+     */
+    public function send(string $title, string $body, ?string $url = null, ?int $userId = null): int
     {
         $this->lastErrors = [];
-        $subscriptions = PushSubscription::query()->get();
+        $subscriptions = PushSubscription::query()
+            ->when($userId, fn ($q) => $q->where('user_id', $userId), fn ($q) => $q->whereHas('user', fn ($u) => $u->where('role', 'admin')->whereNull('disabled_at')))
+            ->get();
         if ($subscriptions->isEmpty()) {
             return 0;
         }

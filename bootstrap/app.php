@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ClientHostOnly;
+use App\Http\Middleware\RestrictByRole;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
@@ -15,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
-        $middleware->web(append: ClientHostOnly::class);
+        $middleware->web(append: [ClientHostOnly::class, RestrictByRole::class]);
         // Avant l'authentification : l'adresse client ne renvoie jamais vers la connexion.
         $middleware->prependToPriorityList(
             before: AuthenticatesRequests::class,

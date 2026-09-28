@@ -71,7 +71,7 @@
         @if ($quote->status === 'accepted')
             <a class="btn btn-secondary" href="{{ route('planning.create', ['devis' => $quote->id]) }}"><x-icon name="calendar" /> Planifier</a>
         @endif
-        @if ($quote->isInvoiceable())
+        @if ($quote->isInvoiceable() && auth()->user()->isAdmin())
             <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
         @endif
         <button class="btn btn-secondary" type="button" data-open-sheet="duplicate-dialog"><x-icon name="copy" /> Dupliquer</button>
@@ -105,7 +105,7 @@
 
     @error('percent')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
 
-    @if ($quote->invoices->isNotEmpty())
+    @if ($quote->invoices->isNotEmpty() && auth()->user()->isAdmin())
         @php
             $billed = $quote->invoices->whereIn('status', \App\Models\Invoice::ISSUED)->sum('total_ttc');
         @endphp
@@ -178,7 +178,7 @@
         </form>
     </dialog>
 
-    @if ($quote->isInvoiceable())
+    @if ($quote->isInvoiceable() && auth()->user()->isAdmin())
         @php
             $hasPartial = $quote->invoices->whereIn('kind', ['deposit', 'progress'])->whereIn('status', \App\Models\Invoice::ISSUED)->isNotEmpty();
         @endphp

@@ -40,7 +40,7 @@ class QuoteController extends Controller
     public function documents(Request $request): RedirectResponse
     {
         return redirect()->route(match ($request->session()->get('documents_tab')) {
-            'invoices' => 'invoices.index',
+            'invoices' => $request->user()->isAdmin() ? 'invoices.index' : 'quotes.index',
             'requests' => 'requests.index',
             default => 'quotes.index',
         });

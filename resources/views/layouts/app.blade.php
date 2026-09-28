@@ -16,6 +16,9 @@
         ['prestations', 'Prestations', 'book', route('catalog.index')],
         ['emails', 'Emails', 'mail', route('emails.index')],
     ];
+    // Compte commercial : uniquement les pages qu'il peut ouvrir.
+    $user = auth()->user();
+    $nav = array_values(array_filter($nav, fn ($item) => ! isset(\App\Support\Navigation::ITEMS[$item[0]]) || $user->canOpen(\App\Support\Navigation::ITEMS[$item[0]][2])));
     $isActive = fn (string $key) => match ($key) {
         'dashboard' => request()->routeIs('dashboard'),
         'clients' => request()->routeIs('clients.*', 'worksites.*'),
@@ -61,11 +64,13 @@
                 </a>
             @endforeach
             <span class="nav-sep"></span>
-            <a class="nav-link {{ request()->routeIs('trash.*') ? 'is-active' : '' }}" href="{{ route('trash.index') }}">
-                <x-icon name="trash" /> Corbeille
-            </a>
-            <a class="nav-link {{ request()->routeIs('settings.*') ? 'is-active' : '' }}" href="{{ route('settings.company') }}">
-                <x-icon name="settings" /> Réglages
+            @if ($user->isAdmin())
+                <a class="nav-link {{ request()->routeIs('trash.*') ? 'is-active' : '' }}" href="{{ route('trash.index') }}">
+                    <x-icon name="trash" /> Corbeille
+                </a>
+            @endif
+            <a class="nav-link {{ request()->routeIs('settings.*') ? 'is-active' : '' }}" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}">
+                <x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}
             </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -110,10 +115,10 @@
         </div>
         <div class="sheet-grid">
             <a class="sheet-item" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
-            <a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>
+            @if ($user->isAdmin())<a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
             <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>
-            <a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>
+            @if ($user->isAdmin())<a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>@endif
             <a class="sheet-item" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
         </div>
     </dialog>
@@ -128,7 +133,8 @@
             $inBar = \App\Support\Navigation::bottom();
             $coveredByDocuments = in_array('documents', $inBar, true) ? ['devis', 'factures', 'demandes'] : [];
             $priority = ['planning', 'paiements', 'relances', 'photos', 'statistiques', 'entretiens', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
-            $available = array_values(array_filter($priority, fn ($k) => ! in_array($k, $inBar, true) && ! in_array($k, $coveredByDocuments, true)));
+            $available = array_values(array_filter($priority, fn ($k) => ! in_array($k, $inBar, true) && ! in_array($k, $coveredByDocuments, true)
+                && $user->canOpen(\App\Support\Navigation::ITEMS[$k][2])));
             $main = array_slice($available, 0, 6);
             $others = array_slice($available, 6);
         @endphp
@@ -145,12 +151,14 @@
                     @php [$label, $icon, $route] = \App\Support\Navigation::ITEMS[$key]; @endphp
                     <a href="{{ route($route) }}"><x-icon :name="$icon" /> {{ $key === 'avis' ? 'Avis Google' : $label }}</a>
                 @endforeach
-                <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
-                <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>
+                @if ($user->isAdmin())
+                    <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
+                    <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>
+                @endif
             </div>
         </details>
         <div class="sheet-footer">
-            <a class="btn btn-secondary" href="{{ route('settings.company') }}"><x-icon name="settings" /> Réglages</a>
+            <a class="btn btn-secondary" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}"><x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button class="btn btn-secondary" type="submit"><x-icon name="logout" /> Se déconnecter</button>

@@ -43,20 +43,41 @@ final class Navigation
 
     public const DEFAULT_HOME = ['requests', 'kpis', 'planning', 'todo', 'activity', 'payments'];
 
+    /** Blocs de l'accueil visibles par un commercial (pas de montants encaissés ni de CA). */
+    public const COMMERCIAL_HOME = ['requests', 'planning', 'shortcuts', 'todo'];
+
     /** @return list<string> */
     public static function bottom(): array
     {
         $keys = array_values(array_filter((array) app(Settings::class)->get('layout.bottom_nav', self::DEFAULT_BOTTOM), fn ($k) => isset(self::ITEMS[$k])));
+        $keys = count($keys) === 3 ? $keys : self::DEFAULT_BOTTOM;
 
-        return count($keys) === 3 ? $keys : self::DEFAULT_BOTTOM;
+        // Compte commercial : les raccourcis qu'il ne peut pas ouvrir sont remplacés.
+        $user = auth()->user();
+        if ($user && ! $user->isAdmin()) {
+            $keys = array_values(array_filter($keys, fn ($k) => $user->canOpen(self::ITEMS[$k][2])));
+            foreach (['dashboard', 'clients', 'planning', 'documents', 'demandes'] as $fallback) {
+                if (count($keys) < 3 && ! in_array($fallback, $keys, true)) {
+                    $keys[] = $fallback;
+                }
+            }
+        }
+
+        return $keys;
     }
 
     /** @return list<string> */
     public static function home(): array
     {
         $keys = array_values(array_unique(array_filter((array) app(Settings::class)->get('layout.home_blocks', self::DEFAULT_HOME), fn ($k) => isset(self::HOME_BLOCKS[$k]))));
+        $keys = $keys ?: self::DEFAULT_HOME;
 
-        return $keys ?: self::DEFAULT_HOME;
+        $user = auth()->user();
+        if ($user && ! $user->isAdmin()) {
+            $keys = array_values(array_intersect($keys, self::COMMERCIAL_HOME)) ?: self::COMMERCIAL_HOME;
+        }
+
+        return $keys;
     }
 
     public static function isActive(string $key): bool

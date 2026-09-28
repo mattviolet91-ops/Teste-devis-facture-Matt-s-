@@ -48,10 +48,17 @@ class LoginController extends Controller
             ]);
         }
 
+        $user = $request->user();
+        if ($user->disabled_at !== null) {
+            Auth::logout();
+            RateLimiter::hit($throttleKey, 15 * 60);
+
+            throw ValidationException::withMessages(['email' => 'Ce compte a été désactivé.']);
+        }
+
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
-        $user = $request->user();
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
 
         // Appareil jamais vu : alerte sur le téléphone et par email.

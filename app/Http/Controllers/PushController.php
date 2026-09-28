@@ -35,11 +35,11 @@ class PushController extends Controller
 
     public function test(): JsonResponse
     {
-        $sent = $this->push->send('Notifications activées', 'Vous serez prévenu quand un client ouvre, accepte ou refuse un devis.', route('dashboard'));
+        $sent = $this->push->send('Notifications activées', 'Les notifications arrivent bien sur ce téléphone.', route('dashboard'), auth()->id());
 
         return response()->json([
             'sent' => $sent,
-            'devices' => PushSubscription::query()->count(),
+            'devices' => PushSubscription::query()->where('user_id', auth()->id())->count(),
             'errors' => array_values(array_unique($this->push->lastErrors)),
         ]);
     }
