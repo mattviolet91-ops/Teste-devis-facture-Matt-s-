@@ -114,6 +114,10 @@
 
     @include('payments._card')
 
+    @if (! $invoice->isCredit() && auth()->user()->isAdmin())
+        @include('invoices._expenses')
+    @endif
+
     @unless ($invoice->isDraft())
         @include('documents._client-link', ['document' => $invoice])
     @endunless

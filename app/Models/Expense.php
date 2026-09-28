@@ -6,7 +6,7 @@ use App\Models\Concerns\TracksCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Achat : matériaux, location, déchetterie… rattaché ou non à un chantier (devis accepté). */
+/** Frais d'une facture (matériaux, location, déchetterie…) : visibles par le gérant seul, jamais par le client. */
 class Expense extends Model
 {
     use TracksCreator;
@@ -20,7 +20,7 @@ class Expense extends Model
         'autre' => 'Autre',
     ];
 
-    protected $fillable = ['spent_on', 'label', 'supplier', 'category', 'amount_ttc', 'vat', 'quote_id'];
+    protected $fillable = ['spent_on', 'label', 'supplier', 'category', 'amount_ttc', 'vat', 'quote_id', 'invoice_id'];
 
     protected function casts(): array
     {
@@ -30,6 +30,11 @@ class Expense extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class)->withTrashed();
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class)->withTrashed();
     }
 
     /** Coût réel pour l'entreprise : hors TVA récupérable. */

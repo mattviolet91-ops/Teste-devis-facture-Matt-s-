@@ -8,7 +8,6 @@
         ['demandes', 'Demandes', 'mail', route('requests.index')],
         ['factures', 'Factures', 'receipt', route('invoices.index')],
         ['paiements', 'Paiements', 'wallet', route('payments.index')],
-        ['achats', 'Achats', 'cart', route('expenses.index')],
         ['relances', 'Relances', 'send', route('reminders.index')],
         ['planning', 'Planning', 'calendar', route('planning.index')],
         ['entretiens', 'Entretiens', 'tool', route('maintenance.index')],
@@ -24,7 +23,6 @@
         'dashboard' => request()->routeIs('dashboard'),
         'clients' => request()->routeIs('clients.*', 'worksites.*'),
         'devis' => request()->routeIs('quotes.*'),
-        'achats' => request()->routeIs('expenses.*'),
         'demandes' => request()->routeIs('requests.*'),
         'factures' => request()->routeIs('invoices.*'),
         'prestations' => request()->routeIs('catalog.*'),
@@ -121,7 +119,6 @@
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
             <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>
             @if ($user->isAdmin())<a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>@endif
-            @if ($user->isAdmin())<a class="sheet-item" href="{{ route('expenses.create') }}"><x-icon name="cart" /> Achat</a>@endif
             <a class="sheet-item" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
         </div>
     </dialog>
@@ -135,7 +132,7 @@
             // 6 raccourcis principaux (hors ceux déjà dans la barre du bas), le reste dans « Autres ».
             $inBar = \App\Support\Navigation::bottom();
             $coveredByDocuments = in_array('documents', $inBar, true) ? ['devis', 'factures', 'demandes'] : [];
-            $priority = ['planning', 'paiements', 'achats', 'relances', 'photos', 'statistiques', 'entretiens', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
+            $priority = ['planning', 'paiements', 'relances', 'photos', 'statistiques', 'entretiens', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
             $available = array_values(array_filter($priority, fn ($k) => ! in_array($k, $inBar, true) && ! in_array($k, $coveredByDocuments, true)
                 && $user->canOpen(\App\Support\Navigation::ITEMS[$k][2])));
             $main = array_slice($available, 0, 6);

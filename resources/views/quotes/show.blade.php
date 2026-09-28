@@ -126,29 +126,6 @@
         </div>
     @endif
 
-    @if (auth()->user()->isAdmin() && ($quote->status === 'accepted' || $quote->expenses()->exists()))
-        @php $expenses = $quote->expenses()->latest('spent_on')->get(); @endphp
-        <div class="card" id="marge">
-            <div class="card-head">
-                <h2>Achats et marge</h2>
-                <a class="btn btn-secondary btn-sm" href="{{ route('expenses.create', ['devis' => $quote->id]) }}"><x-icon name="plus" /> Achat</a>
-            </div>
-            @include('expenses._margin', ['m' => app(\App\Services\MarginService::class)->forQuote($quote)])
-            @if ($expenses->isNotEmpty())
-                <details style="margin-top:.5rem">
-                    <summary class="small">{{ $expenses->count() }} achat{{ $expenses->count() > 1 ? 's' : '' }}</summary>
-                    <ul class="stat-list">
-                        @foreach ($expenses as $expense)
-                            <li><a href="{{ route('expenses.edit', $expense) }}">{{ $expense->spent_on->format('d/m') }} · {{ $expense->label }}</a><strong>{{ Money::format($expense->amountHt()) }}</strong></li>
-                        @endforeach
-                    </ul>
-                </details>
-            @else
-                <p class="muted small" style="margin:.5rem 0 0">Ajoutez vos achats (photo du ticket) pour connaître la marge réelle du chantier.</p>
-            @endif
-        </div>
-    @endif
-
     {{-- Aperçu du devis (la mise en page PDF arrive à la phase 8) --}}
     <article class="doc">
         @include('documents._preview', ['document' => $quote, 'docTitle' => 'Devis '.($quote->number ?? '(brouillon)'), 'meta' => $meta])

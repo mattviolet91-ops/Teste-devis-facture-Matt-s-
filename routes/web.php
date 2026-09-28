@@ -165,9 +165,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/photos/ajout', [PhotoController::class, 'uploadToReport'])->middleware('throttle:60,1')->name('photos.upload');
     });
 
-    Route::resource('achats', ExpenseController::class)->except('show')
-        ->parameters(['achats' => 'expense'])->names('expenses')->whereNumber('expense');
-    Route::get('/achats/{expense}/ticket', [ExpenseController::class, 'receipt'])->whereNumber('expense')->name('expenses.receipt');
+    // Frais d'une facture (visibles par le gérant seul).
+    Route::post('/factures/{invoice}/frais', [ExpenseController::class, 'store'])->whereNumber('invoice')->name('expenses.store');
+    Route::delete('/frais/{expense}', [ExpenseController::class, 'destroy'])->whereNumber('expense')->name('expenses.destroy');
+    Route::get('/frais/{expense}/ticket', [ExpenseController::class, 'receipt'])->whereNumber('expense')->name('expenses.receipt');
 
     Route::get('/demandes', [QuoteRequestController::class, 'index'])->name('requests.index');
     Route::get('/demandes/{quoteRequest}', [QuoteRequestController::class, 'show'])->whereNumber('quoteRequest')->name('requests.show');

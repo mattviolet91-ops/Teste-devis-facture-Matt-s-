@@ -123,6 +123,18 @@ class Invoice extends Model
         return $this->morphToMany(Photo::class, 'document', 'document_photo')->withPivot('position')->orderByPivot('position');
     }
 
+    /** Frais de la facture (section « Frais », visible par le gérant seul). */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class)->latest('spent_on')->latest('id');
+    }
+
+    /** Ce qu'il reste une fois les frais déduits (montant HT de la facture − frais HT). */
+    public function remainingAfterExpenses(): int
+    {
+        return (int) $this->total_ht - (int) $this->expenses->sum(fn (Expense $e) => $e->amountHt());
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class)->orderBy('paid_at')->orderBy('id');
