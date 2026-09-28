@@ -123,24 +123,37 @@
             <h2 id="sheet-more-title">Menu</h2>
             <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
         </div>
-        <div class="sheet-list">
-            <a href="{{ route('requests.index') }}"><x-icon name="mail" /> Demandes de devis</a>
-            <a href="{{ route('invoices.index') }}"><x-icon name="receipt" /> Factures</a>
-            <a href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiements</a>
-            <a href="{{ route('reminders.index') }}"><x-icon name="send" /> Relances</a>
-            <a href="{{ route('planning.index') }}"><x-icon name="calendar" /> Planning</a>
-            <a href="{{ route('maintenance.index') }}"><x-icon name="tool" /> Entretiens</a>
-            <a href="{{ route('reviews.index') }}"><x-icon name="check" /> Avis Google</a>
-            <a href="{{ route('statistics') }}"><x-icon name="chart" /> Statistiques</a>
-            <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
-            <a href="{{ route('photos.index') }}"><x-icon name="camera" /> Photos</a>
-            <a href="{{ route('catalog.index') }}"><x-icon name="book" /> Prestations</a>
-            <a href="{{ route('emails.index') }}"><x-icon name="mail" /> Emails</a>
-            <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>
-            <a href="{{ route('settings.company') }}"><x-icon name="settings" /> Réglages</a>
+        @php
+            // 6 raccourcis principaux (hors ceux déjà dans la barre du bas), le reste dans « Autres ».
+            $inBar = \App\Support\Navigation::bottom();
+            $coveredByDocuments = in_array('documents', $inBar, true) ? ['devis', 'factures', 'demandes'] : [];
+            $priority = ['planning', 'paiements', 'relances', 'photos', 'statistiques', 'entretiens', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
+            $available = array_values(array_filter($priority, fn ($k) => ! in_array($k, $inBar, true) && ! in_array($k, $coveredByDocuments, true)));
+            $main = array_slice($available, 0, 6);
+            $others = array_slice($available, 6);
+        @endphp
+        <div class="sheet-grid">
+            @foreach ($main as $key)
+                @php [$label, $icon, $route] = \App\Support\Navigation::ITEMS[$key]; @endphp
+                <a class="sheet-item" href="{{ route($route) }}"><x-icon :name="$icon" /> {{ $key === 'statistiques' ? 'Statistiques' : $label }}</a>
+            @endforeach
+        </div>
+        <details class="sheet-more">
+            <summary>Autres</summary>
+            <div class="sheet-list">
+                @foreach ($others as $key)
+                    @php [$label, $icon, $route] = \App\Support\Navigation::ITEMS[$key]; @endphp
+                    <a href="{{ route($route) }}"><x-icon :name="$icon" /> {{ $key === 'avis' ? 'Avis Google' : $label }}</a>
+                @endforeach
+                <a href="{{ route('archives.index') }}"><x-icon name="file" /> Archives Wix</a>
+                <a href="{{ route('trash.index') }}"><x-icon name="trash" /> Corbeille</a>
+            </div>
+        </details>
+        <div class="sheet-footer">
+            <a class="btn btn-secondary" href="{{ route('settings.company') }}"><x-icon name="settings" /> Réglages</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit"><x-icon name="logout" /> Se déconnecter</button>
+                <button class="btn btn-secondary" type="submit"><x-icon name="logout" /> Se déconnecter</button>
             </form>
         </div>
     </dialog>

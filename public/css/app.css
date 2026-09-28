@@ -741,3 +741,9 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .segmented-3 { grid-template-columns: repeat(3, 1fr); }
 .segmented-3 a { padding: .5rem .25rem; font-size: .875rem; gap: .25rem; }
 .count-badge { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem; border-radius: 999px; background: var(--danger, #c0392b); color: #fff; font-size: .7rem; font-weight: 700; }
+/* Menu « Plus » simplifié */
+.sheet-more { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: .5rem; }
+.sheet-more summary { cursor: pointer; font-weight: 600; padding: .5rem 0; color: var(--text-muted); }
+.sheet-footer { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 1rem; }
+.sheet-footer form { margin: 0; }
+.sheet-footer .btn { width: 100%; justify-content: center; }
