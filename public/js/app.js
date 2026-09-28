@@ -14,6 +14,20 @@
     });
   });
 
+  // Options d'affichage de ce téléphone (menu Plus) : grands boutons, plein soleil.
+  document.querySelectorAll('[data-pref-toggle]').forEach(function (button) {
+    var name = button.getAttribute('data-pref-toggle');
+    var attribute = 'data-' + name;
+    var sync = function () { button.setAttribute('aria-pressed', document.documentElement.hasAttribute(attribute) ? 'true' : 'false'); };
+    sync();
+    button.addEventListener('click', function () {
+      var on = !document.documentElement.hasAttribute(attribute);
+      if (on) { document.documentElement.setAttribute(attribute, ''); } else { document.documentElement.removeAttribute(attribute); }
+      try { localStorage.setItem('pref-' + name, on ? '1' : '0'); } catch (e) { /* ignoré */ }
+      sync();
+    });
+  });
+
   // Feuilles d'actions (bouton « + » et menu « Plus »).
   document.querySelectorAll('[data-open-sheet]').forEach(function (button) {
     button.addEventListener('click', function () {
@@ -260,6 +274,79 @@
         button.disabled = true;
         button.textContent = form.getAttribute('data-busy');
       });
+    });
+  });
+
+  // Bouton « Retour » : revient à la page précédente si elle est dans l'application
+  // (et n'est pas un formulaire déjà enregistré), sinon va à la page parente.
+  document.querySelectorAll('[data-back]').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+      var ref = document.referrer;
+      if (!ref || window.history.length < 2) { return; }
+      try {
+        var previous = new URL(ref);
+        if (previous.origin !== window.location.origin || previous.href === window.location.href) { return; }
+        if (/\/(nouveau|modifier|connexion)(\/|$|\?)/.test(previous.pathname + previous.search)) { return; }
+      } catch (e) { return; }
+      event.preventDefault();
+      window.history.back();
+    });
+  });
+
+  // Barre d'actions : un bouton peut valider un formulaire de la page (avec sa confirmation).
+  document.querySelectorAll('[data-quick-submit]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var form = document.getElementById(button.getAttribute('data-quick-submit'));
+      if (form) { form.requestSubmit ? form.requestSubmit() : form.submit(); }
+    });
+  });
+
+  // Glisser vers la gauche une ligne (planning, devis, factures) : affiche ses actions rapides.
+  var openSwipe = null;
+  function closeSwipe(row) {
+    if (!row) { return; }
+    row.classList.remove('is-open');
+    row.querySelector('.swipe-content').style.transform = '';
+    if (openSwipe === row) { openSwipe = null; }
+  }
+  document.querySelectorAll('[data-swipe]').forEach(function (row) {
+    var content = row.querySelector('.swipe-content');
+    var actions = row.querySelector('.swipe-actions');
+    if (!content || !actions) { return; }
+    var startX = 0, startY = 0, dx = 0, dragging = false, decided = false;
+    row.addEventListener('touchstart', function (event) {
+      if (openSwipe && openSwipe !== row) { closeSwipe(openSwipe); }
+      startX = event.touches[0].clientX; startY = event.touches[0].clientY;
+      dx = 0; dragging = false; decided = false;
+      content.style.transition = 'none';
+    }, { passive: true });
+    row.addEventListener('touchmove', function (event) {
+      var x = event.touches[0].clientX - startX, y = event.touches[0].clientY - startY;
+      if (!decided) {
+        if (Math.abs(x) < 8 && Math.abs(y) < 8) { return; }
+        decided = true;
+        dragging = Math.abs(x) > Math.abs(y);
+      }
+      if (!dragging) { return; }
+      event.preventDefault();
+      var base = row.classList.contains('is-open') ? -actions.offsetWidth : 0;
+      dx = Math.max(-actions.offsetWidth - 24, Math.min(0, base + x));
+      content.style.transform = 'translateX(' + dx + 'px)';
+    }, { passive: false });
+    row.addEventListener('touchend', function () {
+      content.style.transition = '';
+      if (!dragging) { return; }
+      if (dx < -actions.offsetWidth / 2) {
+        row.classList.add('is-open');
+        content.style.transform = 'translateX(' + (-actions.offsetWidth) + 'px)';
+        openSwipe = row;
+      } else {
+        closeSwipe(row);
+      }
+    });
+    // Ligne ouverte : un appui la referme au lieu d'ouvrir la fiche.
+    content.addEventListener('click', function (event) {
+      if (row.classList.contains('is-open')) { event.preventDefault(); closeSwipe(row); }
     });
   });
 })();

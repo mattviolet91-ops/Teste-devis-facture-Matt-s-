@@ -38,7 +38,9 @@
             @endforeach
         </ul>
     @empty
-        <div class="card empty"><x-icon name="book" /><h2>Aucune prestation{{ $q ? ' pour « '.$q.' »' : '' }}</h2></div>
+        <div class="card empty"><x-icon name="book" /><h2>Aucune prestation{{ $q ? ' pour « '.$q.' »' : '' }}</h2>
+            <p class="muted">Enregistrez vos prestations courantes pour les ajouter en un geste dans vos devis.</p>
+            <p><a class="btn" href="{{ route('catalog.create') }}"><x-icon name="plus" /> Ajouter une prestation</a></p></div>
     @endforelse
 
     <div class="card">

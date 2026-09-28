@@ -14,7 +14,8 @@
     @include('photos._upload')
 
     @if ($photos->isEmpty())
-        <div class="card empty"><x-icon name="camera" /><h2>Aucune photo pour ce chantier</h2></div>
+        <div class="card empty"><x-icon name="camera" /><h2>Aucune photo pour ce chantier</h2>
+            <p class="muted">Utilisez « Prendre ou ajouter des photos » ci-dessus.</p></div>
     @else
         @foreach (\App\Models\Photo::CATEGORIES as $key => $label)
             @php $group = $photos->where('category', $key); @endphp

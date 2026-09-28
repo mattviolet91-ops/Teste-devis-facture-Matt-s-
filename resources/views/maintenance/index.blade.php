@@ -24,7 +24,9 @@
     </div>
 
     @if ($reminders->isEmpty())
-        <div class="card empty"><x-icon name="check" /><h2>{{ $tab === 'a-relancer' ? 'Aucun entretien à proposer pour le moment' : 'Rien ici' }}</h2></div>
+        <div class="card empty"><x-icon name="check" /><h2>{{ $tab === 'a-relancer' ? 'Aucun entretien à proposer pour le moment' : 'Rien ici' }}</h2>
+            <p class="muted">Un rappel d'entretien s'ajoute depuis la fiche d'un client, rubrique « Entretiens ».</p>
+            <p><a class="btn btn-secondary" href="{{ route('clients.index') }}"><x-icon name="users" /> Ouvrir un client</a></p></div>
     @else
         <ul class="list">
             @foreach ($reminders as $reminder)

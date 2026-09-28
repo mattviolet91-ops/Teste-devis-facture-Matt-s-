@@ -16,7 +16,9 @@
     </form>
 
     @if ($emails->isEmpty())
-        <div class="card empty"><x-icon name="mail" /><h2>Aucun email envoyé</h2></div>
+        <div class="card empty"><x-icon name="mail" /><h2>Aucun email envoyé</h2>
+            <p class="muted">Les emails partent depuis un devis, une facture ou une fiche client.</p>
+            <p><a class="btn" href="{{ route('quotes.index') }}"><x-icon name="file" /> Voir mes devis</a></p></div>
     @else
         <ul class="list">
             @foreach ($emails as $email)

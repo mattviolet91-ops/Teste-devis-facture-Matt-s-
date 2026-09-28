@@ -57,7 +57,7 @@
             </form>
         @endif
         @if ($quote->awaitsAnswer())
-            <form method="POST" action="{{ route('quotes.accept', $quote) }}" data-confirm="Le client a accepté ce devis ?">
+            <form method="POST" action="{{ route('quotes.accept', $quote) }}" data-confirm="Le client a accepté ce devis ?" id="accept-form">
                 @csrf
                 <button class="btn" type="submit"><x-icon name="check" /> Accepté</button>
             </form>
@@ -224,4 +224,25 @@
             <div class="form-actions"><button class="btn" type="submit">Créer la copie</button></div>
         </form>
     </dialog>
+
+    @php
+        $isAdmin = auth()->user()->isAdmin();
+        $quick = match (true) {
+            $quote->isDraft() => [
+                ['Envoyer', 'mail', route('emails.create', ['devis' => $quote->id]), null],
+                ['Faire signer', 'check', route('quotes.on-site', $quote), null],
+            ],
+            $quote->awaitsAnswer() => array_values(array_filter([
+                $quote->canBeSignedOnline() ? ['Faire signer', 'check', route('quotes.on-site', $quote), null] : null,
+                ['Relancer', 'send', route('emails.create', ['devis' => $quote->id, 'relance' => 1]), null],
+                ['Accepté', 'check', null, 'data-quick-submit="accept-form"'],
+            ])),
+            $quote->status === 'accepted' => array_values(array_filter([
+                $isAdmin ? ['Facturer', 'receipt', null, 'data-open-sheet="invoice-dialog"'] : null,
+                ['Planifier', 'calendar', route('planning.create', ['devis' => $quote->id]), null],
+            ])),
+            default => [],
+        };
+    @endphp
+    @include('documents._quick-bar', ['actions' => $quick])
 @endsection

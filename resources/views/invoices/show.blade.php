@@ -166,4 +166,22 @@
             </form>
         </dialog>
     @endif
+
+    @php
+        $quick = match (true) {
+            $invoice->isCredit() || $invoice->status === 'cancelled' => [],
+            $invoice->isDraft() => [
+                ['Envoyer', 'mail', route('emails.create', ['facture' => $invoice->id]), null],
+                ['Modifier', 'file', route('invoices.edit', $invoice), null],
+            ],
+            in_array($invoice->status, \App\Models\Invoice::OPEN, true) => [
+                ['Encaisser', 'wallet', route('invoices.show', ['invoice' => $invoice, 'encaisser' => 1]).'#paiements', null],
+                ['Relancer', 'send', route('reminders.show', $invoice), null],
+            ],
+            default => [
+                ['Envoyer', 'mail', route('emails.create', ['facture' => $invoice->id]), null],
+            ],
+        };
+    @endphp
+    @include('documents._quick-bar', ['actions' => $quick])
 @endsection

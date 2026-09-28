@@ -11,6 +11,7 @@ use App\Models\Quote;
 use App\Models\QuoteRequest;
 use App\Services\InsuranceService;
 use App\Services\Settings;
+use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -66,6 +67,10 @@ class DashboardController extends Controller
             'nextInterventions' => Intervention::query()->active()->where('status', 'planned')
                 ->whereDate('ends_on', '>=', today())->visible()->with(['client', 'worksite'])
                 ->orderBy('starts_on')->orderBy('start_time')->limit(5)->get(),
+            // Bloc « Aujourd'hui » : rendez-vous et chantiers du jour, avec météo (cache) et itinéraire.
+            'today' => $today = Intervention::query()->active()->where('status', 'planned')->between(today(), today())->visible()
+                ->with(['client', 'worksite'])->orderBy('start_time')->get(),
+            'todayWeather' => $today->mapWithKeys(fn (Intervention $i) => [$i->id => app(WeatherService::class)->forDay($i, today())])->filter(),
             'lastPayments' => Payment::query()->counted()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
         ]);
     }

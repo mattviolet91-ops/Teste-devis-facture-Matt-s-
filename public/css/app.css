@@ -778,3 +778,65 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .pdf-pages canvas { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: var(--shadow); border-radius: 4px; }
 .pdf-status, .pdf-fallback { margin: 1rem 0 0; color: var(--text-muted); text-align: center; }
 @media (max-width: 380px) { .pdf-bar-btn span { display: none; } }
+/* Bouton « Retour » en haut des pages */
+.back-link { display: inline-flex; align-items: center; gap: .25rem; min-height: 44px; margin: -.25rem 0 .25rem -.5rem; padding: 0 .75rem 0 .5rem;
+  border-radius: 999px; color: var(--accent-strong); font-weight: 600; text-decoration: none; }
+.back-link:hover { background: var(--accent-soft); }
+.back-link .icon { width: 20px; height: 20px; }
+/* Barre d'actions fixe au-dessus du menu du bas (devis, factures) */
+.quick-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)); z-index: 25;
+  display: flex; gap: .5rem; padding: .5rem 1rem; background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(8px); border-top: 1px solid var(--border); }
+.quick-bar .btn { flex: 1; justify-content: center; min-height: 44px; padding-inline: .5rem; }
+.quick-bar-spacer { height: 64px; }
+@media (min-width: 900px) { .quick-bar, .quick-bar-spacer { display: none; } }
+/* Glisser pour agir (planning, devis, factures) */
+.swipe { position: relative; overflow: hidden; }
+.swipe-content { position: relative; z-index: 1; background: var(--surface); transition: transform .2s ease; touch-action: pan-y; }
+.planning .swipe { border-radius: var(--radius-sm); }
+.swipe-actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; align-items: stretch; margin: 0; }
+.swipe-action { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 84px; padding: 0 .75rem;
+  border: 0; background: var(--accent-strong); color: #fff; font: inherit; font-size: .8125rem; font-weight: 600; text-decoration: none; cursor: pointer; }
+.swipe-action.swipe-ok { background: var(--success); }
+@media (prefers-reduced-motion: reduce) { .swipe-content { transition: none; } }
+/* Éléments du planning glissables : fond opaque (sinon l'action se voit à travers). */
+.planning-item.swipe-content { background: color-mix(in srgb, var(--brand-accent) 12%, var(--surface)); }
+.planning-item.swipe-content.kind-rdv { background: color-mix(in srgb, #7B61FF 12%, var(--surface)); }
+/* Bloc « Aujourd'hui » de l'accueil */
+.today-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+.today-list li { display: grid; gap: .5rem; padding-bottom: .75rem; border-bottom: 1px solid var(--border); }
+.today-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.today-main { display: grid; gap: .125rem; color: inherit; text-decoration: none; }
+.today-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Options d'affichage (menu Plus) */
+.pref-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+.pref-toggle { display: flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--text); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; text-align: left; }
+.pref-switch { flex: none; position: relative; width: 34px; height: 20px; border-radius: 999px; background: var(--border); transition: background .15s; }
+.pref-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.pref-toggle[aria-pressed="true"] .pref-switch { background: var(--success); }
+.pref-toggle[aria-pressed="true"] .pref-switch::after { transform: translateX(14px); }
+
+/* Grands boutons : texte et zones à toucher plus grands (gants, extérieur). */
+:root[data-big] { font-size: 112.5%; --bottom-nav-h: 74px; }
+:root[data-big] .btn { min-height: 52px; padding-inline: 1.125rem; }
+:root[data-big] .btn-sm { min-height: 44px; }
+:root[data-big] .list-item { min-height: 76px; }
+:root[data-big] .bottom-nav a, :root[data-big] .bottom-nav button { font-size: .8125rem; }
+:root[data-big] .bottom-nav .icon { width: 28px; height: 28px; }
+:root[data-big] input, :root[data-big] select, :root[data-big] textarea { min-height: 52px; font-size: 1.0625rem; }
+
+/* Plein soleil : clair, contraste maximal, traits plus épais (lisible dehors). Gagne sur le mode sombre. */
+:root[data-sun] {
+  color-scheme: light;
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F1F3F4; --border: #5B6670;
+  --text: #000000; --text-muted: #1E2A33;
+  --accent-strong: #004E6B; --accent-soft: #D6EEF7; --on-accent: #000000;
+  --nav-bg: #000000; --nav-text: #FFFFFF;
+  --success: #0B5E36; --success-soft: #D2EDDD; --danger: #8F1209; --danger-soft: #FADAD6; --warning: #5E3D00; --warning-soft: #FFE9B8;
+  --shadow: none;
+}
+:root[data-sun] body { font-weight: 500; }
+:root[data-sun] .card, :root[data-sun] .list, :root[data-sun] input, :root[data-sun] select, :root[data-sun] textarea, :root[data-sun] .btn-secondary { border-width: 2px; }
+:root[data-sun] .muted { color: var(--text-muted); }
+:root[data-sun] .bottom-nav { border-top-width: 2px; }

@@ -92,6 +92,9 @@
                 @if ($errors->any())
                     <div class="alert alert-error" role="alert">Certains champs sont à corriger.</div>
                 @endif
+                @if ($backUrl = \App\Support\BackLink::for(request()))
+                    <a class="back-link" href="{{ $backUrl }}" data-back><x-icon name="chevron-left" /> Retour</a>
+                @endif
                 @yield('content')
             </div>
         </main>
@@ -157,6 +160,10 @@
                 @endif
             </div>
         </details>
+        <div class="pref-toggles" role="group" aria-label="Affichage sur ce téléphone">
+            <button class="pref-toggle" type="button" data-pref-toggle="big" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Grands boutons</button>
+            <button class="pref-toggle" type="button" data-pref-toggle="sun" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Plein soleil</button>
+        </div>
         <div class="sheet-footer">
             <a class="btn btn-secondary" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}"><x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}</a>
             <form method="POST" action="{{ route('logout') }}">

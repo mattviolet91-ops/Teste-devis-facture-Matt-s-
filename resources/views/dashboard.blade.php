@@ -54,6 +54,55 @@
             </form>
         @endif
         @switch($block)
+            @case('today')
+            @php
+                $isAdmin = auth()->user()->isAdmin();
+                $calls = collect($isAdmin ? $overdue->map(fn ($i) => ['who' => $i->client, 'why' => 'Facture '.$i->number.' en retard', 'url' => route('reminders.show', $i)]) : [])
+                    ->concat($toFollowUp->map(fn ($q) => ['who' => $q->client, 'why' => 'Devis '.$q->number.' sans réponse', 'url' => route('quotes.show', $q)]))
+                    ->filter(fn ($c) => $c['who']?->phone)->take(4);
+            @endphp
+            <div class="card today">
+                <div class="card-head"><h2>Aujourd'hui</h2><span class="muted small">{{ ucfirst(today()->locale('fr')->isoFormat('dddd D MMMM')) }}</span></div>
+                @if ($today->isEmpty())
+                    <p class="muted" style="margin:0">Aucun rendez-vous ni chantier aujourd'hui. <a href="{{ route('planning.create', ['type' => 'rdv']) }}">Ajouter un rendez-vous</a></p>
+                @else
+                    <ul class="today-list">
+                        @foreach ($today as $item)
+                            @php
+                                $address = $item->address();
+                                $phone = preg_replace('/\D/', '', (string) $item->client?->phone);
+                                $meteo = $todayWeather[$item->id] ?? null;
+                            @endphp
+                            <li>
+                                <a class="today-main" href="{{ route('planning.show', $item) }}">
+                                    <strong>{{ $item->start_time ? $item->timeLabel().' · ' : '' }}{{ $item->heading() }}</strong>
+                                    <span class="muted small">{{ $item->isAppointment() ? 'RDV · ' : '' }}{{ $item->title }}{{ $address ? ' · '.$address : '' }}</span>
+                                    @if ($meteo)
+                                        @if ($meteo['alerts'])<span class="weather-alert">⚠ {{ implode(' · ', $meteo['alerts']) }}</span>
+                                        @else<span class="small muted">Météo : {{ \App\Services\WeatherService::summary($meteo) }}</span>@endif
+                                    @endif
+                                </a>
+                                <span class="today-actions">
+                                    @if ($address)<a class="btn btn-secondary btn-sm" href="https://www.google.com/maps/dir/?api=1&amp;destination={{ urlencode($address) }}" target="_blank" rel="noopener"><x-icon name="map" /> Itinéraire</a>@endif
+                                    @if ($phone)<a class="btn btn-secondary btn-sm" href="tel:{{ $phone }}"><x-icon name="phone" /> Appeler</a>@endif
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($calls->isNotEmpty())
+                    <h3 class="small muted" style="margin-top:1rem">Appels à passer</h3>
+                    <ul class="stat-list">
+                        @foreach ($calls as $call)
+                            <li>
+                                <a href="{{ $call['url'] }}">{{ $call['who']->displayName() }} <span class="muted small">· {{ $call['why'] }}</span></a>
+                                <a class="btn btn-secondary btn-sm" href="tel:{{ preg_replace('/\D/', '', $call['who']->phone) }}"><x-icon name="phone" /> Appeler</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+                @break
             @case('kpis')
             <div class="grid grid-3">
                 <a class="card kpi kpi-accent kpi-link" href="{{ route('invoices.index', ['status' => 'unpaid']) }}">

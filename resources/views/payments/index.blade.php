@@ -58,7 +58,8 @@
     @endif
 
     @if ($payments->isEmpty())
-        <div class="card empty"><x-icon name="wallet" /><h2>Aucun paiement sur cette période</h2></div>
+        <div class="card empty"><x-icon name="wallet" /><h2>Aucun paiement sur cette période</h2>
+            <p><a class="btn" href="{{ route('invoices.index', ['status' => 'unpaid']) }}"><x-icon name="receipt" /> Factures à encaisser</a></p></div>
     @else
         <ul class="list">
             @foreach ($payments as $payment)

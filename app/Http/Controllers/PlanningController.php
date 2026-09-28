@@ -133,6 +133,15 @@ class PlanningController extends Controller
         return redirect()->route('planning.show', $intervention)->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Intervention').' enregistré'.($intervention->isAppointment() ? '' : 'e').'.');
     }
 
+    /** Marquer comme fait (glisser dans le planning, ou bouton « Fait »). */
+    public function done(Intervention $intervention): RedirectResponse
+    {
+        $intervention->forceFill(['status' => 'done'])->save();
+        ActivityLogger::log('planning.done', 'Fait : '.$intervention->title, $intervention->client);
+
+        return back()->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Chantier').' marqué comme fait.');
+    }
+
     /** « Comment nous a-t-il connus ? » : modifiable depuis le rendez-vous, enregistré sur la fiche client. */
     public function source(Request $request, Intervention $intervention): RedirectResponse
     {

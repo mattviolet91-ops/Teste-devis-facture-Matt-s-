@@ -31,8 +31,11 @@
     @else
         <ul class="list">
             @foreach ($quotes as $quote)
-                <li>
-                    <a class="list-item" href="{{ route('quotes.show', $quote) }}">
+                <li class="swipe" @if ($quote->awaitsAnswer()) data-swipe @endif>
+                    @if ($quote->awaitsAnswer())
+                        <div class="swipe-actions"><a class="swipe-action" href="{{ route('emails.create', ['devis' => $quote->id, 'relance' => 1]) }}" tabindex="-1"><x-icon name="send" /> Relancer</a></div>
+                    @endif
+                    <a class="list-item swipe-content" href="{{ route('quotes.show', $quote) }}">
                         <span class="list-main">
                             <strong>{{ $quote->displayNumber() }} · {{ $quote->client?->displayName() }}</strong>
                             <span class="muted small">{{ $quote->title ?: 'Sans objet' }} · {{ ($quote->issue_date ?? $quote->updated_at)->format('d/m/Y') }}</span>

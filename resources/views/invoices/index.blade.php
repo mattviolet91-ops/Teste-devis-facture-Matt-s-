@@ -32,8 +32,15 @@
     @else
         <ul class="list">
             @foreach ($invoices as $invoice)
-                <li>
-                    <a class="list-item" href="{{ route('invoices.show', $invoice) }}">
+                @php $open = ! $invoice->isCredit() && in_array($invoice->status, \App\Models\Invoice::OPEN, true); @endphp
+                <li class="swipe" @if ($open) data-swipe @endif>
+                    @if ($open)
+                        <div class="swipe-actions">
+                            <a class="swipe-action swipe-ok" href="{{ route('invoices.show', ['invoice' => $invoice, 'encaisser' => 1]) }}#paiements" tabindex="-1"><x-icon name="wallet" /> Encaisser</a>
+                            <a class="swipe-action" href="{{ route('reminders.show', $invoice) }}" tabindex="-1"><x-icon name="send" /> Relancer</a>
+                        </div>
+                    @endif
+                    <a class="list-item swipe-content" href="{{ route('invoices.show', $invoice) }}">
                         <span class="list-main">
                             <strong>{{ $invoice->displayNumber() }} · {{ $invoice->client?->displayName() }}</strong>
                             <span class="muted small">{{ $invoice->kindLabel() }}{{ $invoice->title ? ' · '.$invoice->title : '' }} · {{ ($invoice->issue_date ?? $invoice->updated_at)->format('d/m/Y') }}</span>

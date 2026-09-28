@@ -31,7 +31,14 @@
                 </div>
                 <div class="planning-items">
                     @foreach ($day['items'] as $item)
-                        <a class="planning-item kind-{{ $item->kind }} status-{{ $item->status }}" href="{{ route('planning.show', $item) }}">
+                        <div class="swipe" @if ($item->status === 'planned') data-swipe @endif>
+                        @if ($item->status === 'planned')
+                            <form class="swipe-actions" method="POST" action="{{ route('planning.done', $item) }}">
+                                @csrf
+                                <button class="swipe-action swipe-ok" type="submit" tabindex="-1"><x-icon name="check" /> Fait</button>
+                            </form>
+                        @endif
+                        <a class="planning-item swipe-content kind-{{ $item->kind }} status-{{ $item->status }}" href="{{ route('planning.show', $item) }}">
                             <strong>{{ $item->start_time && $item->starts_on->isSameDay($day['date']) ? ($item->isAppointment() ? $item->timeRange() : $item->timeLabel()).' · ' : '' }}{{ $item->heading() }}</strong>
                             <span class="small">{{ $item->isAppointment() ? 'RDV · ' : '' }}{{ $item->client ? $item->title : '' }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
                             @if ($item->address())<span class="small muted">{{ $item->location ?: ($item->worksite?->city ?? $item->client?->city) }}</span>@endif
@@ -43,11 +50,13 @@
                                 @endif
                             @endif
                         </a>
+                        </div>
                     @endforeach
                 </div>
             </section>
         @empty
-            <div class="card empty"><x-icon name="calendar" /><h2>Rien de prévu ce mois-ci</h2></div>
+            <div class="card empty"><x-icon name="calendar" /><h2>Rien de prévu ce mois-ci</h2>
+                <p><a class="btn" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="plus" /> Ajouter un rendez-vous</a></p></div>
         @endforelse
     </div>
 

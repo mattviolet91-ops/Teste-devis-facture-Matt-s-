@@ -32,6 +32,7 @@ final class Navigation
 
     /** Blocs de la page d'accueil : clé => libellé. */
     public const HOME_BLOCKS = [
+        'today' => 'Aujourd\'hui (rendez-vous du jour, itinéraire, météo, appels)',
         'kpis' => 'Chiffres clés (à encaisser, devis en attente, encaissé)',
         'requests' => 'Demandes de devis reçues (site internet)',
         'activity' => 'Activité de la période',
@@ -41,10 +42,10 @@ final class Navigation
         'payments' => 'Derniers paiements',
     ];
 
-    public const DEFAULT_HOME = ['requests', 'kpis', 'planning', 'todo', 'activity', 'payments'];
+    public const DEFAULT_HOME = ['today', 'requests', 'kpis', 'planning', 'todo', 'activity', 'payments'];
 
     /** Blocs de l'accueil visibles par un commercial (pas de montants encaissés ni de CA). */
-    public const COMMERCIAL_HOME = ['requests', 'planning', 'shortcuts', 'todo'];
+    public const COMMERCIAL_HOME = ['today', 'requests', 'planning', 'shortcuts', 'todo'];
 
     /** @return list<string> */
     public static function bottom(): array

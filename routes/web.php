@@ -156,6 +156,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->whereNumber('intervention');
     Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
     Route::put('/planning/{intervention}/provenance', [PlanningController::class, 'source'])->whereNumber('intervention')->name('planning.source');
+    Route::post('/planning/{intervention}/fait', [PlanningController::class, 'done'])->whereNumber('intervention')->name('planning.done');
 
     Route::resource('rapports', ReportController::class)->except('index')
         ->parameters(['rapports' => 'report'])->names('reports')->whereNumber('report');
