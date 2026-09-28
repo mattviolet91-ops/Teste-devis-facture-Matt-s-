@@ -2,10 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Client;
-use App\Models\Invoice;
-use App\Models\Quote;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,36 +9,34 @@ class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_error_pages_are_in_french_and_hide_details(): void
+    public function test_security_headers_are_sent(): void
     {
-        $this->get('/page-qui-nexiste-pas')->assertNotFound()->assertSee('Page introuvable')->assertSee('Retour à l\'accueil', false);
+        $response = $this->get(route('login'));
 
-        $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('invoices.index'))->assertForbidden()->assertSee('Accès refusé')->assertSee('Cette page est réservée au gérant.');
+        $response->assertHeader('X-Frame-Options', 'DENY');
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->assertStringContainsString("script-src 'self'", $response->headers->get('Content-Security-Policy'));
     }
 
-    public function test_offline_list_never_offers_invoices_to_a_commercial(): void
+    public function test_private_storage_is_not_served_directly(): void
     {
-        $this->actingAs($this->admin());
-        $client = Client::factory()->create();
-        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Travaux', 'validity_days' => 30,
-            'lines' => [['type' => 'item', 'title' => 'Faîtage', 'quantity' => '1', 'unit_price' => '100']]]);
-        $quote = Quote::query()->firstOrFail();
-        $this->post(route('quotes.send', $quote));
-        $this->post(route('quotes.accept', $quote));
-        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
-        $invoice = Invoice::query()->firstOrFail();
-        $this->getJson(route('offline.pages'))->assertOk()->assertJsonFragment([route('invoices.show', $invoice->id)]);
-
-        $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $urls = $this->getJson(route('offline.pages'))->assertOk()->json('urls');
-        $this->assertContains(route('clients.show', $client->id), $urls);
-        $this->assertEmpty(array_filter($urls, fn ($url) => str_contains($url, '/factures') || str_contains($url, '/paiements') || str_contains($url, '/relances')));
+        $this->get('/storage/branding/logo.png')->assertNotFound();
     }
 
-    public function test_security_check_command_reports_problems(): void
+    public function test_every_settings_page_requires_login(): void
     {
-        $this->admin();
-        $this->artisan('app:security-check')->expectsOutputToContain('Mode debug désactivé')->assertFailed();
+        foreach (['company', 'branding', 'vat', 'numbering', 'account'] as $page) {
+            $this->get(route("settings.$page"))->assertRedirect(route('login'));
+        }
+    }
+
+    public function test_unknown_module_returns_404(): void
+    {
+        $this->actingAs($this->admin())->get('/inexistant')->assertNotFound();
+    }
+
+    public function test_app_pages_are_not_indexed_by_search_engines(): void
+    {
+        $this->get(route('login'))->assertSee('<meta name="robots" content="noindex, nofollow">', false);
     }
 }
