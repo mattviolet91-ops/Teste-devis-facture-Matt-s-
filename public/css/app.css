@@ -758,3 +758,4 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .sheet-footer { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 1rem; }
 .sheet-footer form { margin: 0; }
 .sheet-footer .btn { width: 100%; justify-content: center; }
+.text-danger { color: var(--danger); }

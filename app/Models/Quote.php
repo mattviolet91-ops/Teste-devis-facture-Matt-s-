@@ -93,6 +93,11 @@ class Quote extends Model
     }
 
     /** Photos imprimées en annexe du PDF. */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function interventions(): HasMany
     {
         return $this->hasMany(Intervention::class)->orderBy('starts_on');

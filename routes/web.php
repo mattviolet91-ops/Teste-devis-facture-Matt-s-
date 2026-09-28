@@ -10,6 +10,7 @@ use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MyposNotificationController;
@@ -151,6 +152,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->whereNumber('intervention');
     Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
     Route::put('/planning/{intervention}/provenance', [PlanningController::class, 'source'])->whereNumber('intervention')->name('planning.source');
+
+    Route::resource('achats', ExpenseController::class)->except('show')
+        ->parameters(['achats' => 'expense'])->names('expenses')->whereNumber('expense');
+    Route::get('/achats/{expense}/ticket', [ExpenseController::class, 'receipt'])->whereNumber('expense')->name('expenses.receipt');
 
     Route::get('/demandes', [QuoteRequestController::class, 'index'])->name('requests.index');
     Route::get('/demandes/{quoteRequest}', [QuoteRequestController::class, 'show'])->whereNumber('quoteRequest')->name('requests.show');

@@ -22,6 +22,7 @@ final class Navigation
         'photos' => ['Photos', 'camera', 'photos.index', ['photos.*']],
         'entretiens' => ['Entretiens', 'tool', 'maintenance.index', ['maintenance.*']],
         'statistiques' => ['Stats', 'chart', 'statistics', ['statistics']],
+        'achats' => ['Achats', 'cart', 'expenses.index', ['expenses.*']],
         'prestations' => ['Prestations', 'book', 'catalog.index', ['catalog.*']],
         'emails' => ['Emails', 'mail', 'emails.index', ['emails.*']],
         'avis' => ['Avis', 'check', 'reviews.index', ['reviews.*']],
