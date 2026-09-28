@@ -109,7 +109,10 @@ class PdfTest extends TestCase
         $this->assertStringContainsString('Bon pour accord', $html);
         $this->assertStringContainsString('Médiateur Test', $html);
         $this->assertStringContainsString('Conditions générales de vente', $html);
-        $this->assertStringNotContainsString('Formulaire de rétractation', $html);
+        // CGV validées le 28/09/2026 : titres en gras, formulaire de rétractation à la fin du texte.
+        $this->assertStringContainsString('<b>1. Entreprise et champ d&#039;application.</b>', $html);
+        $this->assertStringContainsString('<b>18. Litiges.</b>', $html);
+        $this->assertStringContainsString('<b>Formulaire de rétractation (à renvoyer uniquement pour annuler le contrat) :</b>', $html);
     }
 
     public function test_professional_client_siret_is_printed(): void

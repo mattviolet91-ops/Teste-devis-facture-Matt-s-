@@ -343,7 +343,13 @@
     <div class="annex-title">Conditions générales de vente</div>
     <div class="cgv small">
         @foreach (preg_split('/\R{1,}/', trim($pdf['cgv'])) as $paragraph)
-            @if (trim($paragraph) !== '')<p>{{ $paragraph }}</p>@endif
+            @if (trim($paragraph) !== '')
+                @if (preg_match('/^(\d+\.\s[^.]{2,80}\.|[^.:«]{3,90}\s:)\s(.*)$/su', trim($paragraph), $m))
+                    <p><b>{{ $m[1] }}</b> {{ $m[2] }}</p>
+                @else
+                    <p>{{ $paragraph }}</p>
+                @endif
+            @endif
         @endforeach
     </div>
 @endif
