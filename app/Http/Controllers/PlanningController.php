@@ -124,6 +124,22 @@ class PlanningController extends Controller
         return redirect()->route('planning.show', $intervention)->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Intervention').' enregistré'.($intervention->isAppointment() ? '' : 'e').'.');
     }
 
+    /** « Comment nous a-t-il connus ? » : modifiable depuis le rendez-vous, enregistré sur la fiche client. */
+    public function source(Request $request, Intervention $intervention): RedirectResponse
+    {
+        $client = $intervention->client;
+        abort_unless($client, 404);
+
+        $data = $request->validate([
+            'source' => ['nullable', Rule::in(array_keys(Client::SOURCES))],
+            'source_detail' => ['nullable', 'string', 'max:160'],
+        ], [], ['source' => 'provenance', 'source_detail' => 'précision']);
+
+        $client->update(['source' => $data['source'] ?? null, 'source_detail' => $data['source_detail'] ?? null]);
+
+        return redirect()->route('planning.show', $intervention)->with('status', 'Provenance du client enregistrée.');
+    }
+
     public function destroy(Intervention $intervention): RedirectResponse
     {
         $date = $intervention->starts_on->toDateString();

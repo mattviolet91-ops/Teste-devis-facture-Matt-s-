@@ -150,6 +150,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         ->names('planning')
         ->whereNumber('intervention');
     Route::get('/planning/{intervention}/agenda.ics', [PlanningController::class, 'ics'])->whereNumber('intervention')->name('planning.ics');
+    Route::put('/planning/{intervention}/provenance', [PlanningController::class, 'source'])->whereNumber('intervention')->name('planning.source');
 
     Route::get('/demandes', [QuoteRequestController::class, 'index'])->name('requests.index');
     Route::get('/demandes/{quoteRequest}', [QuoteRequestController::class, 'show'])->whereNumber('quoteRequest')->name('requests.show');

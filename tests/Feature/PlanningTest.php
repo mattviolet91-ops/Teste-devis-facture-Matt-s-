@@ -6,6 +6,7 @@ use App\Mail\ClientMessage;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Quote;
+use App\Models\User;
 use App\Models\Worksite;
 use App\Services\PushService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -192,5 +193,25 @@ class PlanningTest extends TestCase
         $this->put(route('planning.update', $work), ['kind' => 'chantier', 'client_id' => $this->client->id, 'title' => 'Démoussage',
             'starts_on' => '2026-10-16', 'start_time' => '08:00', 'remind_days' => 2, 'remind_client' => '1', 'status' => 'planned']);
         $this->assertNull($work->fresh()->reminder_sent_at);
+    }
+
+    public function test_client_source_can_be_changed_from_the_appointment(): void
+    {
+        $rdv = Intervention::query()->create(['kind' => 'rdv', 'client_id' => $this->client->id, 'title' => 'Visite toiture', 'starts_on' => '2026-10-08', 'ends_on' => '2026-10-08', 'start_time' => '14:00']);
+
+        $this->get(route('planning.show', $rdv))->assertOk()->assertSee('Comment nous a-t-il connus ?');
+
+        $this->put(route('planning.source', $rdv), ['source' => 'google', 'source_detail' => 'Fiche Google'])
+            ->assertRedirect(route('planning.show', $rdv))->assertSessionHasNoErrors();
+        $this->assertSame('google', $this->client->fresh()->source);
+        $this->assertSame('Fiche Google', $this->client->fresh()->source_detail);
+
+        $this->put(route('planning.source', $rdv), ['source' => 'nimporte'])->assertSessionHasErrors('source');
+        $this->assertSame('google', $this->client->fresh()->source);
+
+        // Un commercial peut aussi la corriger.
+        $this->actingAs(User::factory()->create(['role' => 'commercial']));
+        $this->put(route('planning.source', $rdv), ['source' => 'recommandation'])->assertSessionHasNoErrors();
+        $this->assertSame('recommandation', $this->client->fresh()->source);
     }
 }

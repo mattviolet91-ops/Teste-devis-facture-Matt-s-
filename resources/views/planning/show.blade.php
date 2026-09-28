@@ -49,6 +49,19 @@
         </div>
     </div>
 
+    @if ($client)
+    <div class="card">
+        <h2>Comment nous a-t-il connus ?</h2>
+        <form method="POST" action="{{ route('planning.source', $intervention) }}" class="form-grid cols-2">
+            @csrf
+            @method('PUT')
+            <x-select name="source" label="Provenance" :options="\App\Models\Client::SOURCES" :value="$client->source" placeholder="Non renseignée" />
+            <x-field name="source_detail" label="Précision" :value="$client->source_detail" placeholder="ex. recommandé par M. Martin" />
+            <div class="span-2"><button class="btn btn-secondary" type="submit"><x-icon name="check" /> Enregistrer</button></div>
+        </form>
+    </div>
+    @endif
+
     @if ($message)
     <div class="card" data-share>
         @csrf

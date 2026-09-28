@@ -60,6 +60,24 @@ class StatisticsTest extends TestCase
         $this->assertArrayNotHasKey('google', $rows->all());
     }
 
+    public function test_statistics_chart_counts_new_clients_by_source(): void
+    {
+        Carbon::setTestNow('2026-09-25 10:00');
+        $this->actingAs($this->admin());
+        Client::factory()->count(3)->create(['source' => 'google']);
+        Client::factory()->create(['source' => 'recommandation']);
+        Client::factory()->create(['source' => null]);
+
+        $response = $this->get(route('statistics'))->assertOk()
+            ->assertSee('Comment vos clients vous ont trouvés')
+            ->assertSee('5 nouveaux clients')
+            ->assertSee('3 · 60 %')
+            ->assertSee('1 · 20 %');
+
+        $found = $response->viewData('found');
+        $this->assertSame(['google', 'recommandation', 'inconnue'], $found->keys()->all());
+    }
+
     public function test_clients_can_be_filtered_by_source(): void
     {
         $this->actingAs($this->admin());

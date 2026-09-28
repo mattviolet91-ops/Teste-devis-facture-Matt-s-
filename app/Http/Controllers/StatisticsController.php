@@ -68,6 +68,11 @@ class StatisticsController extends Controller
             ->whereDate('issue_date', '>=', $from)->whereDate('issue_date', '<=', $to)
             ->groupBy('client_id')->selectRaw('client_id, -SUM(total_ht) as n')->pluck('n', 'client_id'), 'revenue');
 
+        // Graphe « Comment vos clients vous ont trouvés » : nouveaux clients par provenance, « Non renseignée » à la fin.
+        $found = $rows->filter(fn ($row) => $row['prospects'] > 0)
+            ->map(fn ($row) => ['label' => $row['label'], 'count' => $row['prospects']])
+            ->sortBy(fn ($row, $key) => [$key === 'inconnue' ? 1 : 0, -$row['count']]);
+
         $rows = $rows
             ->map(fn ($row) => $row + ['rate' => $row['sent'] ? (int) round($row['accepted'] * 100 / $row['sent']) : null])
             ->filter(fn ($row) => $row['prospects'] || $row['sent'] || $row['accepted'] || $row['revenue'])
@@ -81,6 +86,6 @@ class StatisticsController extends Controller
             'revenue' => $rows->sum('revenue'),
         ];
 
-        return view('statistics.index', compact('period', 'from', 'to', 'rows', 'totals'));
+        return view('statistics.index', compact('period', 'from', 'to', 'rows', 'totals', 'found'));
     }
 }

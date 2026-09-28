@@ -40,6 +40,26 @@
         <div class="card kpi kpi-accent"><span class="label">CA facturé (HT)</span><span class="value">{{ Money::format($totals['revenue']) }}</span></div>
     </div>
 
+    @if ($found->isNotEmpty())
+        @php $maxFound = max(1, $found->max('count')); $totalFound = $found->sum('count'); @endphp
+        <div class="card" style="margin-top:1rem">
+            <div class="card-head"><h2>Comment vos clients vous ont trouvés</h2><span class="small muted">{{ $totalFound }} nouveau{{ $totalFound > 1 ? 'x' : '' }} client{{ $totalFound > 1 ? 's' : '' }}</span></div>
+            <ul class="hbars" aria-label="Nouveaux clients par provenance">
+                @foreach ($found as $key => $item)
+                    @php $percent = (int) round($item['count'] * 100 / $totalFound); @endphp
+                    <li class="{{ $key === 'inconnue' ? 'is-unknown' : '' }}" title="{{ $item['label'] }} : {{ $item['count'] }} client{{ $item['count'] > 1 ? 's' : '' }} ({{ $percent }} %)">
+                        <span class="hbar-label">{{ $item['label'] }}</span>
+                        <span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width: {{ max(1, (int) round($item['count'] * 100 / $maxFound)) }}%"></span></span>
+                        <span class="hbar-value">{{ $item['count'] }} · {{ $percent }} %</span>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($found->has('inconnue'))
+                <p class="muted small" style="margin:.75rem 0 0">« Non renseignée » : complétez la provenance sur la fiche du client ou depuis son rendez-vous.</p>
+            @endif
+        </div>
+    @endif
+
     @if ($rows->isEmpty())
         <div class="card" style="margin-top:1rem"><p class="muted" style="margin:0">Aucune donnée sur cette période. Renseignez « Comment nous a-t-il connu ? » sur la fiche de chaque client.</p></div>
     @else

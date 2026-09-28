@@ -667,6 +667,15 @@ button.nav-link { width: 100%; border: 0; background: none; font: inherit; color
 /* Paiements */
 .progress { height: .5rem; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: .75rem; }
 .progress span { display: block; height: 100%; background: var(--success, #2E7D32); }
+/* Graphe en barres horizontales (statistiques de provenance). */
+.hbars { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
+.hbars li { display: grid; grid-template-columns: minmax(6.5rem, 11rem) 1fr auto; grid-template-areas: "label track value"; align-items: center; gap: .75rem; font-size: .9rem; }
+.hbar-label { grid-area: label; }
+.hbar-track { grid-area: track; height: .75rem; }
+.hbar-fill { display: block; height: 100%; min-width: 3px; background: var(--accent-strong); border-radius: 0 4px 4px 0; }
+.hbars .is-unknown .hbar-fill { background: var(--text-muted); opacity: .45; }
+.hbar-value { grid-area: value; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 479px) { .hbars li { grid-template-columns: 1fr auto; grid-template-areas: "label value" "track track"; gap: .25rem .75rem; } }
 .chip-radio { cursor: pointer; }
 .chip-radio input { margin: 0 .25rem 0 0; }
 .chip-radio:has(input:checked) { background: var(--brand-accent); border-color: var(--brand-accent); color: #0B2A36; }
