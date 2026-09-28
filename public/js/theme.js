@@ -6,8 +6,9 @@
     if (theme === 'light' || theme === 'dark') {
       root.setAttribute('data-theme', theme);
     }
-    // Options de ce téléphone : grands boutons, contraste « plein soleil ».
+    // Option de ce téléphone : grands boutons.
     if (localStorage.getItem('pref-big') === '1') { root.setAttribute('data-big', ''); }
-    if (localStorage.getItem('pref-sun') === '1') { root.setAttribute('data-sun', ''); }
+    // Ancienne option « plein soleil » retirée : on efface le choix enregistré.
+    localStorage.removeItem('pref-sun');
   } catch (e) { /* stockage indisponible : on suit le réglage du téléphone */ }
 })();

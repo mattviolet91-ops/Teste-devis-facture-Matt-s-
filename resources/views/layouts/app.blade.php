@@ -162,7 +162,6 @@
         </details>
         <div class="pref-toggles" role="group" aria-label="Affichage sur ce téléphone">
             <button class="pref-toggle" type="button" data-pref-toggle="big" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Grands boutons</button>
-            <button class="pref-toggle" type="button" data-pref-toggle="sun" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Plein soleil</button>
         </div>
         <div class="sheet-footer">
             <a class="btn btn-secondary" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}"><x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}</a>

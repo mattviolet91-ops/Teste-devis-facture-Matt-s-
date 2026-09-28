@@ -809,7 +809,7 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .today-main { display: grid; gap: .125rem; color: inherit; text-decoration: none; }
 .today-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 /* Options d'affichage (menu Plus) */
-.pref-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+.pref-toggles { display: grid; grid-template-columns: 1fr; gap: .5rem; margin-top: .75rem; }
 .pref-toggle { display: flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface-2); color: var(--text); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; text-align: left; }
 .pref-switch { flex: none; position: relative; width: 34px; height: 20px; border-radius: 999px; background: var(--border); transition: background .15s; }
@@ -826,17 +826,3 @@ details > summary.btn::-webkit-details-marker { display: none; }
 :root[data-big] .bottom-nav .icon { width: 28px; height: 28px; }
 :root[data-big] input, :root[data-big] select, :root[data-big] textarea { min-height: 52px; font-size: 1.0625rem; }
 
-/* Plein soleil : clair, contraste maximal, traits plus épais (lisible dehors). Gagne sur le mode sombre. */
-:root[data-sun] {
-  color-scheme: light;
-  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F1F3F4; --border: #5B6670;
-  --text: #000000; --text-muted: #1E2A33;
-  --accent-strong: #004E6B; --accent-soft: #D6EEF7; --on-accent: #000000;
-  --nav-bg: #000000; --nav-text: #FFFFFF;
-  --success: #0B5E36; --success-soft: #D2EDDD; --danger: #8F1209; --danger-soft: #FADAD6; --warning: #5E3D00; --warning-soft: #FFE9B8;
-  --shadow: none;
-}
-:root[data-sun] body { font-weight: 500; }
-:root[data-sun] .card, :root[data-sun] .list, :root[data-sun] input, :root[data-sun] select, :root[data-sun] textarea, :root[data-sun] .btn-secondary { border-width: 2px; }
-:root[data-sun] .muted { color: var(--text-muted); }
-:root[data-sun] .bottom-nav { border-top-width: 2px; }

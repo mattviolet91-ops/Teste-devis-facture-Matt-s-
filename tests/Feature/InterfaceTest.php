@@ -87,6 +87,6 @@ class InterfaceTest extends TestCase
     {
         $this->get(route('catalog.index', ['q' => 'zzzz-introuvable']))->assertSee('Ajouter une prestation');
         $this->get(route('payments.index'))->assertSee('Factures à encaisser');
-        $this->get(route('dashboard'))->assertSee('data-pref-toggle="big"', false)->assertSee('data-pref-toggle="sun"', false)->assertSee('Plein soleil');
+        $this->get(route('dashboard'))->assertSee('data-pref-toggle="big"', false)->assertDontSee('Plein soleil');
     }
 }

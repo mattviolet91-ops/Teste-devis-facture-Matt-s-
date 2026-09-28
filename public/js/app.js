@@ -14,7 +14,7 @@
     });
   });
 
-  // Options d'affichage de ce téléphone (menu Plus) : grands boutons, plein soleil.
+  // Options d'affichage de ce téléphone (menu Plus) : grands boutons.
   document.querySelectorAll('[data-pref-toggle]').forEach(function (button) {
     var name = button.getAttribute('data-pref-toggle');
     var attribute = 'data-' + name;
