@@ -19,7 +19,7 @@ class RestrictByRole
 {
     /** Pages ouvertes au commercial (noms de routes). */
     public const COMMERCIAL_ALLOWED = [
-        'dashboard', 'search', 'logout', 'documents', 'branding.image',
+        'dashboard', 'search', 'logout', 'documents', 'pdf.view', 'branding.image',
         'clients.*', 'worksites.*', 'quotes.*', 'planning.*', 'requests.*', 'photos.*', 'attachments.*',
         'maintenance.*', 'reports.*', 'emails.*', 'catalog.index', 'push.*', 'offline.*',
         'settings.account', 'settings.account.*',

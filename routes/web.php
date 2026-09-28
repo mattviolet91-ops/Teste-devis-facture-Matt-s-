@@ -17,6 +17,7 @@ use App\Http\Controllers\MyposNotificationController;
 use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PushController;
@@ -84,6 +85,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/recherche', SearchController::class)->name('search');
     // Bouton « Documents » : réouvre la dernière liste consultée (devis ou factures).
     Route::get('/documents', [QuoteController::class, 'documents'])->name('documents');
+    Route::get('/apercu-pdf', PdfViewerController::class)->name('pdf.view');
     Route::get('/hors-ligne/jeton', [OfflineController::class, 'token'])->name('offline.token');
     Route::get('/hors-ligne/pages', [OfflineController::class, 'pages'])->name('offline.pages');
     Route::get('/statistiques', StatisticsController::class)->name('statistics');

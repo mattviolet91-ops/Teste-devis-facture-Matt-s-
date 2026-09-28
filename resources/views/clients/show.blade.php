@@ -207,7 +207,11 @@
             <ul class="stat-list">
                 @foreach ($client->attachments as $attachment)
                     <li>
-                        <a href="{{ route('attachments.show', $attachment) }}" target="_blank" rel="noopener">{{ $attachment->name }}</a>
+                        @if ($attachment->mime === 'application/pdf')
+                            <a href="{{ \App\Http\Controllers\PdfViewerController::link(route('attachments.show', $attachment), $attachment->name) }}">{{ $attachment->name }}</a>
+                        @else
+                            <a href="{{ route('attachments.show', $attachment) }}" target="_blank" rel="noopener">{{ $attachment->name }}</a>
+                        @endif
                         <span class="muted small">{{ $attachment->humanSize() }} · {{ $attachment->created_at->format('d/m/Y') }}
                             <form method="POST" action="{{ route('attachments.destroy', $attachment) }}" data-confirm="Supprimer « {{ $attachment->name }} » ?" style="display:inline">
                                 @csrf

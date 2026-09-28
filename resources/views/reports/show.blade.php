@@ -18,7 +18,7 @@
                 @if ($report->sent_at)<span class="badge badge-success">Envoyé le {{ $report->sent_at->format('d/m') }}</span>@endif</p>
         </div>
         <div class="action-bar" style="margin:0">
-            <a class="btn" href="{{ route('reports.pdf', $report) }}" target="_blank" rel="noopener"><x-icon name="file" /> Voir le PDF</a>
+            <a class="btn" href="{{ \App\Http\Controllers\PdfViewerController::link(route('reports.pdf', $report), 'Rapport du '.$report->visit_date->format('d/m/Y')) }}"><x-icon name="file" /> Voir le PDF</a>
             <a class="btn btn-secondary" href="{{ route('reports.edit', $report) }}">Modifier</a>
         </div>
     </div>
