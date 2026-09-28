@@ -35,6 +35,13 @@
                             <strong>{{ $item->start_time && $item->starts_on->isSameDay($day['date']) ? ($item->isAppointment() ? $item->timeRange() : $item->timeLabel()).' · ' : '' }}{{ $item->heading() }}</strong>
                             <span class="small">{{ $item->isAppointment() ? 'RDV · ' : '' }}{{ $item->client ? $item->title : '' }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
                             @if ($item->address())<span class="small muted">{{ $item->location ?: ($item->worksite?->city ?? $item->client?->city) }}</span>@endif
+                            @if ($meteo = $weather[$item->id][$day['date']->toDateString()] ?? null)
+                                @if ($meteo['alerts'])
+                                    <span class="weather-alert">⚠ {{ implode(' · ', $meteo['alerts']) }}</span>
+                                @else
+                                    <span class="small muted">Météo : {{ \App\Services\WeatherService::summary($meteo) }}</span>
+                                @endif
+                            @endif
                         </a>
                     @endforeach
                 </div>
@@ -43,6 +50,10 @@
             <div class="card empty"><x-icon name="calendar" /><h2>Rien de prévu ce mois-ci</h2></div>
         @endforelse
     </div>
+
+    @if ($weather->isNotEmpty())
+        <p class="muted small" style="margin:.5rem 0 0">Météo des 8 prochains jours pour les heures de chantier (7 h – 19 h) · données MET Norway.</p>
+    @endif
 
     @if ($toPlan->isNotEmpty())
         <div class="card" style="margin-top:1rem">

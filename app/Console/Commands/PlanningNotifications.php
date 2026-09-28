@@ -7,6 +7,7 @@ use App\Services\EmailService;
 use App\Services\MailSettings;
 use App\Services\PlanningMessages;
 use App\Services\PushService;
+use App\Services\WeatherService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
@@ -43,7 +44,7 @@ class PlanningNotifications extends Command
                     $rdv ? $rdv.' rendez-vous' : null,
                     $work ? $work.' chantier'.($work > 1 ? 's' : '') : null,
                 ])->filter()->implode(' et '),
-                $items->map(fn (Intervention $i) => $this->summary($i))->implode(' · '),
+                $items->map(fn (Intervention $i) => $this->summary($i).$this->weatherAlert($i, $tomorrow))->implode(' · '),
                 route('planning.index', ['date' => $tomorrow->toDateString()]),
             );
         }
@@ -108,6 +109,14 @@ class PlanningNotifications extends Command
         $this->info($items->count().' rappel(s).');
 
         return self::SUCCESS;
+    }
+
+    /** « ⚠ Pluie 5 mm » quand la météo du lendemain gêne le chantier. */
+    private function weatherAlert(Intervention $i, Carbon $day): string
+    {
+        $alerts = app(WeatherService::class)->forIntervention($i, fetch: true)[$day->toDateString()]['alerts'] ?? [];
+
+        return $alerts ? ' ⚠ '.implode(', ', $alerts) : '';
     }
 
     private function summary(Intervention $i): string

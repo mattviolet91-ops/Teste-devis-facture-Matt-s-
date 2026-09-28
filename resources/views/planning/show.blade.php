@@ -50,6 +50,24 @@
         </div>
     </div>
 
+    @if ($weather)
+    <div class="card">
+        <h2>Météo</h2>
+        <ul class="stat-list">
+            @foreach ($weather as $date => $meteo)
+                <li>
+                    <span>{{ ucfirst(\Illuminate\Support\Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM')) }}</span>
+                    <strong>
+                        {{ \App\Services\WeatherService::summary($meteo) }}
+                        @foreach ($meteo['alerts'] as $alert)<br><span class="badge badge-warning">⚠ {{ $alert }}</span>@endforeach
+                    </strong>
+                </li>
+            @endforeach
+        </ul>
+        <p class="muted small" style="margin:.5rem 0 0">Prévisions pour 7 h – 19 h, mises à jour toutes les heures · données MET Norway.</p>
+    </div>
+    @endif
+
     @if ($client)
     <div class="card">
         <h2>Comment nous a-t-il connus ?</h2>

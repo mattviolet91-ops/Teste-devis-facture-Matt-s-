@@ -8,6 +8,7 @@ use App\Models\Quote;
 use App\Services\ActivityLogger;
 use App\Services\PlanningMessages;
 use App\Services\Settings;
+use App\Services\WeatherService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -47,6 +48,8 @@ class PlanningController extends Controller
             'from' => $from,
             'to' => $to,
             'days' => $days,
+            // Météo des prochains jours (lue dans le cache, mise à jour toutes les heures).
+            'weather' => $interventions->where('status', 'planned')->mapWithKeys(fn (Intervention $i) => [$i->id => app(WeatherService::class)->forIntervention($i)])->filter(),
             'previous' => ($mode === 'mois' ? $from->copy()->subMonth() : $from->copy()->subWeek())->toDateString(),
             'next' => ($mode === 'mois' ? $from->copy()->addMonth() : $from->copy()->addWeek())->toDateString(),
             // Devis acceptés sans intervention prévue : à planifier.
@@ -91,6 +94,7 @@ class PlanningController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $intervention = Intervention::query()->create($this->validated($request));
+        $this->refreshWeather($intervention);
         $what = $intervention->isAppointment() ? 'Rendez-vous' : 'Intervention';
         ActivityLogger::log('planning.created', "$what planifié(e) {$intervention->whenLabel()} : {$intervention->title}", $intervention->client);
 
@@ -103,7 +107,11 @@ class PlanningController extends Controller
         abort_if($intervention->client_id && ! $intervention->client, 404);
         $intervention->load(['client', 'worksite', 'quote']);
 
-        return view('planning.show', ['intervention' => $intervention, 'message' => $intervention->client ? $this->message($intervention) : null]);
+        return view('planning.show', [
+            'intervention' => $intervention,
+            'message' => $intervention->client ? $this->message($intervention) : null,
+            'weather' => $intervention->status === 'planned' ? app(WeatherService::class)->forIntervention($intervention) : [],
+        ]);
     }
 
     public function edit(Intervention $intervention): View
@@ -120,6 +128,7 @@ class PlanningController extends Controller
             $intervention->reminded_at = null;
         }
         $intervention->save();
+        $this->refreshWeather($intervention);
 
         return redirect()->route('planning.show', $intervention)->with('status', ($intervention->isAppointment() ? 'Rendez-vous' : 'Intervention').' enregistré'.($intervention->isAppointment() ? '' : 'e').'.');
     }
@@ -138,6 +147,14 @@ class PlanningController extends Controller
         $client->update(['source' => $data['source'] ?? null, 'source_detail' => $data['source_detail'] ?? null]);
 
         return redirect()->route('planning.show', $intervention)->with('status', 'Provenance du client enregistrée.');
+    }
+
+    /** Météo du nouveau lieu ou de la nouvelle date : téléchargée juste après l'affichage de la page. */
+    private function refreshWeather(Intervention $intervention): void
+    {
+        if (! app()->runningUnitTests()) {
+            dispatch(fn () => app(WeatherService::class)->forIntervention($intervention->fresh(['client', 'worksite']), fetch: true))->afterResponse();
+        }
     }
 
     public function destroy(Intervention $intervention): RedirectResponse
