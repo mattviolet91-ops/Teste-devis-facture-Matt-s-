@@ -123,6 +123,10 @@ class MyposTest extends TestCase
         $this->assertSame(0, $this->invoice->payments()->count());
         $this->assertSame('pending', $attempt->fresh()->status);
 
+        // Le lien d'une autre facture ne peut pas annuler cette tentative.
+        $this->post(route('portal.invoice.pay-cancel', str_repeat('z', 48)), ['OrderID' => $attempt->order_id]);
+        $this->assertSame('pending', $attempt->fresh()->status);
+
         $this->post(route('portal.invoice.pay-cancel', $this->invoice->public_token), ['OrderID' => $attempt->order_id])
             ->assertRedirect(route('portal.invoice', $this->invoice->public_token));
         $this->assertSame('cancelled', $attempt->fresh()->status);

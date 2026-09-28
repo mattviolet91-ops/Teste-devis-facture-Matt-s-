@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /** Mode hors connexion : page de secours, jeton pour les envois différés, pages à garder sur le téléphone. */
@@ -39,12 +40,25 @@ class OfflineController extends Controller
         foreach (Quote::query()->latest('updated_at')->limit(60)->pluck('id') as $id) {
             $urls[] = route('quotes.show', $id);
         }
-        foreach (Invoice::query()->latest('updated_at')->limit(60)->pluck('id') as $id) {
-            $urls[] = route('invoices.show', $id);
+        // Factures : seulement pour le gérant (un commercial n'y a pas accès).
+        if (auth()->user()->isAdmin()) {
+            foreach (Invoice::query()->latest('updated_at')->limit(60)->pluck('id') as $id) {
+                $urls[] = route('invoices.show', $id);
+            }
         }
         for ($page = 2; $page <= (int) ceil($clients->count() / 25); $page++) {
             $urls[] = route('clients.index', ['page' => $page]);
         }
+
+        // Compte commercial : on ne propose pas les pages qu'il ne peut pas ouvrir.
+        $user = auth()->user();
+        $urls = array_filter($urls, function (string $url) use ($user) {
+            try {
+                return $user->canOpen((string) app('router')->getRoutes()->match(Request::create($url))->getName());
+            } catch (\Throwable) {
+                return false;
+            }
+        });
 
         return response()->json(['urls' => array_values(array_unique($urls))])->header('Cache-Control', 'no-store');
     }

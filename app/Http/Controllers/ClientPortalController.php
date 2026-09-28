@@ -139,7 +139,9 @@ class ClientPortalController extends Controller
     public function payCancelled(Request $request, string $token): RedirectResponse
     {
         if ($order = $request->input('OrderID')) {
-            OnlinePayment::query()->where('order_id', (string) $order)->where('status', 'pending')->update(['status' => 'cancelled']);
+            // Seulement une tentative de la facture de ce lien.
+            OnlinePayment::query()->where('order_id', (string) $order)->where('status', 'pending')
+                ->whereHas('invoice', fn ($q) => $q->where('public_token', $token))->update(['status' => 'cancelled']);
         }
 
         return redirect()->route('portal.invoice', $token)->with('status', 'Paiement annulé : aucun montant n\'a été débité.');

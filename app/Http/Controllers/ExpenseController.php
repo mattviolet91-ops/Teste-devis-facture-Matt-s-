@@ -91,8 +91,10 @@ class ExpenseController extends Controller
     {
         abort_unless($expense->receipt_path && Storage::disk('local')->exists($expense->receipt_path), 404);
 
-        return Storage::disk('local')->response($expense->receipt_path, $expense->receipt_name ?? 'ticket', [
-            'Content-Disposition' => 'inline; filename="'.Str::ascii($expense->receipt_name ?? 'ticket').'"',
+        $name = Str::of($expense->receipt_name ?? 'ticket')->ascii()->replaceMatches('/[^A-Za-z0-9._ -]/', '')->limit(100, '')->trim()->value() ?: 'ticket';
+
+        return Storage::disk('local')->response($expense->receipt_path, $name, [
+            'Content-Disposition' => 'inline; filename="'.$name.'"',
         ]);
     }
 
