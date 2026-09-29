@@ -12,6 +12,7 @@
 @endphp
 
 @section('content')
+    @include('statistics._tabs')
     <div class="page-head">
         <div>
             <h1>Provenance des clients</h1>

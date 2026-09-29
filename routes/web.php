@@ -29,6 +29,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings;
+use App\Http\Controllers\SiteStatsCollectController;
+use App\Http\Controllers\SiteStatsController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WixArchiveController;
@@ -60,6 +62,9 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::match(['get', 'post'], '/f/{token}/paiement-annule', [ClientPortalController::class, 'payCancelled'])->name('portal.invoice.pay-cancel');
 });
 
+// Statistiques du site internet : visites et clics envoyés par le script « s.js » (sans cookie).
+Route::post('/stats/collect', SiteStatsCollectController::class)->middleware('throttle:120,1')->name('portal.site.collect');
+
 // Demande de devis depuis le site internet (page publique, adresse client).
 Route::get('/demande-de-devis', [QuoteRequestFormController::class, 'create'])->name('portal.request');
 Route::post('/demande-de-devis', [QuoteRequestFormController::class, 'store'])->middleware('throttle:5,1')->name('portal.request.store');
@@ -89,6 +94,14 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/hors-ligne/jeton', [OfflineController::class, 'token'])->name('offline.token');
     Route::get('/hors-ligne/pages', [OfflineController::class, 'pages'])->name('offline.pages');
     Route::get('/statistiques', StatisticsController::class)->name('statistics');
+    Route::prefix('statistiques/site')->name('site-stats.')->group(function () {
+        Route::get('/', [SiteStatsController::class, 'index'])->name('index');
+        Route::put('/wordpress', [SiteStatsController::class, 'saveApp'])->name('wpcom.app');
+        Route::get('/wordpress/connexion', [SiteStatsController::class, 'connect'])->name('wpcom.connect');
+        Route::get('/wordpress/retour', [SiteStatsController::class, 'callback'])->name('wpcom.callback');
+        Route::post('/wordpress/actualiser', [SiteStatsController::class, 'sync'])->middleware('throttle:10,1')->name('wpcom.sync');
+        Route::delete('/wordpress', [SiteStatsController::class, 'disconnect'])->name('wpcom.disconnect');
+    });
 
     Route::get('/clients/importer', [ClientImportController::class, 'create'])->name('clients.import');
     Route::post('/clients/importer/apercu', [ClientImportController::class, 'preview'])->middleware('throttle:20,1')->name('clients.import.preview');

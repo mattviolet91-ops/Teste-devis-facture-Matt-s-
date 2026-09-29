@@ -6,6 +6,7 @@ use App\Http\Controllers\TrashController;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Models\SiteEvent;
 use App\Models\Snapshot;
 use App\Models\Worksite;
 use Illuminate\Console\Command;
@@ -36,6 +37,9 @@ class PurgeTrash extends Command
             ->each(fn (Invoice $invoice) => $invoice->lines()->delete())->each->forceDelete()->count();
         $worksites = Worksite::onlyTrashed()->where('deleted_at', '<', $limit)->get()->each->forceDelete()->count();
         $clients = Client::onlyTrashed()->where('deleted_at', '<', $limit)->get()->each->forceDelete()->count();
+
+        // Statistiques du site : conservées 13 mois au plus (recommandation de la CNIL).
+        SiteEvent::query()->where('created_at', '<', now()->subMonths(13))->delete();
 
         $this->info("Corbeille vidée : {$clients} client(s), {$worksites} chantier(s), {$quotes} devis, {$invoices} brouillon(s) de facture.");
 

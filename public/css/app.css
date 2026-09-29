@@ -826,3 +826,12 @@ details > summary.btn::-webkit-details-marker { display: none; }
 :root[data-big] .bottom-nav .icon { width: 28px; height: 28px; }
 :root[data-big] input, :root[data-big] select, :root[data-big] textarea { min-height: 52px; font-size: 1.0625rem; }
 
+/* Statistiques du site */
+.stats-tabs { margin-bottom: .75rem; }
+.day-bars { display: flex; align-items: flex-end; gap: 2px; height: 140px; padding-top: .5rem; border-bottom: 1px solid var(--border); }
+.day-bar { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.day-bar > span { display: block; width: 100%; background: var(--accent-strong); border-radius: 4px 4px 0 0; }
+.day-bars-wp .day-bar > span { background: var(--text-muted); }
+.day-bars-axis { display: flex; justify-content: space-between; margin-top: .25rem; }
+.page-path { overflow-wrap: anywhere; }
+.howto-list { margin: .75rem 0; padding-left: 1.25rem; display: grid; gap: .375rem; }

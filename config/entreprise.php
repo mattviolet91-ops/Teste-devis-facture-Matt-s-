@@ -160,6 +160,18 @@ CGV,
         'last_error' => '',
     ],
 
+    // Statistiques du site internet : lecture de WordPress.com (Jetpack Stats). Jeton enregistré chiffré.
+    'site_stats' => [
+        'wpcom_client_id' => '',
+        'wpcom_client_secret' => '',
+        'wpcom_token' => '',
+        'wpcom_blog_id' => '',
+        'wpcom_connected_at' => null,
+        'wpcom_last_sync_at' => null,
+        'wpcom_last_error' => '',
+        'wpcom_top' => [],
+    ],
+
     // Personnalisation : barre du bas (3 raccourcis) et blocs de la page d'accueil.
     'layout' => [
         'bottom_nav' => ['dashboard', 'clients', 'documents'],
