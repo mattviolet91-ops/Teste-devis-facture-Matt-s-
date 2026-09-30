@@ -6,7 +6,10 @@
     @include('documents._switch', ['current' => 'quotes'])
     <div class="page-head">
         <h1>Devis</h1>
-        <a class="btn" href="{{ route('quotes.create') }}"><x-icon name="plus" /> Nouveau devis</a>
+        <div class="action-bar" style="margin:0">
+            <a class="btn" href="{{ route('quotes.create') }}"><x-icon name="plus" /> Nouveau devis</a>
+            <a class="btn btn-secondary" href="{{ route('quotes.express') }}"><x-icon name="send" /> Devis express</a>
+        </div>
     </div>
 
     <form method="GET" action="{{ route('quotes.index') }}" class="card filters">

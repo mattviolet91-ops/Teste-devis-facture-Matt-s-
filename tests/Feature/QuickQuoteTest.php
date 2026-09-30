@@ -30,7 +30,10 @@ class QuickQuoteTest extends TestCase
     public function test_a_sentence_becomes_a_draft_quote_after_preview(): void
     {
         $this->actingAs($this->admin());
-        $this->get(route('quotes.express'))->assertOk()->assertSee('Devis express');
+        $this->get(route('quotes.express'))->assertOk()->assertSee('Devis express')->assertSee('href="'.route('quotes.index').'" data-back', false);
+        $this->get(route('quotes.index'))->assertSee(route('quotes.express'));
+        $this->get(route('quotes.create'))->assertSee(route('quotes.express'));
+        $this->get(route('dashboard'))->assertDontSee('> Devis express</a>', false);
 
         $this->post(route('quotes.express.preview'), ['text' => self::TEXT])->assertOk()
             ->assertSee('Mme Martin')->assertSee('Remplacement d&#039;une faîtière', false)->assertSee('Bibliothèque')

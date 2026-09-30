@@ -10,6 +10,9 @@
     <div class="page-head">
         <div>
             <h1>{{ $quote->exists ? 'Modifier le brouillon' : 'Nouveau devis' }}</h1>
+            @unless ($quote->exists)
+                <p>Plus rapide : <a href="{{ route('quotes.express') }}">Devis express</a>, le devis en une phrase.</p>
+            @endunless
             @if ($quote->replaces)
                 <p>Nouvelle version du devis {{ $quote->replaces->number }} : un nouveau numéro sera attribué à l'envoi.</p>
             @endif

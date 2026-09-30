@@ -38,7 +38,7 @@ final class BackLink
             $name === 'clients.edit' => route('clients.show', $id($param('client'))),
             $name === 'worksites.create' => route('clients.show', $id($param('client'))),
             $name === 'worksites.edit', $name === 'photos.worksite' => self::worksiteClient($param('worksite')),
-            in_array($name, ['quotes.show', 'quotes.create'], true) => route('quotes.index'),
+            in_array($name, ['quotes.show', 'quotes.create', 'quotes.express', 'quotes.express.preview', 'quotes.express.store'], true) => route('quotes.index'),
             in_array($name, ['quotes.edit', 'quotes.signature'], true) => route('quotes.show', $id($param('quote'))),
             in_array($name, ['invoices.show', 'invoices.create'], true) => route('invoices.index'),
             in_array($name, ['invoices.edit', 'reminders.show'], true) => route('invoices.show', $id($param('invoice'))),
