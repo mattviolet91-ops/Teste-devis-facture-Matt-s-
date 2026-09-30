@@ -7,6 +7,7 @@ use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\User;
+use App\Services\QuickQuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -60,6 +61,51 @@ class QuickQuoteTest extends TestCase
         $this->post(route('quotes.express.preview'), ['text' => 'Martin — faîtage 15 ml à 45 €'])->assertDontSee('Réfection complète');
         $this->post(route('quotes.express.store'), ['text' => 'Mme Martin — nettoyage gouttières 20 ml']);
         $this->assertSame(0, Quote::query()->count());
+    }
+
+    /** @return list<array{0: string, 1: string, 2: string, 3: ?int}> titre, quantité, unité, prix unitaire */
+    private function lines(string $text): array
+    {
+        $parsed = app(QuickQuoteService::class)->parse($text);
+        $this->assertSame($this->martin->id, $parsed['client']?->id, 'Client non trouvé pour : '.$text);
+
+        return array_map(fn ($l) => [$l['title'], $l['quantity'], $l['unit'], $l['unit_price_cents']], $parsed['lines']);
+    }
+
+    public function test_dictated_sentences_are_read_correctly(): void
+    {
+        // Virgules et points comme séparateurs, unités en toutes lettres.
+        $this->assertSame([['Démoussage', '120', 'm²', 1200], ['Remplacement d\'une faîtière', '3', 'u', 15000]],
+            $this->lines('Madame Martin à Massy. Démoussage 120 mètres carrés à 12 euros. Remplacement de 3 faîtières à 150 euros.'));
+        // Client et première prestation dans la même phrase, « et » entre deux prestations.
+        $this->assertSame([['Démoussage', '120', 'm²', 1200], ['Évacuation', '1', 'forfait', 15000]],
+            $this->lines('Devis pour Mme Martin démoussage 120 m2 à 12€ et évacuation forfait 150€'));
+        // « x3 150 € » : 3 à 150 €, jamais 3 150 €.
+        $this->assertSame([['Faîtière', '3', 'u', 15000], ['Démoussage', '12.5', 'm²', 1200]],
+            $this->lines('Mme Martin — faîtière x3 150 € — démoussage 12,5 m² à 12 € HT'));
+        // Prix « le mètre linéaire », « de l'heure », milliers avec espace, mots gardés dans la désignation.
+        $this->assertSame([['Nettoyage et vérification des gouttières', '20', 'ml', 800], ['Main d\'oeuvre', '8', 'h', 4500], ['Pose de velux', '2', 'u', 150000], ['Démoussage', '1200', 'm²', 350]],
+            $this->lines("Martin\nnettoyage des gouttières 20 ml à 8 € le mètre linéaire\nmain d'oeuvre 8 h à 45 € de l'heure\npose de 2 velux à 1 500 €\ndémoussage 1 200 m² à 3,50 € le m²"));
+        // Mots en plus du nom de la bibliothèque : reconnue, mais les mots sont gardés.
+        $line = app(QuickQuoteService::class)->parse('Martin, remplacement faîtière côté rue x2 à 150 €')['lines'][0];
+        $this->assertSame(['Remplacement faîtière côté rue', true], [$line['title'], $line['recognized']]);
+    }
+
+    public function test_a_vague_word_never_picks_a_library_price(): void
+    {
+        CatalogItem::query()->create(['name' => 'Traitement de la charpente', 'unit' => 'm²', 'unit_price' => 2500, 'vat_rate' => 1000, 'is_active' => true]);
+        CatalogItem::query()->create(['name' => 'Traitement hydrofuge de la toiture', 'unit' => 'm²', 'unit_price' => 900, 'vat_rate' => 1000, 'is_active' => true]);
+
+        $line = app(QuickQuoteService::class)->parse('Mme Martin — traitement 80 m² à 8 € du m²')['lines'][0];
+        $this->assertSame(['Traitement', '80', 'm²', 800, false], [$line['title'], $line['quantity'], $line['unit'], $line['unit_price_cents'], $line['recognized']]);
+        $this->assertStringContainsString('proche de votre bibliothèque', $line['warnings'][0]);
+
+        $parsed = app(QuickQuoteService::class)->parse('Mme Martin — traitement hydrofuge de la toiture 80 m²');
+        $this->assertSame([900, true, []], [$parsed['lines'][0]['unit_price_cents'], $parsed['lines'][0]['recognized'], $parsed['errors']]);
+        $this->assertSame(['Martinez', 'Mme Martin'], [
+            app(QuickQuoteService::class)->parse('Martinez recherche de fuite forfait 180 €')['client']?->last_name,
+            app(QuickQuoteService::class)->parse('Martin Massy, recherche de fuite forfait 180 €')['client']?->displayName(),
+        ]);
     }
 
     public function test_commercial_can_use_quick_quotes(): void

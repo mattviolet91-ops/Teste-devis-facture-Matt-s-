@@ -13,8 +13,8 @@
     <form method="POST" action="{{ route('quotes.express.preview') }}" class="card">
         @csrf
         <x-field name="text" label="Client, puis les prestations" type="textarea" rows="5" :value="$text" required
-            placeholder="Mme Martin Massy — démoussage 120 m² à 12 € — faîtage 15 ml à 45 € — évacuation forfait 150 €"
-            hint="Commencez par le client. Séparez les prestations par un tiret, un point-virgule ou un retour à la ligne. Pour chacune : quantité + unité (m², ml, u, h, forfait) et prix « à … € ». Astuce : le micro du clavier permet de dicter." />
+            placeholder="Mme Martin, démoussage 120 m² à 12 €, 3 faîtières à 150 €, évacuation forfait 150 €"
+            hint="Commencez par le client. Séparez les prestations par une virgule, un point, « et », un tiret ou un retour à la ligne. Pour chacune : la quantité (120 m², 15 ml, 3 faîtières, x3, forfait) et le prix « à … € ». Astuce : le micro du clavier permet de dicter." />
         <div class="action-bar"><button class="btn" type="submit"><x-icon name="check" /> Voir l'aperçu</button></div>
     </form>
 
@@ -58,7 +58,7 @@
                                 <span>{{ str_replace('.', ',', $line['quantity']) }} {{ $line['unit'] }} × {{ $line['unit_price_cents'] !== null ? Money::format($line['unit_price_cents']) : '? €' }}</span>
                                 <strong>{{ $line['total'] !== null ? Money::format($line['total']) : '—' }}</strong>
                             </div>
-                            @foreach ($line['warnings'] as $warning)<div class="small {{ $line['blocking'] ? 'text-danger' : 'muted' }}">{{ ucfirst($warning) }}</div>@endforeach
+                            @foreach ($line['warnings'] as $warning)<div class="small {{ in_array($warning, $line['problems'], true) ? 'text-danger' : 'muted' }}">{{ ucfirst($warning) }}</div>@endforeach
                         </li>
                     @endforeach
                 </ul>
