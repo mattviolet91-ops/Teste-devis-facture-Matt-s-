@@ -21,6 +21,7 @@ use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PushController;
+use App\Http\Controllers\QuickQuoteController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteRequestController;
 use App\Http\Controllers\QuoteRequestFormController;
@@ -117,6 +118,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/chantiers/{worksite}/modifier', [WorksiteController::class, 'edit'])->name('worksites.edit');
     Route::put('/chantiers/{worksite}', [WorksiteController::class, 'update'])->name('worksites.update');
     Route::delete('/chantiers/{worksite}', [WorksiteController::class, 'destroy'])->name('worksites.destroy');
+
+    Route::get('/devis/express', [QuickQuoteController::class, 'create'])->name('quotes.express');
+    Route::post('/devis/express/apercu', [QuickQuoteController::class, 'preview'])->name('quotes.express.preview');
+    Route::post('/devis/express', [QuickQuoteController::class, 'store'])->name('quotes.express.store');
 
     Route::resource('devis', QuoteController::class)
         ->parameters(['devis' => 'quote'])
@@ -300,6 +305,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/compte/mot-de-passe', [Settings\AccountController::class, 'updatePassword'])->name('account.password');
         Route::post('/compte/deconnecter-appareils', [Settings\AccountController::class, 'logoutOthers'])->middleware('throttle:5,1')->name('account.logout-others');
         Route::get('/journal', [Settings\AccountController::class, 'journal'])->name('journal');
+
+        Route::get('/acces-claude', [Settings\ApiTokenController::class, 'index'])->name('api');
+        Route::post('/acces-claude', [Settings\ApiTokenController::class, 'store'])->middleware('throttle:10,1')->name('api.store');
+        Route::delete('/acces-claude/{token}', [Settings\ApiTokenController::class, 'destroy'])->whereNumber('token')->name('api.destroy');
 
         Route::get('/comptes', [Settings\UserController::class, 'index'])->name('users');
         Route::post('/comptes', [Settings\UserController::class, 'store'])->middleware('throttle:10,1')->name('users.store');

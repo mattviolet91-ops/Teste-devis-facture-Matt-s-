@@ -118,6 +118,7 @@
         </div>
         <div class="sheet-grid">
             <a class="sheet-item" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
+            <a class="sheet-item" href="{{ route('quotes.express') }}"><x-icon name="send" /> Devis express</a>
             @if ($user->isAdmin())<a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
             <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>

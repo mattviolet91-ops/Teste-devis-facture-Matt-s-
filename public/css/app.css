@@ -835,3 +835,9 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .day-bars-axis { display: flex; justify-content: space-between; margin-top: .25rem; }
 .page-path { overflow-wrap: anywhere; }
 .howto-list { margin: .75rem 0; padding-left: 1.25rem; display: grid; gap: .375rem; }
+/* Devis express : aperçu des lignes */
+.express-lines { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.express-lines li { display: grid; gap: .25rem; padding: .75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.express-line-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.express-line-calc { display: flex; justify-content: space-between; gap: .75rem; font-variant-numeric: tabular-nums; }
+.express-total { display: flex; justify-content: space-between; margin: .75rem 0 0; padding: .75rem; background: var(--surface-2); border-radius: var(--radius-sm); font-size: 1.0625rem; }

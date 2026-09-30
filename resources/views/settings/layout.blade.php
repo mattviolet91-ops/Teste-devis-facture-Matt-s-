@@ -15,6 +15,7 @@
         'settings.texts' => 'Textes types',
         'settings.account' => 'Mon compte',
         'settings.users' => 'Comptes',
+        'settings.api' => 'Accès Claude',
         'settings.backups' => 'Sauvegardes',
         'settings.journal' => 'Journal',
     ];
