@@ -856,3 +856,20 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .guide-steps li, .guide-tips li { margin-bottom: .4rem; }
 .guide-tips { background: var(--surface-2); border-radius: 10px; padding: .75rem 1rem; margin-bottom: 1rem; }
 .guide-tips ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+.getting-started summary .badge { margin-left: .25rem; }
+.progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: .25rem 0 .5rem; }
+.progress span { display: block; height: 100%; background: var(--success); border-radius: inherit; }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-top: 1px solid var(--border, rgba(127, 127, 127, .2)); }
+.checklist li > span:nth-child(2) { flex: 1; }
+.checklist .btn { flex-shrink: 0; }
+.check-dot { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--text-muted); display: grid; place-items: center; }
+.checklist .is-done .check-dot { background: var(--success); border-color: var(--success); color: #fff; }
+.check-dot .icon { width: 16px; height: 16px; }
+.guide-shot { display: block; width: 100%; max-width: 280px; margin: 0 auto 1rem; border-radius: 14px; border: 1px solid var(--border, rgba(127, 127, 127, .25)); box-shadow: 0 4px 14px rgba(0, 0, 0, .08); }
+.tip-card { display: flex; gap: .75rem; align-items: flex-start; }
+.tip-card .icon { flex-shrink: 0; color: var(--brand-accent); width: 26px; height: 26px; }
+.tip-card p { margin: .25rem 0 .5rem; }
+.guide-figure { margin: 0 0 1rem; text-align: center; }
+.guide-figure .guide-shot { height: auto; margin-bottom: .4rem; }
+.guide-section:not([open]) .guide-shot { display: none; }

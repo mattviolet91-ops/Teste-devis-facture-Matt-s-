@@ -1,6 +1,6 @@
 // Service worker : notifications sur le téléphone (Web Push) et mode hors connexion.
 var PAGES = 'mc-pages-v1';
-var STATIC = 'mc-static-v1';
+var STATIC = 'mc-static-v2';
 var OFFLINE_URL = '/hors-ligne';
 
 self.addEventListener('install', function (event) {
@@ -15,7 +15,7 @@ self.addEventListener('activate', function (event) {
 
 // Jamais en cache : espace client, déconnexion, sauvegardes, jeton, liste des pages.
 var SKIP = [/^\/d\//, /^\/f\//, /^\/deconnexion/, /^\/reglages\/sauvegardes\//, /^\/hors-ligne\/(jeton|pages)/, /^\/connexion/, /^\/photos\/\d+\/original/];
-var STATIC_PATH = /^\/(css|js|fonts|icons|marque)\/|\.(css|js|png|svg|woff2?|webmanifest)$/;
+var STATIC_PATH = /^\/(css|js|fonts|icons|marque|images\/guide)\/|\.(css|js|png|svg|woff2?|webmanifest)$/;
 
 // Réseau mobile instable : une demande qui échoue est retentée une fois (ou deux)
 // avant d'abandonner, au lieu d'afficher « connexion échouée ».

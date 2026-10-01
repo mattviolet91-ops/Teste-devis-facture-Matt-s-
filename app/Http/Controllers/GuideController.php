@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\GettingStarted;
 use App\Support\Guide;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,6 +12,11 @@ class GuideController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        return view('guide', ['sections' => Guide::sections($request->user())]);
+        $user = $request->user();
+
+        return view('guide', [
+            'sections' => Guide::sections($user),
+            'checklist' => $user->isAdmin() ? GettingStarted::items($user) : [],
+        ]);
     }
 }

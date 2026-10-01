@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 
 /**
  * Contenu de la page « Guide » : chaque fonctionnalité expliquée pas à pas.
@@ -11,11 +12,80 @@ use App\Models\User;
 final class Guide
 {
     /**
-     * @return list<array{id: string, title: string, icon: string, route: ?string, link: ?string, intro: string, steps: list<string>, tips: list<string>}>
+     * @return list<array{id: string, title: string, icon: string, route: ?string, link: ?string, intro: string, steps: list<string>, tips: list<string>, image?: string, caption?: string}>
      */
     public static function sections(User $user): array
     {
         return array_values(array_filter(self::all(), fn (array $s) => ! $s['route'] || $user->canOpen($s['route'])));
+    }
+
+    /** Page de l'application → rubrique du guide (bouton « ? »). Le plus précis d'abord. */
+    private const PAGES = [
+        'quotes.express*' => 'devis-express',
+        'settings.api*' => 'claude',
+        'settings.account*' => 'compte',
+        'settings.*' => 'reglages',
+        'dashboard' => 'premiers-pas',
+        'search' => 'premiers-pas',
+        'clients.*' => 'clients',
+        'worksites.*' => 'clients',
+        'requests.*' => 'demandes',
+        'quotes.*' => 'devis',
+        'documents' => 'devis',
+        'invoices.*' => 'factures',
+        'expenses.*' => 'factures',
+        'payments.*' => 'paiements',
+        'reminders.*' => 'relances',
+        'planning.*' => 'planning',
+        'reports.*' => 'rapports',
+        'photos.*' => 'photos',
+        'maintenance.*' => 'entretiens',
+        'reviews.*' => 'avis',
+        'catalog.*' => 'prestations',
+        'emails.*' => 'emails',
+        'statistics' => 'statistiques',
+        'site-stats.*' => 'statistiques',
+        'trash.*' => 'corbeille',
+        'archives.*' => 'corbeille',
+    ];
+
+    /** Captures d'écran du guide (aussi gardées sur le téléphone pour le mode hors connexion). */
+    public static function images(User $user): array
+    {
+        return array_values(array_filter(array_map(fn (array $s) => isset($s['image']) ? asset('images/guide/'.$s['image']) : null, self::sections($user))));
+    }
+
+    /** Lien du bouton « ? » : la rubrique de la page ouverte, sinon le début du guide. */
+    public static function urlFor(?string $routeName): string
+    {
+        foreach (self::PAGES as $pattern => $id) {
+            if ($routeName && Str::is($pattern, $routeName)) {
+                return route('guide').'#'.$id;
+            }
+        }
+
+        return route('guide');
+    }
+
+    /**
+     * Astuce du jour : une des astuces du guide, différente chaque jour.
+     *
+     * @return array{text: string, section: string, title: string}|null
+     */
+    public static function tipOfTheDay(User $user, ?\DateTimeInterface $day = null): ?array
+    {
+        $tips = [];
+        foreach (self::sections($user) as $section) {
+            foreach ($section['tips'] as $tip) {
+                $tips[] = ['text' => $tip, 'section' => $section['id'], 'title' => $section['title']];
+            }
+        }
+        if ($tips === []) {
+            return null;
+        }
+        $day ??= now();
+
+        return $tips[((int) $day->format('Y') * 366 + (int) $day->format('z')) % count($tips)];
     }
 
     /** @return list<array<string, mixed>> */
@@ -23,7 +93,7 @@ final class Guide
     {
         return [
             [
-                'id' => 'premiers-pas', 'title' => 'Premiers pas', 'icon' => 'home', 'route' => 'dashboard', 'link' => 'Ouvrir l\'accueil',
+                'id' => 'premiers-pas', 'image' => 'accueil.jpg', 'caption' => 'L\'accueil : la journée, les appels à passer et les demandes reçues.', 'title' => 'Premiers pas', 'icon' => 'home', 'route' => 'dashboard', 'link' => 'Ouvrir l\'accueil',
                 'intro' => 'L\'accueil résume votre journée : rendez-vous du jour, demandes reçues, factures à encaisser et ce qu\'il reste à faire.',
                 'steps' => [
                     'Barre du bas : vos pages principales. Le bouton rond « + Nouveau » crée un devis, une facture, un client, une photo, un paiement ou un rendez-vous.',
@@ -39,7 +109,7 @@ final class Guide
                 ],
             ],
             [
-                'id' => 'clients', 'title' => 'Clients et chantiers', 'icon' => 'users', 'route' => 'clients.index', 'link' => 'Ouvrir les clients',
+                'id' => 'clients', 'image' => 'client.jpg', 'caption' => 'Une fiche client : appeler, SMS, email, devis ou rendez-vous en un geste.', 'title' => 'Clients et chantiers', 'icon' => 'users', 'route' => 'clients.index', 'link' => 'Ouvrir les clients',
                 'intro' => 'La fiche client regroupe tout : coordonnées, chantiers, devis, factures, photos, rapports, entretiens et historique.',
                 'steps' => [
                     '« + Nouveau » → Client : particulier ou professionnel, nom, téléphone, email, adresse.',
@@ -66,7 +136,7 @@ final class Guide
                 ],
             ],
             [
-                'id' => 'devis', 'title' => 'Faire un devis', 'icon' => 'file', 'route' => 'quotes.index', 'link' => 'Ouvrir les devis',
+                'id' => 'devis', 'image' => 'devis.jpg', 'caption' => 'L\'éditeur de devis : chaque prestation avec sa quantité, son unité et son prix.', 'title' => 'Faire un devis', 'icon' => 'file', 'route' => 'quotes.index', 'link' => 'Ouvrir les devis',
                 'intro' => 'Un devis reste un brouillon modifiable tant qu\'il n\'est pas envoyé. À l\'envoi, il reçoit son numéro.',
                 'steps' => [
                     'Devis → « Nouveau devis » : choisissez le client et le chantier, puis l\'objet.',
@@ -84,7 +154,7 @@ final class Guide
                 ],
             ],
             [
-                'id' => 'devis-express', 'title' => 'Devis express (en une phrase)', 'icon' => 'file', 'route' => 'quotes.express', 'link' => 'Ouvrir Devis express',
+                'id' => 'devis-express', 'image' => 'devis-express.jpg', 'caption' => 'L\'aperçu du Devis express : client, lignes et total à vérifier.', 'title' => 'Devis express (en une phrase)', 'icon' => 'file', 'route' => 'quotes.express', 'link' => 'Ouvrir Devis express',
                 'intro' => 'Écrivez ou dictez le devis en une phrase : l\'application prépare le brouillon. Rien n\'est envoyé au client.',
                 'steps' => [
                     'Devis → « Devis express » (ou le lien « Plus rapide » sur Nouveau devis).',
@@ -101,7 +171,7 @@ final class Guide
                 ],
             ],
             [
-                'id' => 'factures', 'title' => 'Factures', 'icon' => 'receipt', 'route' => 'invoices.index', 'link' => 'Ouvrir les factures',
+                'id' => 'factures', 'image' => 'facture.jpg', 'caption' => 'Une facture : envoyer, PDF, relancer, et « Encaisser » en bas.', 'title' => 'Factures', 'icon' => 'receipt', 'route' => 'invoices.index', 'link' => 'Ouvrir les factures',
                 'intro' => 'Facturez un devis accepté en un clic, ou créez une facture libre. Le numéro est attribué à l\'envoi.',
                 'steps' => [
                     'Sur un devis accepté : « Facturer » → facture complète, d\'acompte (un pourcentage), de situation ou de solde. Les acomptes déjà facturés sont déduits.',
@@ -126,7 +196,7 @@ final class Guide
                 'tips' => ['Réglages → Paiement en ligne : activez le paiement par carte sur les factures en ligne.'],
             ],
             [
-                'id' => 'relances', 'title' => 'Relances de factures', 'icon' => 'send', 'route' => 'reminders.index', 'link' => 'Ouvrir les relances',
+                'id' => 'relances', 'image' => 'relances.jpg', 'caption' => 'Les factures à relancer, avec le retard.', 'title' => 'Relances de factures', 'icon' => 'send', 'route' => 'reminders.index', 'link' => 'Ouvrir les relances',
                 'intro' => 'Les factures en retard, ou qui arrivent à échéance dans les 3 jours.',
                 'steps' => [
                     'Ouvrez une facture de la liste : le message est déjà rédigé (rappel avant échéance ou relance).',
@@ -136,7 +206,7 @@ final class Guide
                 'tips' => ['Réglages → Textes types : modifiez le texte des messages.'],
             ],
             [
-                'id' => 'planning', 'title' => 'Planning et rendez-vous', 'icon' => 'calendar', 'route' => 'planning.index', 'link' => 'Ouvrir le planning',
+                'id' => 'planning', 'image' => 'planning.jpg', 'caption' => 'Le planning de la semaine.', 'title' => 'Planning et rendez-vous', 'icon' => 'calendar', 'route' => 'planning.index', 'link' => 'Ouvrir le planning',
                 'intro' => 'Rendez-vous et chantiers à la semaine ou au mois, avec la météo.',
                 'steps' => [
                     '« Ajouter un rendez-vous » (visite, métré) ou un chantier, avec le client, l\'adresse, la date et l\'heure.',
@@ -205,7 +275,7 @@ final class Guide
                 'tips' => ['Réglages → Emails : l\'adresse d\'envoi et les textes des emails.'],
             ],
             [
-                'id' => 'statistiques', 'title' => 'Statistiques', 'icon' => 'chart', 'route' => 'statistics', 'link' => 'Ouvrir les statistiques',
+                'id' => 'statistiques', 'image' => 'statistiques.jpg', 'caption' => 'D\'où viennent vos clients.', 'title' => 'Statistiques', 'icon' => 'chart', 'route' => 'statistics', 'link' => 'Ouvrir les statistiques',
                 'intro' => 'Chiffre d\'affaires, devis acceptés, et d\'où viennent vos clients (et ce qu\'ils vous rapportent).',
                 'steps' => [
                     'Choisissez la période en haut de la page.',

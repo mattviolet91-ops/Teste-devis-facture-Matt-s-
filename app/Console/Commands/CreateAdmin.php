@@ -15,7 +15,7 @@ class CreateAdmin extends Command
 
     public function handle(): int
     {
-        $name = $this->option('name') ?: $this->ask('Nom', 'Matt Violet');
+        $name = $this->option('name') ?: $this->ask('Nom', 'Gérant');
         $email = $this->option('email') ?: $this->ask('Email de connexion', 'mv.entreprise91@gmail.com');
         $password = $this->secret('Mot de passe (12 caractères minimum, lettres et chiffres)');
         $confirmation = $this->secret('Confirmez le mot de passe');

@@ -23,7 +23,7 @@ class DemoSeeder extends Seeder
 
         User::query()->firstOrCreate(
             ['email' => 'demo@example.com'],
-            ['name' => 'Matt Violet', 'password' => 'demo-motdepasse-2026', 'role' => 'admin']
+            ['name' => 'Gérant (démo)', 'password' => 'demo-motdepasse-2026', 'role' => 'admin']
         );
 
         $dupont = Client::query()->create([

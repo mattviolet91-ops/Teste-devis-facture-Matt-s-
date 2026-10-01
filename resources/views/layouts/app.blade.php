@@ -49,6 +49,7 @@
             <input id="global-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" placeholder="Client, n° de devis ou de facture, téléphone, adresse…">
         </form>
         <span class="spacer"></span>
+        <a class="icon-btn" href="{{ \App\Support\Guide::urlFor(request()->route()?->getName()) }}" title="Aide sur cette page"><x-icon name="help" /><span class="visually-hidden">Aide sur cette page</span></a>
         <a class="icon-btn search-mobile" href="{{ route('search') }}" title="Rechercher"><x-icon name="search" /><span class="visually-hidden">Rechercher</span></a>
         <button class="icon-btn" type="button" data-theme-toggle title="Mode clair / sombre">
             <x-icon name="moon" class="icon theme-moon" /><x-icon name="sun" class="icon theme-sun" /><span class="visually-hidden">Mode clair / sombre</span>

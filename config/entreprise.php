@@ -175,7 +175,7 @@ CGV,
     // Personnalisation : barre du bas (3 raccourcis) et blocs de la page d'accueil.
     'layout' => [
         'bottom_nav' => ['dashboard', 'clients', 'documents'],
-        'home_blocks' => ['today', 'requests', 'kpis', 'planning', 'todo', 'activity', 'payments'],
+        'home_blocks' => ['today', 'requests', 'kpis', 'planning', 'todo', 'activity', 'payments', 'tip'],
     ],
 
     'backups' => [

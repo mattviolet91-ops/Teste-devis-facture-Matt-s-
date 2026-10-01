@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Support\Guide;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,6 +32,7 @@ class OfflineController extends Controller
             route('planning.index'), route('planning.index', ['date' => today()->addWeek()->toDateString()]),
             route('quotes.create'), route('invoices.create'), route('clients.create'), route('planning.create'),
             route('catalog.index'), route('maintenance.index'), route('reminders.index'), route('payments.index'),
+            route('guide'), ...Guide::images(auth()->user()),
         ];
 
         $clients = Client::query()->latest('updated_at')->pluck('id');
@@ -53,6 +55,9 @@ class OfflineController extends Controller
         // Compte commercial : on ne propose pas les pages qu'il ne peut pas ouvrir.
         $user = auth()->user();
         $urls = array_filter($urls, function (string $url) use ($user) {
+            if (str_contains($url, '/images/guide/')) {
+                return true;
+            }
             try {
                 return $user->canOpen((string) app('router')->getRoutes()->match(Request::create($url))->getName());
             } catch (\Throwable) {

@@ -40,12 +40,13 @@ final class Navigation
         'planning' => 'Prochains rendez-vous et chantiers',
         'shortcuts' => 'Raccourcis (nouveau devis, rendez-vous…)',
         'payments' => 'Derniers paiements',
+        'tip' => 'Astuce du jour (une fonction de l\'application à découvrir)',
     ];
 
-    public const DEFAULT_HOME = ['today', 'requests', 'kpis', 'planning', 'todo', 'activity', 'payments'];
+    public const DEFAULT_HOME = ['today', 'requests', 'kpis', 'planning', 'todo', 'activity', 'payments', 'tip'];
 
     /** Blocs de l'accueil visibles par un commercial (pas de montants encaissés ni de CA). */
-    public const COMMERCIAL_HOME = ['today', 'requests', 'planning', 'shortcuts', 'todo'];
+    public const COMMERCIAL_HOME = ['today', 'requests', 'planning', 'shortcuts', 'todo', 'tip'];
 
     /** @return list<string> */
     public static function bottom(): array

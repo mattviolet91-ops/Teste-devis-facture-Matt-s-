@@ -13,7 +13,7 @@ class CreateAdminCommandTest extends TestCase
 
     public function test_admin_account_is_created(): void
     {
-        $this->artisan('app:create-admin', ['--name' => 'Matt Violet', '--email' => 'matt@example.com'])
+        $this->artisan('app:create-admin', ['--name' => 'Gérant Exemple', '--email' => 'matt@example.com'])
             ->expectsQuestion('Mot de passe (12 caractères minimum, lettres et chiffres)', 'toiture-solide-2026')
             ->expectsQuestion('Confirmez le mot de passe', 'toiture-solide-2026')
             ->assertSuccessful();

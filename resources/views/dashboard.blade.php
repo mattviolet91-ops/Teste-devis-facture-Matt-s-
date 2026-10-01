@@ -33,6 +33,13 @@
         <div class="alert alert-info" role="status">Pensez à télécharger une copie de votre sauvegarde (une fois par semaine). <a href="{{ route('settings.backups') }}">Télécharger ma sauvegarde</a></div>
     @endif
 
+    @if (auth()->user()->isAdmin())
+        @php $start = \App\Support\GettingStarted::progress(auth()->user()); @endphp
+        @if ($start['done'] < $start['total'])
+            <a class="alert alert-info kpi-link" href="{{ route('guide') }}#bien-demarrer" style="display:block"><strong>Bien démarrer : {{ $start['done'] }} / {{ $start['total'] }} réglages faits.</strong> Voir ce qu'il reste →</a>
+        @endif
+    @endif
+
     @php $periodShown = false; @endphp
     <div class="home-blocks">
     @foreach (\App\Support\Navigation::home() as $block)
@@ -102,6 +109,19 @@
                     </ul>
                 @endif
             </div>
+                @break
+            @case('tip')
+            @php $tip = \App\Support\Guide::tipOfTheDay(auth()->user()); @endphp
+            @if ($tip)
+                <div class="card tip-card">
+                    <x-icon name="help" />
+                    <div>
+                        <h2 class="small muted" style="margin:0">Astuce du jour · {{ $tip['title'] }}</h2>
+                        <p>{{ $tip['text'] }}</p>
+                        <a class="small" href="{{ route('guide') }}#{{ $tip['section'] }}">En savoir plus dans le guide →</a>
+                    </div>
+                </div>
+            @endif
                 @break
             @case('kpis')
             <div class="grid grid-3">
