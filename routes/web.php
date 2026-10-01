@@ -11,6 +11,7 @@ use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MyposNotificationController;
@@ -89,6 +90,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/recherche', SearchController::class)->name('search');
+    Route::get('/guide', GuideController::class)->name('guide');
     // Bouton « Documents » : réouvre la dernière liste consultée (devis ou factures).
     Route::get('/documents', [QuoteController::class, 'documents'])->name('documents');
     Route::get('/apercu-pdf', PdfViewerController::class)->name('pdf.view');

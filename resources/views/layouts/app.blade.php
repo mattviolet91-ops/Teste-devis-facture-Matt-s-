@@ -69,6 +69,9 @@
                     <x-icon name="trash" /> Corbeille
                 </a>
             @endif
+            <a class="nav-link {{ request()->routeIs('guide') ? 'is-active' : '' }}" href="{{ route('guide') }}">
+                <x-icon name="book" /> Guide
+            </a>
             <a class="nav-link {{ request()->routeIs('settings.*') ? 'is-active' : '' }}" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}">
                 <x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}
             </a>
@@ -164,6 +167,7 @@
             <button class="pref-toggle" type="button" data-pref-toggle="big" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Grands boutons</button>
         </div>
         <div class="sheet-footer">
+            <a class="btn btn-secondary sheet-footer-wide" href="{{ route('guide') }}"><x-icon name="book" /> Guide d'utilisation</a>
             <a class="btn btn-secondary" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}"><x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
