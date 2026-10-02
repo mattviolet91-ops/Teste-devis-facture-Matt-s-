@@ -10,4 +10,5 @@ Route::prefix('v1')->middleware([AuthenticateApiToken::class, 'throttle:30,1'])-
     Route::get('/prestations', [QuoteApiController::class, 'catalog']);
     Route::post('/devis/apercu', [QuoteApiController::class, 'preview']);
     Route::post('/devis', [QuoteApiController::class, 'store']);
+    Route::post('/devis/complet', [QuoteApiController::class, 'storeStructured']);
 });

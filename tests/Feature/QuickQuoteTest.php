@@ -151,6 +151,37 @@ class QuickQuoteTest extends TestCase
         $this->withToken($plain)->getJson('/api/v1/clients?q=martin')->assertUnauthorized();
     }
 
+    public function test_claude_creates_a_complete_draft_with_sections_texts_and_options(): void
+    {
+        $plain = ApiToken::issue($this->admin(), 'Claude');
+        $api = $this->withToken($plain);
+
+        $api->postJson('/api/v1/devis/complet', ['client_id' => $this->martin->id, 'lines' => [['type' => 'item', 'title' => '']]])
+            ->assertStatus(422)->assertJsonValidationErrors(['lines.0.title', 'lines.0.quantity']);
+        $api->postJson('/api/v1/devis/complet', ['client_id' => $this->martin->id])->assertStatus(422)->assertJsonValidationErrors('lines');
+        $this->assertSame(0, Quote::query()->count());
+
+        $api->postJson('/api/v1/devis/complet', [
+            'client_id' => $this->martin->id,
+            'title' => 'Isolation de la toiture — 3 solutions',
+            'notes' => 'Chiffrage communiqué à part.',
+            'lines' => [
+                ['type' => 'text', 'description' => 'Trois solutions au choix.'],
+                ['type' => 'section', 'title' => 'Solution 1 — PIR', 'hide_prices' => true],
+                ['type' => 'item', 'title' => 'Panneaux PIR 120 mm', 'description' => 'λ 0,022, R ≈ 5,45', 'quantity' => '1', 'unit' => 'forfait', 'unit_price' => '', 'is_optional' => true],
+            ],
+        ])->assertCreated()->assertJsonPath('statut', 'brouillon')->assertJsonPath('lignes', 3)->assertJsonPath('objet', 'Isolation de la toiture — 3 solutions');
+
+        $quote = Quote::query()->sole();
+        $lines = $quote->lines()->orderBy('position')->get();
+        $this->assertSame(['draft', 30, 'Chiffrage communiqué à part.'], [$quote->status, $quote->validity_days, $quote->notes]);
+        $this->assertSame(['text', 'section', 'item'], $lines->pluck('type')->all());
+        $this->assertTrue($lines[1]->hide_prices);
+        $this->assertTrue($lines[2]->is_optional);
+        $this->assertSame('λ 0,022, R ≈ 5,45', $lines[2]->description);
+        $this->actingAs($this->admin())->get(route('quotes.edit', $quote))->assertOk()->assertSee('Panneaux PIR 120 mm');
+    }
+
     public function test_access_key_of_a_disabled_or_commercial_account_is_refused(): void
     {
         $commercial = User::factory()->create(['role' => 'commercial']);
