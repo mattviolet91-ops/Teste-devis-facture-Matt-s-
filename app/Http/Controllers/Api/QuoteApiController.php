@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ApiQuoteRequest;
 use App\Models\CatalogItem;
 use App\Models\Client;
+use App\Models\Quote;
 use App\Services\ActivityLogger;
 use App\Services\QuickQuoteService;
+use App\Services\QuoteService;
+use App\Services\Settings;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,6 +74,31 @@ class QuoteApiController extends Controller
             'total_ht' => Money::plain((int) $quote->total_ht),
             'total_ttc' => Money::plain((int) $quote->total_ttc),
         ] + $this->present($parsed), 201);
+    }
+
+    /**
+     * Devis complet (sections, textes, descriptions, options), mêmes champs que l'éditeur.
+     * Toujours en brouillon : le gérant relit, modifie et envoie lui-même.
+     */
+    public function storeStructured(ApiQuoteRequest $request, QuoteService $quotes, Settings $settings): JsonResponse
+    {
+        $attributes = $request->quoteAttributes();
+        $attributes['validity_days'] = (int) ($attributes['validity_days'] ?? $settings->get('documents.quote_validity_days', 30));
+        $attributes['worksite_id'] ??= Client::query()->find($attributes['client_id'])?->worksites()->value('id');
+
+        $quote = $quotes->saveDraft(new Quote(['status' => 'draft']), $attributes, $request->lines());
+        ActivityLogger::log('quote.api', 'Devis brouillon créé par Claude (clé d\'accès)', $quote);
+
+        return response()->json([
+            'id' => $quote->id,
+            'statut' => 'brouillon',
+            'lien' => route('quotes.show', $quote),
+            'client' => $quote->client?->displayName(),
+            'objet' => $quote->title,
+            'lignes' => $quote->lines()->count(),
+            'total_ht' => Money::plain((int) $quote->total_ht),
+            'total_ttc' => Money::plain((int) $quote->total_ttc),
+        ], 201);
     }
 
     /** @return array{texte: string, client_id?: int|null, objet?: string|null} */
