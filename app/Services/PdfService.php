@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Report;
 use App\Models\Snapshot;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Mpdf\Config\ConfigVariables;
@@ -82,7 +83,68 @@ class PdfService
         }
         $mpdf->WriteHTML($html);
 
+        // Attestation d'assurance décennale (fichier envoyé dans Réglages → Assurance) en dernière page.
+        if ($this->annexes($document, $document instanceof Quote)['insurance'] && ($path = $this->certificatePath())) {
+            $this->appendCertificate($mpdf, $path);
+        }
+
         return $mpdf->Output('', 'S');
+    }
+
+    /** Fichier de l'attestation en cours, s'il y en a un. */
+    public function certificatePath(): ?string
+    {
+        $certificate = app(InsuranceService::class)->currentCertificate();
+
+        return $certificate && Storage::disk('local')->exists($certificate->path) ? Storage::disk('local')->path($certificate->path) : null;
+    }
+
+    /** L'attestation peut-elle être insérée dans les PDF ? (PDF protégé ou abîmé : non.) */
+    public function canEmbedCertificate(string $path): bool
+    {
+        $mpdf = $this->mpdf();
+        $mpdf->WriteHTML('<p></p>');
+
+        return $this->appendCertificate($mpdf, $path);
+    }
+
+    /** Ajoute l'attestation (PDF : ses pages, image : une page) à la fin du document. */
+    private function appendCertificate(Mpdf $mpdf, string $path): bool
+    {
+        // Zone imprimable : entre les marges, au-dessus du pied de page.
+        [$left, $top, $width, $height] = [14, 14, 182, 261];
+
+        try {
+            if (mime_content_type($path) === 'application/pdf') {
+                $pages = $mpdf->setSourceFile($path);
+                for ($i = 1; $i <= min($pages, 4); $i++) {
+                    $template = $mpdf->importPage($i);
+                    $size = $mpdf->getTemplateSize($template);
+                    $scale = min($width / $size['width'], $height / $size['height']);
+                    $w = $size['width'] * $scale;
+                    $h = $size['height'] * $scale;
+                    $mpdf->AddPage();
+                    $mpdf->useTemplate($template, $left + ($width - $w) / 2, $top, $w, $h);
+                }
+
+                return true;
+            }
+
+            [$pixelWidth, $pixelHeight] = getimagesize($path) ?: [0, 0];
+            if (! $pixelWidth || ! $pixelHeight) {
+                return false;
+            }
+            $mpdf->AddPage();
+            $mpdf->WriteHTML('<div style="font-family: montserrat; font-weight: bold; font-size: 14pt; margin-bottom: 8pt;">Attestation d\'assurance décennale</div>');
+            $scale = min($width / $pixelWidth, ($height - 14) / $pixelHeight);
+            $mpdf->Image($path, $left + ($width - $pixelWidth * $scale) / 2, $top + 12, $pixelWidth * $scale, $pixelHeight * $scale, '', '', false, false);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Attestation d\'assurance non insérée dans le PDF', ['error' => $e->getMessage()]);
+
+            return false;
+        }
     }
 
     /** PDF d'un rapport d'intervention (généré à chaque ouverture). */
@@ -143,7 +205,7 @@ class PdfService
         ];
     }
 
-    /** @return array{cover: bool, cgv: bool} */
+    /** @return array{cover: bool, cgv: bool, insurance: bool} */
     private function annexes(Quote|Invoice $document, bool $isQuote): array
     {
         $pdf = $this->settings->group('pdf');
@@ -151,6 +213,7 @@ class PdfService
         return [
             'cover' => ! empty($pdf[$isQuote ? 'cover_quotes' : 'cover_invoices']),
             'cgv' => $isQuote && ! empty($pdf['cgv_enabled']) && trim((string) $pdf['cgv']) !== '',
+            'insurance' => ! empty($pdf[$isQuote ? 'insurance_quotes' : 'insurance_invoices']) && $this->certificatePath() !== null,
         ];
     }
 

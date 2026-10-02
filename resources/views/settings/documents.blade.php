@@ -11,6 +11,16 @@
         <div class="alert alert-warning">Aucun médiateur de la consommation n'est renseigné. C'est obligatoire pour travailler avec des particuliers : ajoutez-le dans <a href="{{ route('settings.company') }}">Réglages → Entreprise</a> dès votre adhésion.</div>
     @endif
 
+    <div class="card" id="attestation">
+        <h2>Attestation d'assurance décennale</h2>
+        <p class="muted small">Le fichier de votre attestation (PDF ou photo) est ajouté en dernière page du PDF. L'encadré « Assurance décennale » reste toujours imprimé sur le document.</p>
+        @if (! $certificate)
+            <div class="alert alert-warning">Aucune attestation enregistrée : ajoutez le fichier dans <a href="{{ route('settings.insurance') }}">Réglages → Assurance</a>.</div>
+        @endif
+        <label class="check"><input type="checkbox" name="pdf[insurance_quotes]" value="1" @checked(old('pdf.insurance_quotes', $pdf['insurance_quotes'] ?? true))> <span>Sur les devis</span></label>
+        <label class="check" style="margin-top:.5rem"><input type="checkbox" name="pdf[insurance_invoices]" value="1" @checked(old('pdf.insurance_invoices', $pdf['insurance_invoices'] ?? true))> <span>Sur les factures et avoirs</span></label>
+    </div>
+
     <div class="card">
         <h2>Page de couverture</h2>
         <p class="muted small">Une première page à vos couleurs : logo, type de document, client, encadré d'assurance décennale et coordonnées. Les données d'assurance se modifient dans <a href="{{ route('settings.insurance') }}">Réglages → Assurance</a>.</p>

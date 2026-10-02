@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\InsuranceCertificate;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Snapshot;
@@ -10,8 +11,10 @@ use App\Models\Worksite;
 use App\Services\PdfService;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Mpdf\Mpdf;
 use Tests\TestCase;
 
 class PdfTest extends TestCase
@@ -197,5 +200,75 @@ class PdfTest extends TestCase
         $method = new \ReflectionMethod($service, 'viewData');
 
         return $method->invoke($service, $document);
+    }
+
+    private function pages(string $pdf): int
+    {
+        return preg_match_all('#/Type\s*/Page[^s]#', $pdf);
+    }
+
+    /** Vraie attestation PDF de 2 pages (comme celle de l'assureur). */
+    private function certificatePdf(): string
+    {
+        $mpdf = new Mpdf(['tempDir' => storage_path('framework/cache/mpdf')]);
+        $mpdf->WriteHTML('<h1>Attestation QBE</h1><pagebreak /><p>Page 2</p>');
+
+        return $mpdf->Output('', 'S');
+    }
+
+    private function storeCertificate(string $content, string $name): void
+    {
+        Storage::disk('local')->put('assurance/'.$name, $content);
+        InsuranceCertificate::query()->create([
+            'insurer' => 'Assureur', 'policy_number' => '123', 'valid_from' => '2026-01-01', 'valid_until' => '2026-12-31',
+            'path' => 'assurance/'.$name, 'original_name' => $name,
+        ]);
+    }
+
+    public function test_insurance_certificate_is_added_at_the_end_of_the_pdf(): void
+    {
+        Storage::fake('local');
+        $pdfs = app(PdfService::class);
+        $quote = $this->quote();
+        $without = $this->pages($pdfs->render($quote));
+
+        $this->storeCertificate($this->certificatePdf(), 'attestation.pdf');
+        $with = $pdfs->render($quote->fresh());
+        $this->assertSame($without + 2, $this->pages($with));
+        $html = view('pdf.document', (fn () => $this->viewData($quote->fresh()))->call($pdfs))->render();
+        $this->assertStringContainsString('Attestation d\'assurance décennale en annexe', $html);
+
+        // Option désactivée pour les devis : plus d'annexe.
+        app(Settings::class)->set(['pdf.insurance_quotes' => false]);
+        $this->assertSame($without, $this->pages($pdfs->render($quote->fresh())));
+    }
+
+    public function test_insurance_certificate_photo_is_added_as_one_page(): void
+    {
+        Storage::fake('local');
+        $pdfs = app(PdfService::class);
+        $quote = $this->quote();
+        $without = $this->pages($pdfs->render($quote));
+
+        $image = imagecreatetruecolor(600, 850);
+        imagefill($image, 0, 0, imagecolorallocate($image, 255, 255, 255));
+        ob_start();
+        imagejpeg($image);
+        $this->storeCertificate((string) ob_get_clean(), 'attestation.jpg');
+
+        $this->assertSame($without + 1, $this->pages($pdfs->render($quote->fresh())));
+    }
+
+    public function test_unreadable_certificate_is_refused_with_a_clear_message(): void
+    {
+        Storage::fake('local');
+        $this->put(route('settings.insurance'), [
+            'insurance' => ['insurer' => 'QBE', 'policy_number' => '42', 'valid_from' => '2026-01-01', 'valid_until' => '2026-12-31',
+                'activities' => 'Couverture', 'coverage_area' => 'France'],
+            'certificate' => UploadedFile::fake()->createWithContent('attestation.pdf', '%PDF-1.4 abîmé'),
+        ])->assertSessionHasErrors('certificate');
+
+        // Le devis reste généré normalement, avec l'encadré d'assurance.
+        $this->get(route('quotes.pdf', $this->quote()))->assertOk();
     }
 }

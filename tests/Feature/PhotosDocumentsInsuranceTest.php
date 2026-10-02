@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Mpdf\Mpdf;
 use Tests\TestCase;
 
 class PhotosDocumentsInsuranceTest extends TestCase
@@ -229,7 +230,7 @@ class PhotosDocumentsInsuranceTest extends TestCase
         $this->get(route('settings.insurance'))->assertOk()->assertSee('Assurance décennale')->assertSee('Aucune attestation');
 
         $this->put(route('settings.insurance'), $this->insurancePayload() + [
-            'certificate' => UploadedFile::fake()->create('attestation-2027.pdf', 120, 'application/pdf'),
+            'certificate' => UploadedFile::fake()->createWithContent('attestation-2027.pdf', (new Mpdf(['tempDir' => storage_path('framework/cache/mpdf')]))->Output('', 'S')),
         ])->assertSessionHasNoErrors();
 
         $certificate = InsuranceCertificate::query()->sole();

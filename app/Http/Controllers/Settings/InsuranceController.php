@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\InsuranceCertificate;
 use App\Services\ActivityLogger;
 use App\Services\InsuranceService;
+use App\Services\PdfService;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -71,7 +72,13 @@ class InsuranceController extends Controller
 
         ActivityLogger::log('settings.insurance', 'Assurance décennale mise à jour (validité jusqu\'au '.$values['insurance.valid_until'].')');
 
-        return back()->with('status', 'Assurance enregistrée. Elle s\'applique aux prochains documents envoyés.');
+        // Attestation envoyée : vérifier qu'elle pourra être ajoutée aux PDF (fichier protégé ou abîmé : non).
+        if (isset($certificate) && $certificate->path && ! app(PdfService::class)->canEmbedCertificate(Storage::disk('local')->path($certificate->path))) {
+            return back()->with('status', 'Assurance enregistrée.')
+                ->withErrors(['certificate' => 'Ce fichier ne peut pas être ajouté aux PDF (document protégé). Envoyez plutôt une photo nette de l\'attestation ou un PDF non protégé.']);
+        }
+
+        return back()->with('status', 'Assurance enregistrée. Elle s\'applique aux prochains documents envoyés, avec l\'attestation en dernière page.');
     }
 
     public function download(InsuranceCertificate $certificate): Response

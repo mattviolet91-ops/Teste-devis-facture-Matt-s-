@@ -89,6 +89,9 @@ CGV,
         // Page de couverture stylisée (logo, client, assurance, coordonnées).
         'cover_quotes' => true,
         'cover_invoices' => false,
+        // Attestation d'assurance décennale (Réglages → Assurance) en dernière page du PDF.
+        'insurance_quotes' => true,
+        'insurance_invoices' => true,
         // Texte de présentation facultatif, imprimé sur la couverture.
         'presentation_text' => '',
     ],

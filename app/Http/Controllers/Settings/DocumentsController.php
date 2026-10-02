@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogger;
+use App\Services\PdfService;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** Contenu des PDF : couverture, déchets, CGV. */
+/** Contenu des PDF : couverture, attestation d'assurance, déchets, CGV. */
 class DocumentsController extends Controller
 {
     public function edit(Settings $settings): View
@@ -17,6 +18,7 @@ class DocumentsController extends Controller
         return view('settings.documents', [
             'pdf' => $settings->group('pdf'),
             'mediator' => $settings->get('company.mediator_name'),
+            'certificate' => app(PdfService::class)->certificatePath() !== null,
         ]);
     }
 
@@ -33,6 +35,8 @@ class DocumentsController extends Controller
         $values['pdf.cgv_enabled'] = $request->boolean('pdf.cgv_enabled');
         $values['pdf.cover_quotes'] = $request->boolean('pdf.cover_quotes');
         $values['pdf.cover_invoices'] = $request->boolean('pdf.cover_invoices');
+        $values['pdf.insurance_quotes'] = $request->boolean('pdf.insurance_quotes');
+        $values['pdf.insurance_invoices'] = $request->boolean('pdf.insurance_invoices');
 
         $settings->set($values);
         ActivityLogger::log('settings.documents', 'Contenu des documents PDF modifié');

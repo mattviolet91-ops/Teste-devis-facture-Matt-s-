@@ -300,6 +300,7 @@
         <p>En cas de litige, le client consommateur peut recourir gratuitement au médiateur de la consommation : {{ $company['mediator_name'] }}@if (! empty($company['mediator_url'])) — {{ $company['mediator_url'] }}@endif.</p>
     @endif
     @if ($annexes['cgv'])<p>Conditions générales de vente en annexe.</p>@endif
+    @if ($annexes['insurance'])<p>Attestation d'assurance décennale en annexe.</p>@endif
 </div>
 
 @if ($document->photos->isNotEmpty())
