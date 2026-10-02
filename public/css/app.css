@@ -260,6 +260,7 @@ img { max-width: 100%; }
 
 .badge { display: inline-block; padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 600; background: var(--surface-2); color: var(--text-muted); }
 .badge-success { background: var(--success-soft); color: var(--success); }
+.badge .badge-icon { width: 12px; height: 12px; margin-right: .25rem; vertical-align: -1px; stroke-width: 2.2; }
 
 /* ---------- Formulaires ---------- */
 

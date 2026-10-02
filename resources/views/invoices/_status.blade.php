@@ -5,4 +5,4 @@
         default => ['draft' => '', 'sent' => 'badge-info', 'partial' => 'badge-warning', 'paid' => 'badge-success', 'cancelled' => ''][$invoice->status] ?? '',
     };
 @endphp
-<span class="badge {{ $invoiceBadge }}">{{ $invoice->statusLabel() }}</span>
+<span class="badge {{ $invoiceBadge }}">@if ($invoice->status === 'sent' && ! $invoice->isCredit() && ! $invoice->isOverdue())<x-icon name="send" class="badge-icon" />@endif{{ $invoice->statusLabel() }}</span>
