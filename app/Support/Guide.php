@@ -148,7 +148,7 @@ final class Guide
                 'tips' => [
                     'Le client ouvre le lien, lit le devis et peut l\'accepter en signant sur l\'écran, demander une modification ou le refuser. Vous êtes prévenu.',
                     '« Faire signer sur place » : le client signe directement sur votre téléphone.',
-                    'Devis déjà envoyé à changer ? « Nouvelle version » : l\'ancienne est remplacée, l\'historique est gardé.',
+                    'Devis déjà envoyé à changer ? « Modifier » prépare une version modifiable ; à l\'envoi, elle garde le numéro avec « -V2 » et remplace l\'ancienne (l\'historique est gardé). Un devis déjà facturé ne se modifie plus.',
                     '« Dupliquer » reprend un devis pour un autre client ; « Relancer » envoie un rappel au client qui n\'a pas répondu.',
                     'Les notes internes ne sont jamais montrées au client.',
                 ],

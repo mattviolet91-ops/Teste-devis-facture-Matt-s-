@@ -114,8 +114,13 @@ class QuoteController extends Controller
     public function edit(Quote $quote, Settings $settings): View|RedirectResponse
     {
         if (! $quote->isDraft()) {
+            // Modification déjà commencée : on la reprend.
+            if ($pending = Quote::query()->where('replaces_id', $quote->id)->where('status', 'draft')->first()) {
+                return redirect()->route('quotes.edit', $pending);
+            }
+
             return redirect()->route('quotes.show', $quote)
-                ->with('status', 'Un devis envoyé ne se modifie plus : créez une nouvelle version.');
+                ->with('status', 'Pour changer un devis envoyé, touchez « Modifier » : une version modifiable est préparée.');
         }
 
         return view('quotes.edit', ['quote' => $quote->load('lines')] + $this->editorData($quote, $settings));
@@ -229,12 +234,16 @@ class QuoteController extends Controller
     public function revise(Quote $quote): RedirectResponse
     {
         abort_if($quote->isDraft() || $quote->status === 'replaced', 403);
+        if ($quote->invoices()->exists()) {
+            return redirect()->route('quotes.show', $quote)
+                ->withErrors(['quote' => 'Ce devis est déjà facturé : il ne peut plus être modifié. Faites un nouveau devis pour les travaux en plus.']);
+        }
 
         $pending = Quote::query()->where('replaces_id', $quote->id)->where('status', 'draft')->first();
         $draft = $pending ?? $this->quotes->revise($quote);
 
         return redirect()->route('quotes.edit', $draft)
-            ->with('status', "Nouvelle version du devis {$quote->number} : elle recevra un nouveau numéro à l'envoi.");
+            ->with('status', "Modification du devis {$quote->number} : changez ce qu'il faut puis envoyez-le. Il deviendra {$this->quotes->versionNumber($quote->number)} et remplacera l'ancien.");
     }
 
     public function duplicate(Request $request, Quote $quote): RedirectResponse

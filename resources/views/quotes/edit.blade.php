@@ -14,7 +14,7 @@
                 <p>Plus rapide : <a href="{{ route('quotes.express') }}">Devis express</a>, le devis en une phrase.</p>
             @endunless
             @if ($quote->replaces)
-                <p>Nouvelle version du devis {{ $quote->replaces->number }} : un nouveau numéro sera attribué à l'envoi.</p>
+                <p>Modification du devis {{ $quote->replaces->number }} : à l'envoi, il deviendra {{ app(\App\Services\QuoteService::class)->versionNumber($quote->replaces->number) }} et remplacera l'ancien.</p>
             @endif
         </div>
     </div>

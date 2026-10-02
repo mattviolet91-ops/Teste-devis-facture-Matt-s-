@@ -45,7 +45,8 @@ class QuoteService
     public function send(Quote $quote): Quote
     {
         return DB::transaction(function () use ($quote) {
-            $quote->number ??= $this->numbers->next('quote');
+            // Devis modifié après envoi : même numéro avec l'indice de version (DEV-2026-0005-V2).
+            $quote->number ??= $quote->replaces?->number ? $this->versionNumber($quote->replaces->number) : $this->numbers->next('quote');
             // Lien client secret, créé à l'envoi.
             $quote->public_token ??= Str::random(48);
             $quote->status = 'sent';
@@ -91,8 +92,8 @@ class QuoteService
     }
 
     /**
-     * Nouvelle version d'un devis déjà envoyé : un brouillon identique qui, une
-     * fois envoyé, recevra un nouveau numéro et remplacera l'ancien.
+     * Modification d'un devis déjà envoyé : un brouillon identique qui, une fois
+     * envoyé, prend le même numéro avec l'indice de version et remplace l'ancien.
      */
     public function revise(Quote $quote): Quote
     {
@@ -103,6 +104,18 @@ class QuoteService
         ActivityLogger::log('quote.revised', "Nouvelle version en préparation pour le devis {$quote->number}", $quote);
 
         return $copy;
+    }
+
+    /** « DEV-2026-0005 » → « DEV-2026-0005-V2 », « …-V2 » → « …-V3 » (jamais un numéro déjà pris). */
+    public function versionNumber(string $previous): string
+    {
+        $base = preg_replace('/-V\d+$/', '', $previous) ?? $previous;
+        $version = preg_match('/-V(\d+)$/', $previous, $m) ? (int) $m[1] + 1 : 2;
+        while (Quote::withTrashed()->where('number', $base.'-V'.$version)->exists()) {
+            $version++;
+        }
+
+        return $base.'-V'.$version;
     }
 
     public function duplicate(Quote $quote, Client $client): Quote

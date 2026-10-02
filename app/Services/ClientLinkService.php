@@ -103,7 +103,7 @@ class ClientLinkService
         $this->notify(
             "Demande de modification — devis {$quote->number}",
             "{$quote->client?->displayName()} demande une modification du devis {$quote->number} :\n\n$comment\n\n"
-            .'Créez une nouvelle version depuis le devis pour lui répondre.',
+            .'Touchez « Modifier » sur le devis pour lui envoyer la version corrigée.',
             $quote,
         );
 

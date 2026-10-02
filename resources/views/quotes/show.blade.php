@@ -41,6 +41,7 @@
     @endif
 
     {{-- Actions --}}
+    @error('quote')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
     <div class="action-bar">
         @if ($quote->status !== 'replaced')
             <a class="btn" href="{{ route('emails.create', ['devis' => $quote->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
@@ -51,7 +52,7 @@
         @endif
         @if ($quote->isDraft())
             <a class="btn" href="{{ route('quotes.edit', $quote) }}"><x-icon name="file" /> Modifier</a>
-            <form method="POST" action="{{ route('quotes.send', $quote) }}" data-confirm="Marquer ce devis comme envoyé ? Il recevra son numéro définitif et ne sera plus modifiable.">
+            <form method="POST" action="{{ route('quotes.send', $quote) }}" data-confirm="Marquer ce devis comme envoyé ? Il recevra son numéro définitif. Pour le changer ensuite, « Modifier » en préparera une nouvelle version.">
                 @csrf
                 <button class="btn btn-secondary" type="submit"><x-icon name="send" /> Marquer comme envoyé</button>
             </form>
@@ -63,11 +64,17 @@
             </form>
             <button class="btn btn-secondary" type="button" data-open-sheet="refuse-dialog"><x-icon name="x" /> Refusé</button>
         @endif
-        @if (! $quote->isDraft() && $quote->status !== 'replaced')
-            <form method="POST" action="{{ route('quotes.revise', $quote) }}">
-                @csrf
-                <button class="btn btn-secondary" type="submit"><x-icon name="file" /> Nouvelle version</button>
-            </form>
+        @if (! $quote->isDraft() && $quote->status !== 'replaced' && ! $quote->invoices()->exists())
+            @php $pendingVersion = \App\Models\Quote::query()->where('replaces_id', $quote->id)->where('status', 'draft')->first(); @endphp
+            @if ($pendingVersion)
+                <a class="btn" href="{{ route('quotes.edit', $pendingVersion) }}"><x-icon name="file" /> Reprendre la modification</a>
+            @else
+                <form method="POST" action="{{ route('quotes.revise', $quote) }}"
+                    data-confirm="Modifier ce devis ? Une version modifiable est préparée. À l'envoi, elle deviendra {{ app(\App\Services\QuoteService::class)->versionNumber($quote->number) }} et remplacera celui-ci{{ $quote->status === 'accepted' ? ' : le client devra l\'accepter de nouveau' : '' }}.">
+                    @csrf
+                    <button class="btn" type="submit"><x-icon name="file" /> Modifier</button>
+                </form>
+            @endif
         @endif
         @if ($quote->status === 'accepted')
             <a class="btn btn-secondary" href="{{ route('planning.create', ['devis' => $quote->id]) }}"><x-icon name="calendar" /> Planifier</a>

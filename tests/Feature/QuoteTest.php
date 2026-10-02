@@ -208,10 +208,11 @@ class QuoteTest extends TestCase
         $this->assertNotSoftDeleted($quote);
     }
 
-    public function test_new_version_gets_a_new_number_and_replaces_the_old_one(): void
+    public function test_sent_quote_can_be_modified_and_keeps_its_number_with_a_version(): void
     {
         $quote = $this->createQuote();
         $this->post(route('quotes.send', $quote));
+        $this->get(route('quotes.show', $quote))->assertSee('action="'.route('quotes.revise', $quote).'"', false)->assertSee('DEV-2026-0001-V2');
 
         $this->post(route('quotes.revise', $quote));
         $draft = Quote::query()->where('replaces_id', $quote->id)->firstOrFail();
@@ -221,10 +222,34 @@ class QuoteTest extends TestCase
         // Demander une nouvelle version une 2e fois rouvre le même brouillon.
         $this->post(route('quotes.revise', $quote))->assertRedirect(route('quotes.edit', $draft));
 
+        // « Modifier » sur le devis envoyé (lien direct) reprend aussi ce brouillon.
+        $this->get(route('quotes.edit', $quote))->assertRedirect(route('quotes.edit', $draft));
+
         $this->post(route('quotes.send', $draft));
-        $this->assertSame('DEV-2026-0002', $draft->fresh()->number);
+        $this->assertSame('DEV-2026-0001-V2', $draft->fresh()->number);
         $this->assertSame('replaced', $quote->fresh()->status);
         $this->assertSame($draft->id, $quote->fresh()->replaced_by_id);
+
+        // Deuxième modification : V3. Le devis suivant garde la numérotation normale.
+        $this->post(route('quotes.revise', $draft));
+        $third = Quote::query()->where('replaces_id', $draft->id)->firstOrFail();
+        $this->post(route('quotes.send', $third));
+        $this->assertSame('DEV-2026-0001-V3', $third->fresh()->number);
+        $next = $this->createQuote();
+        $this->post(route('quotes.send', $next));
+        $this->assertSame('DEV-2026-0002', $next->fresh()->number);
+    }
+
+    public function test_invoiced_quote_cannot_be_modified(): void
+    {
+        $quote = $this->createQuote();
+        $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'deposit', 'percent' => '30']);
+
+        $this->get(route('quotes.show', $quote))->assertDontSee('action="'.route('quotes.revise', $quote).'"', false);
+        $this->post(route('quotes.revise', $quote))->assertSessionHasErrors('quote');
+        $this->assertSame(0, Quote::query()->where('replaces_id', $quote->id)->count());
     }
 
     public function test_accepting_turns_the_prospect_into_a_client(): void
