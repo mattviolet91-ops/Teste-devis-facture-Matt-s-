@@ -349,4 +349,107 @@
       if (row.classList.contains('is-open')) { event.preventDefault(); closeSwipe(row); }
     });
   });
+  // ---- Envois de formulaires sur réseau faible ----
+  // Chaque formulaire porte un identifiant unique (« _once ») : s'il arrive deux fois au
+  // serveur (double appui, réponse perdue, envoi différé rejoué), il n'est traité qu'une fois.
+  function newId() {
+    if (window.crypto && window.crypto.randomUUID) { return window.crypto.randomUUID(); }
+    var id = '';
+    while (id.length < 32) { id += Math.random().toString(36).slice(2); }
+    return id.slice(0, 32);
+  }
+  function isPost(form) { return form instanceof HTMLFormElement && (form.getAttribute('method') || '').toLowerCase() === 'post'; }
+  // Envoi interrompu (réponse perdue) puis retour au formulaire : on garde le même identifiant,
+  // pour que le renvoi ne crée pas de doublon. Toute autre arrivée sur une page repart de zéro.
+  var navigation = (window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+  var pending = {};
+  try {
+    if (navigation.type === 'back_forward') { pending = JSON.parse(sessionStorage.getItem('mc-pending') || '{}'); }
+    else { sessionStorage.removeItem('mc-pending'); }
+  } catch (e) { pending = {}; }
+  function remember(form) {
+    var input = form.querySelector('input[name="_once"]');
+    if (!input) { return; }
+    pending[form.action] = input.value;
+    try { sessionStorage.setItem('mc-pending', JSON.stringify(pending)); } catch (e) { /* ignoré */ }
+  }
+  function stamp(form) {
+    if (!isPost(form) || form.querySelector('input[name="_once"]')) { return; }
+    var input = document.createElement('input');
+    input.type = 'hidden'; input.name = '_once'; input.value = pending[form.action] || newId();
+    form.appendChild(input);
+  }
+  document.querySelectorAll('form').forEach(stamp);
+
+  function release(form) {
+    delete form.dataset.sending;
+    clearTimeout(form._watchdog);
+    form.querySelectorAll('[type="submit"][data-was-enabled]').forEach(function (b) { b.disabled = false; b.removeAttribute('data-was-enabled'); b.removeAttribute('aria-busy'); });
+    var notice = form.previousElementSibling;
+    if (notice && notice.hasAttribute('data-slow-notice')) { notice.remove(); }
+  }
+
+  // Le réseau ne répond plus (le téléphone se croit pourtant connecté) : on le dit, sans perdre la saisie.
+  function watchdog(form) {
+    clearTimeout(form._watchdog);
+    form._watchdog = setTimeout(function () {
+      if (!form.dataset.sending || form.previousElementSibling && form.previousElementSibling.hasAttribute('data-slow-notice')) { return; }
+      var notice = document.createElement('div');
+      notice.className = 'alert alert-warning';
+      notice.setAttribute('role', 'alert');
+      notice.setAttribute('data-slow-notice', '');
+      var text = document.createElement('p');
+      text.style.margin = '0 0 .5rem';
+      text.textContent = 'Le réseau ne répond pas. Vos informations sont toujours dans le formulaire.';
+      notice.appendChild(text);
+      var actions = document.createElement('div');
+      actions.className = 'chips';
+      var retry = document.createElement('button');
+      retry.type = 'button'; retry.className = 'chip'; retry.textContent = 'Réessayer';
+      retry.addEventListener('click', function () {
+        window.stop();
+        release(form);
+        if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+      });
+      actions.appendChild(retry);
+      if (form.hasAttribute('data-offline') && window.mcQueueForm) {
+        var keep = document.createElement('button');
+        keep.type = 'button'; keep.className = 'chip'; keep.textContent = 'Garder sur le téléphone et envoyer plus tard';
+        keep.addEventListener('click', function () {
+          window.stop();
+          release(form);
+          window.mcQueueForm(form);
+        });
+        actions.appendChild(keep);
+      }
+      notice.appendChild(actions);
+      form.parentNode.insertBefore(notice, form);
+      notice.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, hasFiles(form) ? 90000 : 20000);
+  }
+  function hasFiles(form) {
+    return Array.prototype.some.call(form.querySelectorAll('input[type="file"]'), function (i) { return i.files && i.files.length; });
+  }
+
+  window.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (!isPost(form) || form.hasAttribute('data-download')) { return; }
+    stamp(form);
+    // Deuxième appui pendant l'envoi : ignoré.
+    if (form.dataset.sending) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    setTimeout(function () {
+      if (event.defaultPrevented) { return; } // annulé, gardé hors connexion ou envoyé autrement
+      form.dataset.sending = '1';
+      remember(form);
+      form.querySelectorAll('[type="submit"]').forEach(function (b) {
+        if (!b.disabled) { b.disabled = true; b.setAttribute('data-was-enabled', ''); b.setAttribute('aria-busy', 'true'); }
+      });
+      watchdog(form);
+    }, 0);
+  }, true);
+
+  // Retour arrière vers une page gardée en mémoire : formulaires de nouveau utilisables.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) { document.querySelectorAll('form[data-sending]').forEach(release); }
+  });
 })();

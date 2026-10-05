@@ -46,6 +46,7 @@
       var text = '';
       if (!navigator.onLine) { text = 'Hors connexion : vous voyez les pages enregistrées sur le téléphone.'; }
       if (waiting) { text += (text ? ' ' : '') + waiting + ' envoi' + (waiting > 1 ? 's' : '') + ' en attente' + (failed ? ' (' + failed + ' à corriger)' : '') + '.'; }
+      if (bar.hasAttribute('data-stale')) { text = bar.getAttribute('data-stale') + (text ? ' ' + text : ''); }
       bar.hidden = !text;
       bar.querySelector('[data-offline-text]').textContent = text;
       bar.querySelector('[data-offline-open]').hidden = !waiting;
@@ -89,7 +90,11 @@
     var form = event.target;
     if (navigator.onLine || !form.matches('form[data-offline]') || event.defaultPrevented) { return; }
     event.preventDefault();
+    queueForm(form);
+  });
 
+  // Garde le formulaire sur le téléphone (pas de réseau, ou réseau qui ne répond pas).
+  function queueForm(form) {
     var fields = [];
     new FormData(form).forEach(function (value, name) {
       if (typeof value === 'string') { fields.push([name, value]); }
@@ -101,6 +106,7 @@
       var note = document.createElement('div');
       note.className = 'alert alert-info';
       note.setAttribute('role', 'status');
+      note.setAttribute('data-queued-note', '');
       note.textContent = 'Pas de réseau : enregistré sur le téléphone. Envoi automatique dès que le réseau revient.';
       form.parentNode.insertBefore(note, form);
       note.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -109,7 +115,8 @@
     }).catch(function () {
       window.alert('Impossible d\'enregistrer sur ce téléphone. Réessayez quand vous aurez du réseau.');
     });
-  });
+  }
+  window.mcQueueForm = queueForm;
 
   // ---- Envoi au retour du réseau ----
   var flushing = false;
@@ -131,7 +138,22 @@
         bar.hidden = false;
         bar.querySelector('[data-offline-text]').textContent = 'Envois en attente : reconnectez-vous pour les envoyer.';
       }
-    }).then(function () { flushing = false; return refresh(); });
+    }).then(function () { flushing = false; return refresh(); }).then(markSent);
+  }
+
+  // Formulaire gardé sur cette page puis envoyé : on le dit.
+  function markSent() {
+    var notes = document.querySelectorAll('[data-queued-note]');
+    if (!notes.length) { return; }
+    all().then(function (items) {
+      if (items.some(function (i) { return i.page === location.href; })) { return; }
+      notes.forEach(function (note) {
+        note.className = 'alert alert-success';
+        note.textContent = 'Envoyé : c\'est enregistré.';
+        var form = note.nextElementSibling;
+        if (form) { form.querySelectorAll('[type="submit"]').forEach(function (b) { b.textContent = 'Envoyé'; }); }
+      });
+    }).catch(function () {});
   }
 
   function send(item, token) {
@@ -165,6 +187,11 @@
   }
 
   window.addEventListener('online', function () { refresh(); flush(); });
+  // Copie enregistrée affichée parce que le réseau est trop lent : un appui recharge la page.
+  if (bar.hasAttribute('data-stale')) {
+    bar.style.cursor = 'pointer';
+    bar.querySelector('[data-offline-text]').addEventListener('click', function () { window.location.reload(); });
+  }
   window.addEventListener('offline', refresh);
   if (dialog) {
     bar.querySelector('[data-offline-open]').addEventListener('click', function () { refresh(); dialog.showModal(); });

@@ -68,17 +68,44 @@
   function removeQueued(id) { return tx('readwrite', function (s) { return s.delete(id); }); }
   function allQueued() { return tx('readonly', function (s) { return s.getAll(); }); }
 
+  function newId() {
+    if (window.crypto && window.crypto.randomUUID) { return window.crypto.randomUUID(); }
+    var id = '';
+    while (id.length < 32) { id += Math.random().toString(36).slice(2); }
+    return id.slice(0, 32);
+  }
+
+  // Jeton de sécurité à jour (celui gardé avec une photo en attente a pu expirer).
+  function freshToken() {
+    var root = document.querySelector('[data-token-url]');
+    if (!root) { return Promise.resolve(null); }
+    return fetch(root.getAttribute('data-token-url'), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok && !r.redirected ? r.json() : null; })
+      .then(function (json) { return json && json.token; })
+      .catch(function () { return null; });
+  }
+
   function send(item) {
     var data = new FormData();
+    // Identifiant unique : une photo renvoyée après une réponse perdue n'est pas enregistrée deux fois.
+    item.once = item.once || newId();
     data.append('_token', item.token);
+    data.append('_once', item.once);
     data.append('category', item.category);
     data.append('caption', item.caption || '');
     data.append('photos[]', item.blob, item.name);
-    return fetch(item.url, { method: 'POST', body: data, headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    // Réseau qui ne répond plus : on abandonne au bout d'une minute et la photo attend sur le téléphone.
+    var controller = window.AbortController ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 60000) : null;
+    return fetch(item.url, { method: 'POST', body: data, headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: controller ? controller.signal : undefined })
       .then(function (response) {
+        clearTimeout(timer);
         if (response.ok) { return 'ok'; }
         if (response.status === 419 || response.status >= 500) { throw new Error('retry'); }
         return response.json().then(function (json) { throw new Error(json.message || 'Envoi refusé'); }, function () { throw new Error('Envoi refusé'); });
+      }, function (error) {
+        clearTimeout(timer);
+        throw new Error('retry');
       });
   }
 
@@ -86,10 +113,13 @@
   function flush() {
     if (flushing || !navigator.onLine) { return Promise.resolve(0); }
     flushing = true;
-    return allQueued().then(function (items) {
+    return Promise.all([allQueued(), freshToken()]).then(function (results) {
+      var items = results[0];
+      var token = results[1];
       var sent = 0;
       return items.reduce(function (p, item) {
         return p.then(function () {
+          if (token) { item.token = token; }
           return send(item).then(function () { sent++; return removeQueued(item.id); }, function () { /* on réessaiera */ });
         });
       }, Promise.resolve()).then(function () { return sent; });
@@ -136,7 +166,7 @@
           return compress(file).then(function (blob) {
             var item = Object.assign({ blob: blob, name: (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg' }, base);
             return send(item).then(function () { done++; }, function (error) {
-              if (error.message === 'retry' || error instanceof TypeError) {
+              if (error.message === 'retry') {
                 return enqueue(item).then(function () { queued++; });
               }
               errors.push(error.message);

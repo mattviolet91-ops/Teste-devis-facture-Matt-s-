@@ -13,7 +13,7 @@
         <p class="muted small">Une sauvegarde est faite automatiquement chaque nuit sur le serveur (30 jours conservés, plus une sauvegarde complète chaque mois gardée 12 mois).
             Téléchargez aussi régulièrement une copie <strong>chez vous</strong> (ordinateur, clé USB, cloud) : en cas de problème chez l'hébergeur, vous ne perdez rien.</p>
         <p class="small">Dernier téléchargement : <strong>{{ $lastDownload ? \Illuminate\Support\Carbon::parse($lastDownload)->format('d/m/Y à H:i') : 'jamais' }}</strong></p>
-        <form method="POST" action="{{ route('settings.backups.create') }}">
+        <form method="POST" action="{{ route('settings.backups.create') }}" data-download>
             @csrf
             <button class="btn" type="submit"><x-icon name="shield" /> Télécharger ma sauvegarde complète</button>
         </form>

@@ -166,4 +166,33 @@ class PaymentTest extends TestCase
         $this->get(route('payments.index', ['du' => '2026-10-01', 'au' => '2026-11-05']))->assertSee('Aucun paiement sur cette période');
         $this->get(route('dashboard', ['periode' => 'mois']))->assertSeeInOrder(['CA facturé (HT)', "0,00\u{00A0}€"], false);
     }
+
+    public function test_same_payment_form_sent_twice_is_recorded_once(): void
+    {
+        $invoice = $this->sentInvoice();
+        $form = ['amount' => '400', 'paid_at' => '2026-10-01', 'method' => 'cheque', '_once' => 'f0e1d2c3-b4a5-4697-8899-aabbccddeeff'];
+
+        // Double appui, ou réponse perdue puis renvoi : un seul paiement.
+        $first = $this->post(route('payments.store', $invoice), $form)->assertSessionHasNoErrors();
+        $this->post(route('payments.store', $invoice), $form)
+            ->assertRedirect($first->headers->get('Location'))
+            ->assertSessionHas('status', fn ($s) => str_contains($s, 'Déjà enregistré'));
+        $this->assertSame(1, Payment::query()->count());
+        $this->assertSame(40000, $invoice->fresh()->amount_paid);
+
+        // Un autre formulaire (autre identifiant) : un vrai second paiement.
+        $this->post(route('payments.store', $invoice), ['_once' => '11111111-2222-4333-8444-555555555555'] + $form)->assertSessionHasNoErrors();
+        $this->assertSame(2, Payment::query()->count());
+    }
+
+    public function test_form_with_errors_can_be_corrected_and_resent(): void
+    {
+        $invoice = $this->sentInvoice();
+        $once = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+        $this->post(route('payments.store', $invoice), ['amount' => 'abc', 'paid_at' => '2026-10-01', 'method' => 'cheque', '_once' => $once])
+            ->assertSessionHasErrors('amount');
+        $this->post(route('payments.store', $invoice), ['amount' => '100', 'paid_at' => '2026-10-01', 'method' => 'cheque', '_once' => $once])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(1, Payment::query()->count());
+    }
 }
