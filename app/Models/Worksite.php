@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\DescribesChanges;
 use App\Models\Concerns\Searchable;
+use App\Support\Maps;
 use App\Support\Phone;
 use Database\Factories\WorksiteFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -72,7 +73,7 @@ class Worksite extends Model
     /** Lien d'itinéraire (ouvre l'application de cartes du téléphone). */
     public function mapsUrl(): string
     {
-        return 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($this->fullAddress());
+        return Maps::directions($this->fullAddress());
     }
 
     public function hasRoofDetails(): bool

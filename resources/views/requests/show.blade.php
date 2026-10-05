@@ -26,7 +26,7 @@
             <li><span>Travaux</span><strong>{{ $request->worksLabel() ?: '—' }}</strong></li>
             <li><span>Téléphone</span><strong>{{ $client->phone ?: '—' }}</strong></li>
             @if ($client->email)<li><span>Email</span><strong>{{ $client->email }}</strong></li>@endif
-            @if ($request->worksite)<li><span>Adresse</span><a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($request->worksite->fullAddress()) }}" target="_blank" rel="noopener">{{ $request->worksite->fullAddress() }}</a></li>@endif
+            @if ($request->worksite)<li><span>Adresse</span><a href="{{ \App\Support\Maps::directions($request->worksite->fullAddress()) }}" target="_blank" rel="noopener">{{ $request->worksite->fullAddress() }}</a></li>@endif
             @if ($request->availability)<li><span>Disponibilités</span><strong>{{ $request->availability }}</strong></li>@endif
         </ul>
         @if ($request->message)<p class="pre-line">{{ $request->message }}</p>@endif

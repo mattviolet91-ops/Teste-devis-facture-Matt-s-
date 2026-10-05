@@ -7,6 +7,7 @@ use App\Models\Intervention;
 use App\Models\Quote;
 use App\Models\User;
 use App\Models\Worksite;
+use App\Support\Maps;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -75,7 +76,7 @@ class InterfaceTest extends TestCase
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSee('Aujourd\'hui', false)->assertSee('14h00 · '.$this->client->displayName())
-            ->assertSee('https://www.google.com/maps/dir/?api=1&amp;destination=', false)
+            ->assertSee('https://maps.apple.com/?daddr=', false)
             ->assertSee('href="tel:0611223344"', false);
 
         // Le commercial voit aussi son programme du jour.
@@ -88,5 +89,13 @@ class InterfaceTest extends TestCase
         $this->get(route('catalog.index', ['q' => 'zzzz-introuvable']))->assertSee('Ajouter une prestation');
         $this->get(route('payments.index'))->assertSee('Factures à encaisser');
         $this->get(route('dashboard'))->assertSee('data-pref-toggle="big"', false)->assertDontSee('Plein soleil');
+    }
+
+    public function test_addresses_open_apple_plans_with_driving_directions(): void
+    {
+        $this->assertSame(
+            'https://maps.apple.com/?daddr=12%20rue%20des%20Tilleuls%2C%2091300%20Massy&dirflg=d',
+            Maps::directions('12 rue des Tilleuls, 91300 Massy'),
+        );
     }
 }

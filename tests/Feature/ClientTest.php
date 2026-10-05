@@ -121,7 +121,7 @@ class ClientTest extends TestCase
             ->assertSee('mailto:a@example.com', false)
             ->assertSee('5 rue du Four')
             ->assertSee('Digicode 1234')
-            ->assertSee('google.com/maps', false);
+            ->assertSee('https://maps.apple.com/?daddr=', false);
     }
 
     public function test_client_list_filters_by_type_and_status(): void
