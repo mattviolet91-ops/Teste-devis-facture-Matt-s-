@@ -47,6 +47,7 @@
       if (!navigator.onLine) { text = 'Hors connexion : vous voyez les pages enregistrées sur le téléphone.'; }
       if (waiting) { text += (text ? ' ' : '') + waiting + ' envoi' + (waiting > 1 ? 's' : '') + ' en attente' + (failed ? ' (' + failed + ' à corriger)' : '') + '.'; }
       if (bar.hasAttribute('data-stale')) { text = bar.getAttribute('data-stale') + (text ? ' ' + text : ''); }
+      if (waiting && needLogin) { text = waiting + ' envoi' + (waiting > 1 ? 's' : '') + ' en attente : reconnectez-vous pour ' + (waiting > 1 ? 'les ' : 'l\'') + 'envoyer. Touchez Voir pour ' + (waiting > 1 ? 'les' : 'le') + ' vérifier.'; }
       bar.hidden = !text;
       bar.querySelector('[data-offline-text]').textContent = text;
       bar.querySelector('[data-offline-open]').hidden = !waiting;
@@ -120,6 +121,7 @@
 
   // ---- Envoi au retour du réseau ----
   var flushing = false;
+  var needLogin = false;
   function flush() {
     if (flushing || !navigator.onLine) { return Promise.resolve(); }
     flushing = true;
@@ -127,17 +129,14 @@
       items = items.filter(function (i) { return !i.error; });
       if (!items.length) { return; }
       return fetch(tokenUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { if (!r.ok || r.redirected) { throw new Error('login'); } return r.json(); })
+        .then(function (r) { if (!r.ok || r.redirected) { throw new Error('login'); } needLogin = false; return r.json(); })
         .then(function (json) {
           return items.reduce(function (chain, item) {
             return chain.then(function () { return send(item, json.token); });
           }, Promise.resolve());
         });
     }).catch(function (e) {
-      if (e && e.message === 'login') {
-        bar.hidden = false;
-        bar.querySelector('[data-offline-text]').textContent = 'Envois en attente : reconnectez-vous pour les envoyer.';
-      }
+      if (e && e.message === 'login') { needLogin = true; }
     }).then(function () { flushing = false; return refresh(); }).then(markSent);
   }
 
