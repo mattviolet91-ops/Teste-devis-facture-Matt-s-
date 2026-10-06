@@ -18,6 +18,7 @@ final class Navigation
         'planning' => ['Planning', 'calendar', 'planning.index', ['planning.*']],
         'demandes' => ['Demandes', 'mail', 'requests.index', ['requests.*']],
         'paiements' => ['Paiements', 'wallet', 'payments.index', ['payments.*']],
+        'frais' => ['Frais', 'cart', 'expenses.index', ['expenses.*']],
         'relances' => ['Relances', 'send', 'reminders.index', ['reminders.*']],
         'photos' => ['Photos', 'camera', 'photos.index', ['photos.*']],
         'entretiens' => ['Entretiens', 'tool', 'maintenance.index', ['maintenance.*']],

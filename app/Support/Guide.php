@@ -182,7 +182,7 @@ final class Guide
                 ],
                 'tips' => [
                     'Une facture envoyée ne se modifie plus (obligation légale) : « Modifier » émet un avoir qui l\'annule et prépare une copie corrigée avec un nouveau numéro.',
-                    'Bloc « Frais » : notez vos dépenses du chantier (matériaux, location…) avec le justificatif ; l\'application calcule ce qu\'il vous reste. Le client ne le voit jamais.',
+                    'Frais : notez les dépenses du chantier (matériaux, location, déchetterie…) avec la photo du ticket, depuis la facture ou depuis menu Plus → « Frais ». Ils sont classés par chantier : acompte, situation et solde d\'un même devis comptent ensemble, et l\'application calcule ce qu\'il vous reste. Le client ne les voit jamais.',
                     'Chaque paiement est ajouté au PDF de la facture (date, moyen de paiement, montant) et « Facture acquittée » apparaît une fois soldée. « Mettre à jour le PDF » refait la dernière version ; le PDF d\'origine, tel qu\'envoyé, reste disponible.',
                     'Après paiement : « Envoyer un remerciement » et « Demander un avis Google ».',
                 ],

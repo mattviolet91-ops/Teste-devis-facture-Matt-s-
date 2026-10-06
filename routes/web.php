@@ -190,6 +190,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     });
 
     // Frais d'une facture (visibles par le gérant seul).
+    Route::get('/frais', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('/frais/chantier/{quote}', [ExpenseController::class, 'quote'])->whereNumber('quote')->name('expenses.quote');
+    Route::post('/frais/chantier/{quote}', [ExpenseController::class, 'storeForQuote'])->whereNumber('quote')->name('expenses.quote.store');
+    Route::get('/frais/facture/{invoice}', [ExpenseController::class, 'invoice'])->whereNumber('invoice')->name('expenses.invoice');
     Route::post('/factures/{invoice}/frais', [ExpenseController::class, 'store'])->whereNumber('invoice')->name('expenses.store');
     Route::delete('/frais/{expense}', [ExpenseController::class, 'destroy'])->whereNumber('expense')->name('expenses.destroy');
     Route::get('/frais/{expense}/ticket', [ExpenseController::class, 'receipt'])->whereNumber('expense')->name('expenses.receipt');

@@ -15,7 +15,7 @@ final class BackLink
 {
     /** Pages principales : pas de bouton retour. */
     private const TOP = [
-        'dashboard', 'clients.index', 'quotes.index', 'invoices.index', 'requests.index', 'planning.index', 'payments.index',
+        'dashboard', 'clients.index', 'quotes.index', 'invoices.index', 'requests.index', 'planning.index', 'payments.index', 'expenses.index',
         'reminders.index', 'photos.index', 'maintenance.index', 'statistics', 'catalog.index', 'emails.index', 'reviews.index',
         'search', 'trash.index', 'archives.index', 'documents',
         // Signature sur place : écran tendu au client, avec son propre lien de retour.
@@ -41,6 +41,7 @@ final class BackLink
             in_array($name, ['quotes.show', 'quotes.create', 'quotes.express', 'quotes.express.preview', 'quotes.express.store'], true) => route('quotes.index'),
             in_array($name, ['quotes.edit', 'quotes.signature'], true) => route('quotes.show', $id($param('quote'))),
             in_array($name, ['invoices.show', 'invoices.create'], true) => route('invoices.index'),
+            in_array($name, ['expenses.quote', 'expenses.invoice'], true) => route('expenses.index'),
             in_array($name, ['invoices.edit', 'reminders.show'], true) => route('invoices.show', $id($param('invoice'))),
             in_array($name, ['planning.show', 'planning.create'], true) => route('planning.index'),
             $name === 'planning.edit' => route('planning.show', $id($param('intervention'))),

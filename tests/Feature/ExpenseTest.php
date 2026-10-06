@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\User;
+use App\Services\JobCostService;
 use App\Services\PdfService;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,7 +53,7 @@ class ExpenseTest extends TestCase
         Storage::disk('local')->assertExists($expense->receipt_path);
         $this->get(route('expenses.receipt', $expense))->assertOk();
 
-        $this->delete(route('expenses.destroy', $expense))->assertRedirect(route('invoices.show', $this->invoice).'#frais');
+        $this->from(route('invoices.show', $this->invoice))->delete(route('expenses.destroy', $expense))->assertRedirect(route('invoices.show', $this->invoice));
         Storage::disk('local')->assertMissing($expense->receipt_path);
         $this->assertSame(195050, $this->invoice->fresh()->remainingAfterExpenses());
     }
@@ -84,5 +85,64 @@ class ExpenseTest extends TestCase
         $this->get(route('expenses.receipt', $expense))->assertForbidden();
         $this->delete(route('expenses.destroy', $expense))->assertForbidden();
         $this->assertSame(1, Expense::query()->count());
+    }
+
+    public function test_expenses_are_grouped_by_job_across_deposit_and_final_invoices(): void
+    {
+        // Second chantier : devis de 1 000 €, facturé en partie (acompte de 30 %).
+        $client = Client::factory()->create(['last_name' => 'Durand']);
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Démoussage', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Démoussage', 'quantity' => '1', 'unit_price' => '1000']]])->assertSessionHasNoErrors();
+        $quote = Quote::query()->latest('id')->first();
+        $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'deposit', 'percent' => '30']);
+        $deposit = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $deposit));
+
+        // Frais ajouté depuis la page du chantier, et depuis la facture d'acompte.
+        $this->get(route('expenses.quote', $quote))->assertOk()->assertSee('Facturé en partie (30 %)')->assertSee('Ajouter un frais');
+        $this->post(route('expenses.quote.store', $quote), ['expense_label' => 'Location nacelle', 'expense_amount' => '120', 'expense_date' => '2026-01-15', 'category' => 'location'])
+            ->assertRedirect(route('expenses.quote', $quote).'#ajouter');
+        $this->post(route('expenses.store', $deposit), ['expense_label' => 'Produit hydrofuge', 'expense_amount' => '80'])->assertSessionHasNoErrors();
+
+        // Facture de solde : les frais déjà notés restent sur le même chantier.
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'final']);
+        $final = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $final));
+        $this->get(route('invoices.show', $final))->assertSee('Location nacelle')->assertSee('Produit hydrofuge')->assertSee('Frais du chantier');
+
+        $page = $this->get(route('expenses.index'))->assertOk()->assertSee('Frais par chantier');
+        $page->assertSee('Durand')->assertSee('Martin')->assertSee('Facturé entièrement');
+        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $this->assertSame([100000, 20000, 80000, true, 2], [$job['invoiced'], $job['expenses_total'], $job['remaining'], $job['fully'], $job['invoices']->count()]);
+        $this->assertSame('2026-01-15', Expense::query()->where('label', 'Location nacelle')->sole()->spent_on->toDateString());
+
+        // Recherche par client.
+        $this->get(route('expenses.index', ['q' => 'Durand']))->assertSee('Durand')->assertDontSee('Réfection faîtage');
+
+        // Le commercial n'y a pas accès.
+        $this->actingAs(User::factory()->create(['role' => 'commercial']));
+        $this->get(route('expenses.index'))->assertForbidden();
+        $this->get(route('expenses.quote', $quote))->assertForbidden();
+    }
+
+    public function test_job_without_quote_and_unbilled_quote(): void
+    {
+        $client = Client::factory()->create(['last_name' => 'Petit']);
+        $this->post(route('invoices.store'), ['client_id' => $client->id, 'title' => 'Réparation fuite', 'due_days' => 0,
+            'lines' => [['type' => 'item', 'title' => 'Réparation', 'quantity' => '1', 'unit_price' => '300']]])->assertSessionHasNoErrors();
+        $invoice = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $invoice));
+        $this->post(route('expenses.store', $invoice), ['expense_label' => 'Mastic', 'expense_amount' => '20', 'retour' => 'chantier'])
+            ->assertRedirect(route('expenses.invoice', $invoice).'#ajouter');
+        $this->get(route('expenses.invoice', $invoice))->assertOk()->assertSee('Mastic')->assertSee('Facturé entièrement');
+
+        // Facture d'un devis : la page « sans devis » renvoie vers le chantier du devis.
+        $this->get(route('expenses.invoice', $this->invoice))->assertRedirect(route('expenses.quote', $this->invoice->quote_id));
+        // Devis pas encore facturé : pas de page de frais.
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Pas facturé', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'X', 'quantity' => '1', 'unit_price' => '10']]]);
+        $this->get(route('expenses.quote', Quote::query()->latest('id')->first()))->assertNotFound();
     }
 }

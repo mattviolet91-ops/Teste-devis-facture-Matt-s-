@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\TextTemplate;
@@ -123,8 +124,9 @@ class InvoiceService
             ActivityLogger::log('invoice.sent', "{$invoice->fullTitle()} envoyée", $invoice);
             app(PdfService::class)->freeze($invoice);
 
-            // Facture corrigée : les règlements reçus sur la facture d'origine la suivent.
+            // Facture corrigée : les règlements reçus et les frais notés sur la facture d'origine la suivent.
             if ($invoice->corrects) {
+                Expense::query()->where('invoice_id', $invoice->corrects->id)->update(['invoice_id' => $invoice->id]);
                 app(PaymentService::class)->transfer($invoice->corrects, $invoice);
             }
 
