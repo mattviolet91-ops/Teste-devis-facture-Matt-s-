@@ -273,7 +273,7 @@ img { max-width: 100%; }
 .field .error { color: var(--danger); font-size: .875rem; font-weight: 500; }
 
 input[type="text"], input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
-input[type="number"], input[type="search"], select, textarea {
+input[type="number"], input[type="search"], input[type="date"], input[type="time"], input[type="datetime-local"], select, textarea {
   width: 100%; min-height: 44px; padding: .5rem .75rem;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); font: inherit;

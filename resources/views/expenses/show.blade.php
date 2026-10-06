@@ -10,7 +10,7 @@
 
     <div class="card">
         <div class="card-head">
-            <h2>{{ $job['fully'] ? 'Facturé entièrement' : 'Facturé en partie ('.$job['percent'].' %)' }}</h2>
+            <h2>{{ $job['fully'] ? 'Facturé entièrement' : ($job['billed'] ? 'Facturé en partie ('.$job['percent'].' %)' : 'En cours, pas encore facturé') }}</h2>
             <span class="badge">Visible par vous seul</span>
         </div>
         <p class="small" style="margin-top:0">

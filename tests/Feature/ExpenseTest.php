@@ -145,4 +145,42 @@ class ExpenseTest extends TestCase
             'lines' => [['type' => 'item', 'title' => 'X', 'quantity' => '1', 'unit_price' => '10']]]);
         $this->get(route('expenses.quote', Quote::query()->latest('id')->first()))->assertNotFound();
     }
+
+    public function test_expenses_can_be_noted_at_any_time(): void
+    {
+        // Devis accepté, pas encore facturé : déjà un chantier.
+        $client = Client::factory()->create(['last_name' => 'Bernard']);
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Zinguerie', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Gouttière', 'quantity' => '1', 'unit_price' => '800']]])->assertSessionHasNoErrors();
+        $quote = Quote::query()->latest('id')->first();
+        $this->post(route('quotes.send', $quote));
+        $this->get(route('expenses.quote', $quote))->assertNotFound();
+        $this->post(route('quotes.accept', $quote));
+
+        $this->get(route('quotes.show', $quote))->assertSee('Frais du chantier')->assertSee('Pas encore facturé');
+        $this->post(route('expenses.quote.store', $quote), ['expense_label' => 'Zinc', 'expense_amount' => '150', 'retour' => 'devis'])
+            ->assertRedirect(route('quotes.show', $quote).'#frais');
+
+        // « + Nouveau → Frais » : chantier choisi dans la liste, ou frais généraux.
+        $this->get(route('expenses.create'))->assertOk()->assertSee('Bernard · Zinguerie (pas encore facturé)')->assertSee('Frais généraux');
+        $this->post(route('expenses.store.any'), ['job' => 'devis-'.$quote->id, 'expense_label' => 'Crochets', 'expense_amount' => '30'])
+            ->assertRedirect(route('expenses.quote', $quote));
+        $this->post(route('expenses.store.any'), ['job' => 'general', 'expense_label' => 'Perceuse', 'expense_amount' => '99'])
+            ->assertRedirect(route('expenses.general'));
+        $this->post(route('expenses.store.any'), ['expense_label' => 'Sans chantier choisi', 'expense_amount' => '5'])->assertSessionHasErrors('job');
+
+        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $this->assertSame([false, 0, 18000, 62000], [$job['billed'], $job['invoiced'], $job['expenses_total'], $job['expected']]);
+        $this->get(route('expenses.index'))->assertSee('En cours · pas encore facturé')->assertSee('Frais généraux');
+        $this->get(route('expenses.general'))->assertSee('Perceuse')->assertSee(Money::format(9900));
+        $this->assertSame(1, Expense::query()->whereNull('quote_id')->whereNull('invoice_id')->count());
+
+        // Facturé ensuite : les frais déjà notés comptent.
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
+        $invoice = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $invoice));
+        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $this->assertSame([true, 80000, 62000], [$job['fully'], $job['invoiced'], $job['remaining']]);
+        $this->get(route('dashboard'))->assertSee(route('expenses.create'));
+    }
 }

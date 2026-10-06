@@ -41,7 +41,7 @@ final class BackLink
             in_array($name, ['quotes.show', 'quotes.create', 'quotes.express', 'quotes.express.preview', 'quotes.express.store'], true) => route('quotes.index'),
             in_array($name, ['quotes.edit', 'quotes.signature'], true) => route('quotes.show', $id($param('quote'))),
             in_array($name, ['invoices.show', 'invoices.create'], true) => route('invoices.index'),
-            in_array($name, ['expenses.quote', 'expenses.invoice'], true) => route('expenses.index'),
+            in_array($name, ['expenses.quote', 'expenses.invoice', 'expenses.create', 'expenses.general'], true) => route('expenses.index'),
             in_array($name, ['invoices.edit', 'reminders.show'], true) => route('invoices.show', $id($param('invoice'))),
             in_array($name, ['planning.show', 'planning.create'], true) => route('planning.index'),
             $name === 'planning.edit' => route('planning.show', $id($param('intervention'))),

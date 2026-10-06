@@ -9,13 +9,14 @@ use Illuminate\Support\Collection;
 
 /**
  * Frais classés par chantier. Un chantier, c'est un devis accepté et toutes ses
- * factures (acompte, situation, solde…), ou une facture faite sans devis.
- * Seuls les chantiers facturés (entièrement ou en partie) apparaissent.
+ * factures (acompte, situation, solde…), ou une facture faite sans devis. Les frais
+ * se notent à tout moment : dès l'acceptation du devis, avant même la première facture.
+ * Les frais sans chantier (outillage, carburant…) sont des « frais généraux ».
  */
 class JobCostService
 {
     /**
-     * Tous les chantiers facturés, du plus récent au plus ancien.
+     * Chantiers en cours ou facturés, du plus récent au plus ancien.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -24,28 +25,36 @@ class JobCostService
         $invoices = Invoice::query()
             ->whereIn('status', Invoice::ISSUED)
             ->where('kind', '!=', 'credit')
-            ->with(['client', 'worksite', 'quote.worksite'])
+            ->with(['client', 'worksite', 'quote.worksite', 'quote.client'])
             ->when($search, fn ($q) => $q->where(fn ($w) => $w->search($search)->orWhereHas('quote', fn ($qq) => $qq->search($search))))
+            ->get();
+
+        // Devis acceptés pas encore facturés : chantiers en cours, frais possibles dès maintenant.
+        $openQuotes = Quote::query()
+            ->where('status', 'accepted')
+            ->whereNotIn('id', $invoices->pluck('quote_id')->filter()->unique())
+            ->with(['client', 'worksite'])
+            ->when($search, fn ($q) => $q->search($search))
             ->get();
 
         $expenses = Expense::query()->get(['id', 'quote_id', 'invoice_id', 'amount_ttc', 'vat']);
         $byQuote = $expenses->whereNotNull('quote_id')->groupBy('quote_id');
-        $byInvoice = $expenses->whereNull('quote_id')->groupBy('invoice_id');
+        $byInvoice = $expenses->whereNull('quote_id')->whereNotNull('invoice_id')->groupBy('invoice_id');
 
-        $jobs = $invoices->groupBy(fn (Invoice $i) => $i->quote_id ? 'q'.$i->quote_id : 'i'.$i->id)
+        $billed = $invoices->groupBy(fn (Invoice $i) => $i->quote_id ? 'q'.$i->quote_id : 'i'.$i->id)
             ->map(function (Collection $group) use ($byQuote, $byInvoice) {
                 $first = $group->sortBy('id')->first();
                 $quote = $first->quote_id ? $first->quote : null;
                 $jobExpenses = $quote ? ($byQuote[$quote->id] ?? collect()) : ($byInvoice[$first->id] ?? collect());
 
-                return $this->summary($quote, $quote ? null : $first, $group, $jobExpenses) + [
-                    'last' => $group->max('issue_date') ?? $group->max('created_at'),
-                ];
-            })
-            ->sortByDesc('last')
-            ->values();
+                return $this->summary($quote, $quote ? null : $first, $group, $jobExpenses)
+                    + ['last' => $group->max('issue_date') ?? $group->max('created_at')];
+            });
 
-        return $jobs;
+        $open = $openQuotes->map(fn (Quote $quote) => $this->summary($quote, null, collect(), $byQuote[$quote->id] ?? collect())
+            + ['last' => $quote->accepted_at ?? $quote->updated_at]);
+
+        return $billed->values()->concat($open)->sortByDesc('last')->values();
     }
 
     /** Un chantier : devis et ses factures, ou facture seule. */
@@ -56,7 +65,6 @@ class JobCostService
             : collect([$invoice]);
         $expenses = Expense::query()
             ->when($quote, fn ($q) => $q->where('quote_id', $quote->id), fn ($q) => $q->whereNull('quote_id')->where('invoice_id', $invoice->id))
-            ->with('invoice')
             ->latest('spent_on')->latest('id')
             ->get();
 
@@ -69,6 +77,20 @@ class JobCostService
         return $invoice->quote_id && $invoice->quote
             ? $this->job($invoice->quote, null)
             : $this->job(null, $invoice);
+    }
+
+    /** Un devis devient un chantier (frais possibles) dès qu'il est accepté ou facturé. */
+    public function isJob(Quote $quote): bool
+    {
+        return $quote->status === 'accepted' || $quote->invoices()->whereIn('status', Invoice::ISSUED)->exists();
+    }
+
+    /** Frais généraux : sans chantier. */
+    public function general(): array
+    {
+        $expenses = Expense::query()->whereNull('quote_id')->whereNull('invoice_id')->latest('spent_on')->latest('id')->get();
+
+        return ['expenses' => $expenses, 'expenses_total' => (int) $expenses->sum(fn (Expense $e) => $e->amountHt())];
     }
 
     /** @return array<string, mixed> */
@@ -89,11 +111,13 @@ class JobCostService
             'numbers' => $invoices->pluck('number')->filter()->implode(', '),
             'planned' => $planned,
             'invoiced' => $invoiced,
-            'fully' => $invoiced >= $planned,
+            'billed' => $invoiced > 0,
+            'fully' => $invoiced > 0 && $invoiced >= $planned,
             'percent' => $planned > 0 ? min(100, (int) round($invoiced * 100 / $planned)) : 100,
             'expenses_total' => $costs,
             'expenses_count' => $expenses->count(),
             'remaining' => $invoiced - $costs,
+            'expected' => $planned - $costs,
             'url' => $quote ? route('expenses.quote', $quote) : route('expenses.invoice', $invoice),
         ];
     }

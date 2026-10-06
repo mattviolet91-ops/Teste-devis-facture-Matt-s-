@@ -6,8 +6,9 @@
     <div class="page-head">
         <div>
             <h1>Frais par chantier</h1>
-            <p>Chaque chantier facturé, entièrement ou en partie, avec ses frais et ce qu'il vous reste. Visible par vous seul.</p>
+            <p>Chaque chantier, dès que son devis est accepté, avec ses frais et ce qu'il vous reste. Visible par vous seul.</p>
         </div>
+        <a class="btn" href="{{ route('expenses.create') }}"><x-icon name="plus" /> Nouveau frais</a>
     </div>
 
     <form method="GET" action="{{ route('expenses.index') }}" class="card" role="search">
@@ -20,7 +21,7 @@
 
     @if ($jobs->isEmpty())
         <div class="card empty-state">
-            <p>{{ $q ? 'Aucun chantier facturé pour « '.$q.' ».' : 'Aucun chantier facturé pour le moment. Dès qu\'une facture est envoyée, son chantier apparaît ici.' }}</p>
+            <p>{{ $q ? 'Aucun chantier pour « '.$q.' ».' : 'Aucun chantier pour le moment. Dès qu\'un devis est accepté, son chantier apparaît ici.' }}</p>
         </div>
     @else
         <div class="card">
@@ -41,11 +42,17 @@
                             <span class="small">{{ $job['expenses_count'] }} frais · {{ Money::format($job['expenses_total']) }}</span>
                         </span>
                         <span class="list-meta">
-                            <strong class="amount {{ $job['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining']) }}</strong>
+                            @if ($job['billed'])
+                                <strong class="amount {{ $job['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining']) }}</strong>
+                            @else
+                                <strong class="amount muted {{ $job['expected'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['expected']) }} <span class="small">prévu</span></strong>
+                            @endif
                             @if ($job['fully'])
                                 <span class="badge badge-success">Facturé entièrement</span>
-                            @else
+                            @elseif ($job['billed'])
                                 <span class="badge badge-warning">Facturé en partie · {{ $job['percent'] }} %</span>
+                            @else
+                                <span class="badge badge-info">En cours · pas encore facturé</span>
                             @endif
                         </span>
                     </a>
@@ -53,4 +60,11 @@
             @endforeach
         </ul>
     @endif
+
+    @unless ($q)
+        <a class="card list-item" href="{{ route('expenses.general') }}" style="margin-top:1rem">
+            <span class="list-main"><strong>Frais généraux</strong><span class="muted small">Sans chantier : outillage, carburant, assurance du véhicule…</span></span>
+            <span class="list-meta"><strong class="amount">{{ Money::format($general['expenses_total']) }}</strong><span class="small muted">{{ $general['expenses']->count() }} frais</span></span>
+        </a>
+    @endunless
 @endsection

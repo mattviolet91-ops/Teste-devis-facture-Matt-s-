@@ -151,6 +151,17 @@
         @include('documents._client-link', ['document' => $quote])
     @endunless
 
+    @if (auth()->user()->isAdmin() && app(\App\Services\JobCostService::class)->isJob($quote))
+        @php $job = app(\App\Services\JobCostService::class)->job($quote, null); @endphp
+        <div class="card" id="frais">
+            <div class="card-head">
+                <h2>Frais du chantier</h2>
+                <span class="badge">Visible par vous seul</span>
+            </div>
+            @include('expenses._panel', ['job' => $job, 'action' => route('expenses.quote.store', $quote), 'retour' => 'devis'])
+        </div>
+    @endif
+
     @include('documents._photos', ['document' => $quote, 'route' => 'quotes.photos'])
 
     @if ($quote->internal_notes)
