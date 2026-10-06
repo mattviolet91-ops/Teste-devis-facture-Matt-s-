@@ -213,6 +213,8 @@ class PaymentTest extends TestCase
         $this->assertStringContainsString('Le 28/09/2026', $html);
         $this->assertStringContainsString('Chèque — réf. 1234567', $html);
         $this->assertStringNotContainsString('FACTURE ACQUITTÉE', $html);
+        $this->assertStringContainsString('PAYÉE PARTIELLEMENT', $html);
+        $this->assertStringContainsString('reste 600,00', $html);
         $this->assertNotSame($original->sha256, $invoice->fresh()->snapshot->sha256);
         $this->assertSame(Storage::disk('local')->get($original->path), $this->get(route('invoices.pdf', ['invoice' => $invoice, 'version' => 'origine']))->getContent());
         $this->get(route('invoices.show', $invoice))->assertSee("Voir le PDF d'origine", false)->assertSee('Mettre à jour le PDF');
@@ -221,6 +223,8 @@ class PaymentTest extends TestCase
         $this->post(route('payments.store', $invoice), ['amount' => '600', 'paid_at' => '2026-10-01', 'method' => 'virement'])->assertSessionHasNoErrors();
         $html = view('pdf.document', (fn () => $this->viewData($invoice->fresh()))->call($pdfs))->render();
         $this->assertStringContainsString('FACTURE ACQUITTÉE', $html);
+        $this->assertStringContainsString('PAYÉE LE 01/10/2026', $html);
+        $this->assertStringNotContainsString('PAYÉE PARTIELLEMENT', $html);
         $this->assertStringContainsString('le 01/10/2026', $html);
 
         // Bouton « Mettre à jour le PDF ».

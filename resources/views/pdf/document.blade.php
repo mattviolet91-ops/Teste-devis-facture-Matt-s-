@@ -129,6 +129,16 @@
         <td width="45%" style="text-align: right;">
             <div class="doc-title">{{ $title }}</div>
             <div class="doc-number">{{ $number }}</div>
+            @if (! $isQuote && ! $isCredit && in_array($document->status, ['paid', 'partial'], true))
+                @php $paidOn = $document->paid_at ?? $document->payments->max('paid_at'); @endphp
+                <table align="right" style="margin-top: 5pt; border-collapse: collapse;"><tr>
+                    @if ($document->status === 'paid')
+                        <td style="border: 1.2pt solid #1E7F4F; color: #1E7F4F; padding: 3pt 8pt; font-family: montserrat; font-weight: bold; font-size: 9.5pt;">PAYÉE{{ $paidOn ? ' LE '.$paidOn->format('d/m/Y') : '' }}</td>
+                    @else
+                        <td style="border: 1.2pt solid #B26A00; color: #B26A00; padding: 3pt 8pt; font-family: montserrat; font-weight: bold; font-size: 9.5pt;">PAYÉE PARTIELLEMENT</td>
+                    @endif
+                </tr></table>
+            @endif
             <table class="meta" style="margin-top: 6pt;" align="right">
                 @foreach ($meta as $key => $value)
                     <tr><td class="k" style="text-align: right;">{{ $key }}</td><td style="text-align: right;"><b>{{ $value }}</b></td></tr>
@@ -265,6 +275,15 @@
                     @endforeach
                 </table>
             </td>
+            @if ($document->status === 'partial')
+                <td width="38%" style="vertical-align: middle; text-align: center;">
+                    <table align="center" style="border-collapse: collapse;"><tr>
+                        <td style="border: 1.5pt solid #B26A00; color: #B26A00; padding: 5pt 10pt; text-align: center; font-family: montserrat; font-weight: bold; font-size: 11pt; line-height: 1.3;">
+                            PAYÉE PARTIELLEMENT<br><span style="font-size: 8.5pt;">réglé {{ $m($document->amount_paid) }} — reste {{ $m($document->balance()) }}</span>
+                        </td>
+                    </tr></table>
+                </td>
+            @endif
             @if ($document->status === 'paid')
                 <td width="38%" style="vertical-align: middle; text-align: center;">
                     <table align="center" style="border-collapse: collapse;"><tr>
