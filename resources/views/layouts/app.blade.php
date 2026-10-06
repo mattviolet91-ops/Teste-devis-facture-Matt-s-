@@ -167,6 +167,14 @@
         <div class="pref-toggles" role="group" aria-label="Affichage sur ce téléphone">
             <button class="pref-toggle" type="button" data-pref-toggle="big" aria-pressed="false"><span class="pref-switch" aria-hidden="true"></span> Grands boutons</button>
         </div>
+        <label class="nav-pref" for="nav-pref"><x-icon name="map" /> GPS
+            <select id="nav-pref" data-nav-pref>
+                <option value="">Demander à chaque fois</option>
+                <option value="apple">Apple Plans</option>
+                <option value="waze">Waze</option>
+                <option value="google">Google Maps</option>
+            </select>
+        </label>
         <div class="sheet-footer">
             <a class="btn btn-secondary sheet-footer-wide" href="{{ route('guide') }}"><x-icon name="book" /> Guide d'utilisation</a>
             <a class="btn btn-secondary" href="{{ route($user->isAdmin() ? 'settings.company' : 'settings.account') }}"><x-icon name="settings" /> {{ $user->isAdmin() ? 'Réglages' : 'Mon compte' }}</a>
@@ -176,6 +184,21 @@
             </form>
         </div>
     </dialog>
+    <dialog class="sheet" id="nav-dialog" aria-labelledby="nav-title">
+        <div class="card-head">
+            <h2 id="nav-title">Y aller avec…</h2>
+            <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
+        </div>
+        <p class="muted small" data-nav-address></p>
+        <div class="nav-apps">
+            <button class="btn btn-secondary" type="button" data-nav-app="apple"><x-icon name="map" /> Apple Plans</button>
+            <button class="btn btn-secondary" type="button" data-nav-app="waze"><x-icon name="map" /> Waze</button>
+            <button class="btn btn-secondary" type="button" data-nav-app="google"><x-icon name="map" /> Google Maps</button>
+        </div>
+        <label class="check" style="margin-top:.75rem"><input type="checkbox" data-nav-remember> <span>Toujours utiliser cette application sur ce téléphone</span></label>
+        <p class="muted small" style="margin-bottom:0">Modifiable ensuite dans le menu Plus.</p>
+    </dialog>
+
     <dialog class="sheet" id="offline-dialog" aria-labelledby="offline-title">
         <div class="card-head">
             <h2 id="offline-title">Envois en attente</h2>

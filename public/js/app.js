@@ -349,6 +349,49 @@
       if (row.classList.contains('is-open')) { event.preventDefault(); closeSwipe(row); }
     });
   });
+  // ---- GPS : Apple Plans, Waze ou Google Maps (choix retenu sur ce téléphone si demandé) ----
+  var NAV_APPS = {
+    apple: function (a) { return 'https://maps.apple.com/?daddr=' + encodeURIComponent(a) + '&dirflg=d'; },
+    waze: function (a) { return 'https://waze.com/ul?q=' + encodeURIComponent(a) + '&navigate=yes'; },
+    google: function (a) { return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a) + '&travelmode=driving'; }
+  };
+  function navPref() { try { return localStorage.getItem('nav-app') || ''; } catch (e) { return ''; } }
+  function setNavPref(value) { try { if (value) { localStorage.setItem('nav-app', value); } else { localStorage.removeItem('nav-app'); } } catch (e) { /* ignoré */ } }
+  function go(app, address) { window.open(NAV_APPS[app](address), '_blank', 'noopener'); }
+
+  var navDialog = document.getElementById('nav-dialog');
+  var navAddress = null;
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest ? event.target.closest('[data-nav]') : null;
+    if (!link || !navDialog) { return; }
+    event.preventDefault();
+    var address = link.getAttribute('data-nav');
+    var pref = navPref();
+    if (NAV_APPS[pref]) { go(pref, address); return; }
+    navAddress = address;
+    navDialog.querySelector('[data-nav-address]').textContent = address;
+    navDialog.querySelector('[data-nav-remember]').checked = false;
+    navDialog.showModal();
+  });
+  if (navDialog) {
+    navDialog.querySelectorAll('[data-nav-app]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var app = button.getAttribute('data-nav-app');
+        if (navDialog.querySelector('[data-nav-remember]').checked) {
+          setNavPref(app);
+          var select = document.querySelector('[data-nav-pref]');
+          if (select) { select.value = app; }
+        }
+        navDialog.close();
+        if (navAddress) { go(app, navAddress); }
+      });
+    });
+  }
+  document.querySelectorAll('[data-nav-pref]').forEach(function (select) {
+    select.value = NAV_APPS[navPref()] ? navPref() : '';
+    select.addEventListener('change', function () { setNavPref(select.value); });
+  });
+
   // ---- Envois de formulaires sur réseau faible ----
   // Chaque formulaire porte un identifiant unique (« _once ») : s'il arrive deux fois au
   // serveur (double appui, réponse perdue, envoi différé rejoué), il n'est traité qu'une fois.

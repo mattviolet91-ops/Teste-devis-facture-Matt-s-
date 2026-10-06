@@ -65,7 +65,7 @@
                         <a class="btn btn-secondary btn-sm" href="{{ route('worksites.edit', $worksite) }}">Modifier</a>
                     </div>
                     <div class="chips">
-                        <a class="chip" href="{{ $worksite->mapsUrl() }}" target="_blank" rel="noopener"><x-icon name="map" /> Itinéraire</a>
+                        <a class="chip" href="{{ $worksite->mapsUrl() }}" target="_blank" rel="noopener" data-nav="{{ $worksite->fullAddress() }}"><x-icon name="map" /> Itinéraire</a>
                         <a class="chip" href="{{ route('photos.worksite', $worksite) }}"><x-icon name="camera" /> Photos ({{ $worksite->photos->count() }})</a>
                         @if ($worksite->contact_phone)
                             <a class="chip" href="{{ Phone::href($worksite->contact_phone) }}"><x-icon name="phone" /> {{ $worksite->contact_name ?: 'Contact sur place' }}</a>

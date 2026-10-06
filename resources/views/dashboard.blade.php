@@ -90,7 +90,7 @@
                                     @endif
                                 </a>
                                 <span class="today-actions">
-                                    @if ($address)<a class="btn btn-secondary btn-sm" href="{{ \App\Support\Maps::directions($address) }}" target="_blank" rel="noopener"><x-icon name="map" /> Itinéraire</a>@endif
+                                    @if ($address)<a class="btn btn-secondary btn-sm" href="{{ \App\Support\Maps::directions($address) }}" target="_blank" rel="noopener" data-nav="{{ $address }}"><x-icon name="map" /> Itinéraire</a>@endif
                                     @if ($phone)<a class="btn btn-secondary btn-sm" href="tel:{{ $phone }}"><x-icon name="phone" /> Appeler</a>@endif
                                 </span>
                             </li>

@@ -98,4 +98,16 @@ class InterfaceTest extends TestCase
             Maps::directions('12 rue des Tilleuls, 91300 Massy'),
         );
     }
+
+    public function test_directions_offer_apple_plans_waze_or_google_maps(): void
+    {
+        $this->actingAs($this->admin());
+        $client = Client::factory()->create();
+        Worksite::factory()->for($client)->create(['address' => '12 rue des Tilleuls', 'postal_code' => '91300', 'city' => 'Massy']);
+
+        $this->get(route('clients.show', $client))->assertOk()
+            ->assertSee('data-nav="12 rue des Tilleuls, 91300 Massy"', false)
+            ->assertSee('data-nav-app="apple"', false)->assertSee('data-nav-app="waze"', false)->assertSee('data-nav-app="google"', false)
+            ->assertSee('data-nav-pref', false);
+    }
 }

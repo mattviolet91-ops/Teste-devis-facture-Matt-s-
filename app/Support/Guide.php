@@ -105,6 +105,7 @@ final class Guide
                 'tips' => [
                     'Ajoutez l\'application à l\'écran d\'accueil du téléphone (Safari : Partager → « Sur l\'écran d\'accueil » ; Chrome : ⋮ → « Ajouter à l\'écran d\'accueil ») : elle s\'ouvre comme une vraie application.',
                     'Menu « Plus » → « Grands boutons » : tout est plus gros, pratique avec des gants.',
+                    'Itinéraire : choisissez Apple Plans, Waze ou Google Maps. Cochez « Toujours utiliser » pour ne plus avoir la question ; le choix se change dans le menu « Plus » → GPS.',
                     'Réglages → Mon affichage : choisissez les pages de la barre du bas et les blocs de l\'accueil.',
                 ],
             ],
