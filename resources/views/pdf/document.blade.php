@@ -249,6 +249,35 @@
     </tr>
 </table>
 
+{{-- Règlements reçus : date, moyen et montant de chaque paiement --}}
+@if (! $isQuote && ! $isCredit && $document->relationLoaded('payments') && $document->payments->isNotEmpty())
+    <table width="100%" style="margin-top: 10pt; page-break-inside: avoid;">
+        <tr>
+            <td style="vertical-align: top;">
+                <div class="label">Règlements reçus</div>
+                <table width="100%" class="small" style="border-collapse: collapse; margin-top: 3pt;">
+                    @foreach ($document->payments as $payment)
+                        <tr>
+                            <td style="padding: 2pt 0; border-bottom: 0.4pt solid #D5DDE1;">Le {{ $payment->paid_at->format('d/m/Y') }}</td>
+                            <td style="padding: 2pt 6pt; border-bottom: 0.4pt solid #D5DDE1;">{{ $payment->methodLabel() }}@if ($payment->reference) — réf. {{ $payment->reference }}@endif</td>
+                            <td style="padding: 2pt 0; border-bottom: 0.4pt solid #D5DDE1; text-align: right;">{{ $m($payment->amount) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </td>
+            @if ($document->status === 'paid')
+                <td width="38%" style="vertical-align: middle; text-align: center;">
+                    <table align="center" style="border-collapse: collapse;"><tr>
+                        <td style="border: 1.5pt solid #1E7F4F; color: #1E7F4F; padding: 5pt 10pt; text-align: center; font-family: montserrat; font-weight: bold; font-size: 11pt; line-height: 1.3;">
+                            FACTURE ACQUITTÉE<br><span style="font-size: 8.5pt;">le {{ ($document->paid_at ?? $document->payments->max('paid_at'))->format('d/m/Y') }}</span>
+                        </td>
+                    </tr></table>
+                </td>
+            @endif
+        </tr>
+    </table>
+@endif
+
 {{-- Conditions et informations --}}
 <div class="notes" style="margin-top: 10pt;">
     @if ($isQuote && ($document->work_start || $document->work_duration))

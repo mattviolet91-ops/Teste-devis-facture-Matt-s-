@@ -6,10 +6,12 @@ use App\Mail\ClientMessage;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\PdfService;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PaymentTest extends TestCase
@@ -194,5 +196,35 @@ class PaymentTest extends TestCase
         $this->post(route('payments.store', $invoice), ['amount' => '100', 'paid_at' => '2026-10-01', 'method' => 'cheque', '_once' => $once])
             ->assertSessionHasNoErrors();
         $this->assertSame(1, Payment::query()->count());
+    }
+
+    public function test_invoice_pdf_is_updated_with_payment_date_and_method(): void
+    {
+        $invoice = $this->sentInvoice();
+        $original = $invoice->snapshots()->sole();
+
+        $this->post(route('payments.store', $invoice), ['amount' => '400', 'paid_at' => '2026-09-28', 'method' => 'cheque', 'reference' => '1234567'])->assertSessionHasNoErrors();
+        $this->assertSame(2, $invoice->snapshots()->count(), 'Nouvelle version du PDF après le paiement.');
+
+        // Le PDF (dernière version) liste le règlement ; celui d'origine reste disponible tel quel.
+        $pdfs = app(PdfService::class);
+        $html = view('pdf.document', (fn () => $this->viewData($invoice->fresh()))->call($pdfs))->render();
+        $this->assertStringContainsString('Règlements reçus', $html);
+        $this->assertStringContainsString('Le 28/09/2026', $html);
+        $this->assertStringContainsString('Chèque — réf. 1234567', $html);
+        $this->assertStringNotContainsString('FACTURE ACQUITTÉE', $html);
+        $this->assertNotSame($original->sha256, $invoice->fresh()->snapshot->sha256);
+        $this->assertSame(Storage::disk('local')->get($original->path), $this->get(route('invoices.pdf', ['invoice' => $invoice, 'version' => 'origine']))->getContent());
+        $this->get(route('invoices.show', $invoice))->assertSee("Voir le PDF d'origine", false)->assertSee('Mettre à jour le PDF');
+
+        // Soldée : « Facture acquittée ».
+        $this->post(route('payments.store', $invoice), ['amount' => '600', 'paid_at' => '2026-10-01', 'method' => 'virement'])->assertSessionHasNoErrors();
+        $html = view('pdf.document', (fn () => $this->viewData($invoice->fresh()))->call($pdfs))->render();
+        $this->assertStringContainsString('FACTURE ACQUITTÉE', $html);
+        $this->assertStringContainsString('le 01/10/2026', $html);
+
+        // Bouton « Mettre à jour le PDF ».
+        $this->post(route('invoices.pdf.refresh', $invoice))->assertSessionHas('status', fn ($s) => str_contains($s, 'PDF mis à jour'));
+        $this->assertSame(4, $invoice->snapshots()->count());
     }
 }

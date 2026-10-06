@@ -152,6 +152,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::post('/annuler', [InvoiceController::class, 'cancel'])->name('cancel');
         Route::put('/lien-paiement', [InvoiceController::class, 'paymentLink'])->name('payment-link');
         Route::get('/pdf', [PdfController::class, 'invoice'])->name('pdf');
+        Route::post('/pdf/mettre-a-jour', [PdfController::class, 'refreshInvoice'])->middleware('throttle:20,1')->name('pdf.refresh');
     });
 
     Route::resource('prestations', CatalogController::class)

@@ -146,6 +146,12 @@ class Invoice extends Model
         return $this->morphOne(Snapshot::class, 'document')->latestOfMany();
     }
 
+    /** Toutes les versions figées du PDF (la première est celle de l'envoi). */
+    public function snapshots(): MorphMany
+    {
+        return $this->morphMany(Snapshot::class, 'document');
+    }
+
     /** Lien client (créé au premier besoin). */
     public function publicUrl(): string
     {

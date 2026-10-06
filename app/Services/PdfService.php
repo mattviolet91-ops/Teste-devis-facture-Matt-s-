@@ -27,11 +27,18 @@ class PdfService
         private readonly DocumentCalculator $calculator,
     ) {}
 
-    /** Contenu PDF du document : le fichier figé s'il existe, sinon une génération. */
-    public function content(Quote|Invoice $document): string
+    /**
+     * Contenu PDF du document : le fichier figé le plus récent s'il existe, sinon une génération.
+     * $original : le PDF tel qu'il a été envoyé (le premier figé), gardé tel quel.
+     */
+    public function content(Quote|Invoice $document, bool $original = false): string
     {
         if ($document->isDraft()) {
             return $this->render($document);
+        }
+
+        if ($original && ($first = $document->snapshots()->oldest('id')->first()) && Storage::disk('local')->exists($first->path)) {
+            return Storage::disk('local')->get($first->path);
         }
 
         $snapshot = $document->snapshot;
@@ -59,6 +66,25 @@ class PdfService
         $document->setRelation('snapshot', $snapshot);
 
         return $snapshot;
+    }
+
+    /**
+     * Nouvelle version du PDF d'une facture envoyée (règlements reçus compris).
+     * Les versions précédentes restent archivées, à commencer par celle de l'envoi.
+     */
+    public function regenerate(Invoice $invoice): ?Snapshot
+    {
+        if ($invoice->isDraft()) {
+            return null;
+        }
+
+        try {
+            return $this->freeze($invoice->fresh());
+        } catch (\Throwable $e) {
+            Log::warning('PDF de facture non régénéré', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+
+            return null;
+        }
     }
 
     /** Nom du fichier proposé : « Devis DEV-2026-0001 - Dupont.pdf ». */
@@ -182,7 +208,7 @@ class PdfService
         $document->loadMissing(['client', 'worksite', 'lines', 'photos']);
         $isQuote = $document instanceof Quote;
         if (! $isQuote) {
-            $document->loadMissing(['quote', 'cancels', 'corrects']);
+            $document->loadMissing(['quote', 'cancels', 'corrects', 'payments' => fn ($q) => $q->orderBy('paid_at')->orderBy('id')]);
         }
 
         return [

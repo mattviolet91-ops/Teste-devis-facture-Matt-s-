@@ -63,6 +63,12 @@
             <a class="btn" href="{{ route('emails.create', ['facture' => $invoice->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
         @endif
         <a class="btn btn-secondary" href="{{ \App\Http\Controllers\PdfViewerController::link(route('invoices.pdf', $invoice), $invoice->kindLabel().' '.$invoice->displayNumber()) }}"><x-icon name="file" /> PDF</a>
+        @unless ($invoice->isDraft())
+            <form method="POST" action="{{ route('invoices.pdf.refresh', $invoice) }}">
+                @csrf
+                <button class="btn btn-secondary" type="submit"><x-icon name="file" /> Mettre à jour le PDF</button>
+            </form>
+        @endunless
         @if ($invoice->isDraft() && ! $invoice->isCredit())
             <a class="btn" href="{{ route('invoices.edit', $invoice) }}"><x-icon name="file" /> Modifier</a>
             <form method="POST" action="{{ route('invoices.send', $invoice) }}" data-confirm="Marquer cette facture comme envoyée ? Elle recevra son numéro définitif et ne sera plus modifiable directement.">
@@ -105,6 +111,14 @@
             @if (! $invoice->isCredit() && $invoice->amount_paid > 0)
                 <p><strong>Déjà réglé :</strong> {{ Money::format($invoice->amount_paid) }} — <strong>reste à payer :</strong> {{ Money::format($invoice->balance()) }}</p>
             @endif
+            @if (! $invoice->isCredit() && $invoice->payments->isNotEmpty())
+                <p><strong>Règlements reçus :</strong>
+                    @foreach ($invoice->payments->sortBy('paid_at') as $payment)
+                        <br>le {{ $payment->paid_at->format('d/m/Y') }} — {{ $payment->methodLabel() }}@if ($payment->reference) (réf. {{ $payment->reference }})@endif — {{ Money::format($payment->amount) }}
+                    @endforeach
+                    @if ($invoice->status === 'paid')<br><strong>Facture acquittée le {{ ($invoice->paid_at ?? $invoice->payments->max('paid_at'))->format('d/m/Y') }}</strong>@endif
+                </p>
+            @endif
             @if ($invoice->work_period)<p><strong>Date des travaux :</strong> {{ $invoice->work_period }}</p>@endif
             @if ($invoice->payment_terms)<p><strong>Conditions de paiement :</strong> {{ $invoice->payment_terms }}</p>@endif
             @if ($invoice->notes)<p>{!! nl2br(e($invoice->notes)) !!}</p>@endif
@@ -112,6 +126,10 @@
         </div>
     </article>
 
+    @if (! $invoice->isDraft() && $invoice->snapshots()->count() > 1)
+        <p class="small muted">Le PDF affiché est la dernière version (règlements compris).
+            <a href="{{ \App\Http\Controllers\PdfViewerController::link(route('invoices.pdf', ['invoice' => $invoice, 'version' => 'origine']), $invoice->kindLabel().' '.$invoice->displayNumber().' (envoi)') }}">Voir le PDF d'origine, tel qu'envoyé le {{ $invoice->sent_at?->format('d/m/Y') }}</a></p>
+    @endif
     @include('payments._card')
 
     @if (! $invoice->isCredit() && auth()->user()->isAdmin())

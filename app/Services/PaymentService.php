@@ -24,7 +24,7 @@ class PaymentService
             throw new InvalidArgumentException('Le montant dépasse le reste à payer ('.Money::format($invoice->balance()).').');
         }
 
-        return DB::transaction(function () use ($invoice, $data) {
+        $payment = DB::transaction(function () use ($invoice, $data) {
             $payment = new Payment($data);
             $payment->invoice()->associate($invoice);
             $payment->client_id = $invoice->client_id;
@@ -40,6 +40,11 @@ class PaymentService
 
             return $payment;
         });
+
+        // Le PDF de la facture affiche désormais ce règlement (date, moyen, montant).
+        app(PdfService::class)->regenerate($invoice);
+
+        return $payment;
     }
 
     public function delete(Payment $payment): void
@@ -50,6 +55,7 @@ class PaymentService
             $this->refresh($invoice);
             ActivityLogger::log('payment.deleted', 'Paiement de '.Money::format($payment->amount)." supprimé sur la facture {$invoice->number}", $invoice);
         });
+        app(PdfService::class)->regenerate($payment->invoice);
     }
 
     /** Recalcule le montant réglé et le statut (envoyée, partiellement payée, payée). */
@@ -88,5 +94,6 @@ class PaymentService
             $this->refresh($to->fresh());
             ActivityLogger::log('payment.transferred', "Paiements de la facture {$from->number} reportés sur la facture {$to->number}", $to);
         });
+        app(PdfService::class)->regenerate($to);
     }
 }
