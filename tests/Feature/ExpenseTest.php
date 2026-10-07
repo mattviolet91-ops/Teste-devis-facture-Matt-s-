@@ -112,6 +112,16 @@ class ExpenseTest extends TestCase
         $this->post(route('invoices.send', $final));
         $this->get(route('invoices.show', $final))->assertSee('Location nacelle')->assertSee('Produit hydrofuge')->assertSee('Frais du chantier');
 
+        // Mêmes frais sur chaque facture du chantier, avec la facture où chacun a été noté.
+        foreach ([$deposit, $final] as $invoice) {
+            $this->get(route('invoices.show', $invoice))->assertSee('href="#ajouter"', false)
+                ->assertSee('Location nacelle')->assertSee('Produit hydrofuge')
+                ->assertSee('noté sur facture d&#039;acompte '.$deposit->fresh()->number, false)
+                ->assertSee('devis '.$quote->number);
+        }
+        $this->get(route('invoices.show', $final))->assertSee('facture d&#039;acompte '.$deposit->fresh()->number.'</a>', false);
+        $this->get(route('invoices.show', $deposit))->assertSee('facture de solde '.$final->fresh()->number.'</a>', false);
+
         $page = $this->get(route('expenses.index'))->assertOk()->assertSee('Frais par chantier');
         $page->assertSee('Durand')->assertSee('Martin')->assertSee('Facturé entièrement');
         $job = app(JobCostService::class)->job($quote->fresh(), null);

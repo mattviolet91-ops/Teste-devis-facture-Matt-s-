@@ -65,6 +65,7 @@ class JobCostService
             : collect([$invoice]);
         $expenses = Expense::query()
             ->when($quote, fn ($q) => $q->where('quote_id', $quote->id), fn ($q) => $q->whereNull('quote_id')->where('invoice_id', $invoice->id))
+            ->with('invoice')
             ->latest('spent_on')->latest('id')
             ->get();
 

@@ -879,3 +879,4 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .nav-apps .btn { justify-content: flex-start; width: 100%; }
 .nav-pref { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; font-weight: 600; }
 .nav-pref select { margin-left: auto; width: auto; max-width: 60%; }
+#frais, #ajouter { scroll-margin-top: 4.5rem; }

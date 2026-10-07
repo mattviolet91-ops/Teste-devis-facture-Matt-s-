@@ -349,6 +349,22 @@
       if (row.classList.contains('is-open')) { event.preventDefault(); closeSwipe(row); }
     });
   });
+  // Lien vers une partie repliée (ex. « Frais » → #ajouter) : elle s'ouvre et le premier champ est prêt.
+  function openTarget() {
+    if (!location.hash || location.hash.length < 2) { return; }
+    var target = document.getElementById(location.hash.slice(1));
+    if (!target) { return; }
+    var details = target.tagName === 'DETAILS' ? target : target.closest('details');
+    if (details && !details.open) {
+      details.open = true;
+      var field = details.querySelector('input:not([type=hidden]), select, textarea');
+      if (field) { setTimeout(function () { field.focus({ preventScroll: true }); }, 50); }
+    }
+    target.scrollIntoView({ block: 'start' });
+  }
+  window.addEventListener('hashchange', openTarget);
+  openTarget();
+
   // ---- GPS : Apple Plans, Waze ou Google Maps (choix retenu sur ce téléphone si demandé) ----
   var NAV_APPS = {
     apple: function (a) { return 'https://maps.apple.com/?daddr=' + encodeURIComponent(a) + '&dirflg=d'; },

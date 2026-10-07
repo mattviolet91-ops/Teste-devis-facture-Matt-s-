@@ -5,8 +5,12 @@
         <h2>Frais du chantier</h2>
         <span class="badge">Visible par vous seul</span>
     </div>
-    @if ($job['quote'] && $job['invoices']->count() > 1)
-        <p class="muted small">Toutes les factures de ce chantier comptent : {{ $job['numbers'] }}.</p>
+    @php $others = $job['invoices']->reject(fn ($i) => $i->id === $invoice->id); @endphp
+    @if ($job['quote'])
+        <p class="small" style="margin-top:0">
+            Mêmes frais sur tout le chantier du <a href="{{ route('quotes.show', $job['quote']) }}">devis {{ $job['quote']->number }}</a>{{ $others->isNotEmpty() ? ', donc aussi sur ' : '.' }}
+            @foreach ($others as $other)<a href="{{ route('invoices.show', $other) }}#frais">{{ mb_strtolower($other->kindLabel()) }} {{ $other->number }}</a>{{ $loop->last ? '.' : ', ' }}@endforeach
+        </p>
     @endif
     @include('expenses._panel', ['job' => $job, 'action' => route('expenses.store', $invoice)])
     @if (in_array($invoice->status, \App\Models\Invoice::ISSUED, true))

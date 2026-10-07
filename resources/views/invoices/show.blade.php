@@ -76,6 +76,9 @@
                 <button class="btn btn-secondary" type="submit"><x-icon name="send" /> Marquer comme envoyée</button>
             </form>
         @endif
+        @if (! $invoice->isCredit() && auth()->user()->isAdmin())
+            <a class="btn btn-secondary" href="#ajouter"><x-icon name="cart" /> Frais</a>
+        @endif
         @if ($invoice->acceptsPayments())
             <a class="btn btn-secondary" href="{{ route('reminders.show', $invoice) }}"><x-icon name="send" /> Relancer{{ $invoice->reminder_count ? ' ('.$invoice->reminder_count.')' : '' }}</a>
         @endif
