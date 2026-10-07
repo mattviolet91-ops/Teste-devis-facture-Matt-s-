@@ -5,7 +5,7 @@
         @foreach ($expenses as $expense)
             <li>
                 <span>{{ $expense->label }}
-                    <span class="muted small">· {{ $expense->spent_on->format('d/m/Y') }} · {{ $expense->categoryLabel() }}@if ($expense->invoice) · noté sur {{ mb_strtolower($expense->invoice->kindLabel()) }} {{ $expense->invoice->number ?? '(brouillon)' }}@endif</span>
+                    <span class="muted small">· {{ $expense->spent_on->format('d/m/Y') }} · {{ $expense->categoryLabel() }}@if ($expense->invoice) · noté sur {{ mb_strtolower($expense->invoice->kindLabel()) }} {{ $expense->invoice->number ?? '(brouillon)' }}@elseif ($expense->quote) · noté sur le devis {{ $expense->quote->number }}@endif</span>
                     @if ($expense->receipt_path) · <a class="small" href="{{ str_ends_with(strtolower((string) $expense->receipt_path), '.pdf') ? \App\Http\Controllers\PdfViewerController::link(route('expenses.receipt', $expense), 'Ticket '.$expense->label) : route('expenses.receipt', $expense) }}" @unless (str_ends_with(strtolower((string) $expense->receipt_path), '.pdf')) target="_blank" rel="noopener" @endunless>ticket</a>@endif
                 </span>
                 <span class="expense-actions">

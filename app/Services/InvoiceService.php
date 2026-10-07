@@ -83,6 +83,7 @@ class InvoiceService
             $invoice = $this->blank($quote->client_id, $quote->worksite_id);
             $invoice->fill($quote->only(['title', 'vat_regime', 'show_bank', 'notes', 'internal_notes']));
             $invoice->quote_id = $quote->id;
+            $invoice->project_id = $quote->project_id;
             $invoice->kind = $kind;
             $invoice->created_by = auth()->id();
 
@@ -187,6 +188,7 @@ class InvoiceService
             $copy->kind = $invoice->kind;
             $copy->status = 'draft';
             $copy->quote_id = $invoice->quote_id;
+            $copy->project_id = $invoice->project_id;
             $copy->percent = $invoice->percent;
             $copy->corrects_id = $invoice->id;
             $copy->created_by = auth()->id();

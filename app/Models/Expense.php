@@ -20,7 +20,7 @@ class Expense extends Model
         'autre' => 'Autre',
     ];
 
-    protected $fillable = ['spent_on', 'label', 'supplier', 'category', 'amount_ttc', 'vat', 'quote_id', 'invoice_id'];
+    protected $fillable = ['spent_on', 'label', 'supplier', 'category', 'amount_ttc', 'vat', 'quote_id', 'invoice_id', 'project_id'];
 
     protected function casts(): array
     {
@@ -30,6 +30,11 @@ class Expense extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class)->withTrashed();
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function invoice(): BelongsTo

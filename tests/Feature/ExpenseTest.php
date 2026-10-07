@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\Quote;
 use App\Models\User;
 use App\Services\JobCostService;
@@ -101,9 +102,10 @@ class ExpenseTest extends TestCase
         $this->post(route('invoices.send', $deposit));
 
         // Frais ajouté depuis la page du chantier, et depuis la facture d'acompte.
-        $this->get(route('expenses.quote', $quote))->assertOk()->assertSee('Facturé en partie (30 %)')->assertSee('Ajouter un frais');
+        $this->followingRedirects()->get(route('expenses.quote', $quote))->assertOk()->assertSee('Facturé en partie (30 %)')->assertSee('Ajouter un frais');
+        $project = $quote->fresh()->project;
         $this->post(route('expenses.quote.store', $quote), ['expense_label' => 'Location nacelle', 'expense_amount' => '120', 'expense_date' => '2026-01-15', 'category' => 'location'])
-            ->assertRedirect(route('expenses.quote', $quote).'#ajouter');
+            ->assertRedirect(route('expenses.project', $project).'#ajouter');
         $this->post(route('expenses.store', $deposit), ['expense_label' => 'Produit hydrofuge', 'expense_amount' => '80'])->assertSessionHasNoErrors();
 
         // Facture de solde : les frais déjà notés restent sur le même chantier.
@@ -117,14 +119,14 @@ class ExpenseTest extends TestCase
             $this->get(route('invoices.show', $invoice))->assertSee('href="#ajouter"', false)
                 ->assertSee('Location nacelle')->assertSee('Produit hydrofuge')
                 ->assertSee('noté sur facture d&#039;acompte '.$deposit->fresh()->number, false)
-                ->assertSee('devis '.$quote->number);
+                ->assertSee('devis '.$quote->fresh()->number);
         }
         $this->get(route('invoices.show', $final))->assertSee('facture d&#039;acompte '.$deposit->fresh()->number.'</a>', false);
         $this->get(route('invoices.show', $deposit))->assertSee('facture de solde '.$final->fresh()->number.'</a>', false);
 
         $page = $this->get(route('expenses.index'))->assertOk()->assertSee('Frais par chantier');
         $page->assertSee('Durand')->assertSee('Martin')->assertSee('Facturé entièrement');
-        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $job = app(JobCostService::class)->job($project);
         $this->assertSame([100000, 20000, 80000, true, 2], [$job['invoiced'], $job['expenses_total'], $job['remaining'], $job['fully'], $job['invoices']->count()]);
         $this->assertSame('2026-01-15', Expense::query()->where('label', 'Location nacelle')->sole()->spent_on->toDateString());
 
@@ -134,7 +136,7 @@ class ExpenseTest extends TestCase
         // Le commercial n'y a pas accès.
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
         $this->get(route('expenses.index'))->assertForbidden();
-        $this->get(route('expenses.quote', $quote))->assertForbidden();
+        $this->get(route('expenses.project', $project))->assertForbidden();
     }
 
     public function test_job_without_quote_and_unbilled_quote(): void
@@ -145,11 +147,11 @@ class ExpenseTest extends TestCase
         $invoice = Invoice::query()->latest('id')->first();
         $this->post(route('invoices.send', $invoice));
         $this->post(route('expenses.store', $invoice), ['expense_label' => 'Mastic', 'expense_amount' => '20', 'retour' => 'chantier'])
-            ->assertRedirect(route('expenses.invoice', $invoice).'#ajouter');
-        $this->get(route('expenses.invoice', $invoice))->assertOk()->assertSee('Mastic')->assertSee('Facturé entièrement');
+            ->assertRedirect(route('expenses.project', $invoice->fresh()->project_id).'#ajouter');
+        $this->followingRedirects()->get(route('expenses.invoice', $invoice))->assertOk()->assertSee('Mastic')->assertSee('Facturé entièrement');
 
         // Facture d'un devis : la page « sans devis » renvoie vers le chantier du devis.
-        $this->get(route('expenses.invoice', $this->invoice))->assertRedirect(route('expenses.quote', $this->invoice->quote_id));
+        $this->get(route('expenses.invoice', $this->invoice))->assertRedirect(route('expenses.project', $this->invoice->quote->fresh()->project_id));
         // Devis pas encore facturé : pas de page de frais.
         $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Pas facturé', 'validity_days' => 30,
             'lines' => [['type' => 'item', 'title' => 'X', 'quantity' => '1', 'unit_price' => '10']]]);
@@ -173,24 +175,80 @@ class ExpenseTest extends TestCase
 
         // « + Nouveau → Frais » : chantier choisi dans la liste, ou frais généraux.
         $this->get(route('expenses.create'))->assertOk()->assertSee('Bernard · Zinguerie (pas encore facturé)')->assertSee('Frais généraux');
-        $this->post(route('expenses.store.any'), ['job' => 'devis-'.$quote->id, 'expense_label' => 'Crochets', 'expense_amount' => '30'])
-            ->assertRedirect(route('expenses.quote', $quote));
+        $project = $quote->fresh()->project;
+        $this->post(route('expenses.store.any'), ['job' => 'chantier-'.$project->id, 'expense_label' => 'Crochets', 'expense_amount' => '30'])
+            ->assertRedirect(route('expenses.project', $project));
         $this->post(route('expenses.store.any'), ['job' => 'general', 'expense_label' => 'Perceuse', 'expense_amount' => '99'])
             ->assertRedirect(route('expenses.general'));
         $this->post(route('expenses.store.any'), ['expense_label' => 'Sans chantier choisi', 'expense_amount' => '5'])->assertSessionHasErrors('job');
 
-        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $job = app(JobCostService::class)->job($project);
         $this->assertSame([false, 0, 18000, 62000], [$job['billed'], $job['invoiced'], $job['expenses_total'], $job['expected']]);
         $this->get(route('expenses.index'))->assertSee('En cours · pas encore facturé')->assertSee('Frais généraux');
         $this->get(route('expenses.general'))->assertSee('Perceuse')->assertSee(Money::format(9900));
-        $this->assertSame(1, Expense::query()->whereNull('quote_id')->whereNull('invoice_id')->count());
+        $this->assertSame(1, Expense::query()->whereNull('project_id')->whereNull('quote_id')->whereNull('invoice_id')->count());
 
         // Facturé ensuite : les frais déjà notés comptent.
         $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
         $invoice = Invoice::query()->latest('id')->first();
         $this->post(route('invoices.send', $invoice));
-        $job = app(JobCostService::class)->job($quote->fresh(), null);
+        $job = app(JobCostService::class)->job($project->fresh());
         $this->assertSame([true, 80000, 62000], [$job['fully'], $job['invoiced'], $job['remaining']]);
         $this->get(route('dashboard'))->assertSee(route('expenses.create'));
+    }
+
+    public function test_several_quotes_can_belong_to_the_same_job(): void
+    {
+        $client = Client::factory()->create(['last_name' => 'Lefebvre']);
+        $make = function (string $title, string $price) use ($client) {
+            $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => $title, 'validity_days' => 30,
+                'lines' => [['type' => 'item', 'title' => $title, 'quantity' => '1', 'unit_price' => $price]]])->assertSessionHasNoErrors();
+            $quote = Quote::query()->latest('id')->first();
+            $this->post(route('quotes.send', $quote));
+            $this->post(route('quotes.accept', $quote));
+
+            return $quote->fresh();
+        };
+        $toiture = $make('Réfection toiture', '5000');
+        $gouttieres = $make('Gouttières', '1000');
+        $jobs = app(JobCostService::class);
+        $this->get(route('quotes.show', $toiture))->assertSee('Frais du chantier');
+        $this->post(route('expenses.quote.store', $toiture), ['expense_label' => 'Tuiles', 'expense_amount' => '900']);
+        $this->post(route('expenses.quote.store', $gouttieres), ['expense_label' => 'Zinc', 'expense_amount' => '200']);
+        $first = $jobs->projectForQuote($toiture->fresh());
+
+        // Le devis « Gouttières » est rangé dans le chantier de la toiture : un seul chantier.
+        $this->get(route('quotes.show', $gouttieres))->assertSee('Ranger ce devis dans un autre chantier')->assertSee('Réfection toiture');
+        $this->post(route('expenses.attach.quote', $gouttieres), ['project' => (string) $first->id])->assertSessionHasNoErrors();
+        $this->assertSame($first->id, $gouttieres->fresh()->project_id);
+        $this->assertSame(1, Project::query()->where('client_id', $client->id)->count(), 'L\'ancien chantier vide disparaît.');
+
+        // Facturé : les deux devis et leurs factures comptent ensemble.
+        $this->post(route('quotes.invoice', $gouttieres), ['kind' => 'standard']);
+        $invoice = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $invoice));
+        $this->post(route('expenses.store', $invoice), ['expense_label' => 'Crochets', 'expense_amount' => '50']);
+        $job = $jobs->job($first->fresh());
+        $this->assertSame([600000, 100000, 115000, 2, 3], [$job['planned'], $job['invoiced'], $job['expenses_total'], $job['quotes']->count(), $job['expenses_count']]);
+        $this->assertSame([false, 17], [$job['fully'], $job['percent']]);
+        foreach ([route('quotes.show', $toiture), route('quotes.show', $gouttieres), route('invoices.show', $invoice)] as $url) {
+            $this->get($url)->assertSee('Tuiles')->assertSee('Zinc')->assertSee('Crochets');
+        }
+        $this->get(route('expenses.index'))->assertSee('2 devis');
+
+        // Renommer le chantier.
+        $this->put(route('expenses.project.rename', $first), ['title' => 'Maison Lefebvre'])->assertRedirect(route('expenses.project', $first));
+        $this->get(route('expenses.project', $first))->assertSee('Maison Lefebvre')->assertSee('Devis '.$toiture->number)->assertSee('Devis '.$gouttieres->number);
+
+        // Remis à part : le devis repart dans son propre chantier avec ses frais et sa facture.
+        $this->post(route('expenses.attach.quote', $gouttieres), ['project' => 'apart']);
+        $separate = $gouttieres->fresh()->project;
+        $this->assertNotSame($first->id, $separate->id);
+        $this->assertSame([2, 1], [$jobs->job($separate)['expenses_count'], $jobs->job($first->fresh())['expenses_count']]);
+        $this->assertSame($separate->id, $invoice->fresh()->project_id);
+
+        // Jamais vers le chantier d'un autre client.
+        $other = Project::query()->create(['client_id' => $this->invoice->client_id, 'title' => 'Autre client']);
+        $this->post(route('expenses.attach.quote', $gouttieres), ['project' => (string) $other->id])->assertNotFound();
     }
 }

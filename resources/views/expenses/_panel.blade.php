@@ -1,14 +1,14 @@
 {{-- Frais d'un chantier : liste, total, ce qu'il reste, et ajout. Visible par le gérant seul. --}}
 @php
     use App\Support\Money;
-    $assujetti = ! (($job['quote'] ?? $job['invoice'])->isFranchise());
+    $assujetti = ! $job['franchise'];
     $rate = $job['invoiced'] > 0 ? (int) round($job['remaining'] * 100 / $job['invoiced']) : null;
 @endphp
 <ul class="stat-list">
     @if ($job['billed'])
         <li><span>Facturé{{ $assujetti ? ' HT' : '' }}@unless ($job['fully']) <span class="badge badge-warning">en partie · {{ $job['percent'] }} %</span>@endunless</span><strong>{{ Money::format($job['invoiced']) }}</strong></li>
     @else
-        <li><span>Pas encore facturé <span class="muted small">(devis {{ Money::format($job['planned']) }}{{ $assujetti ? ' HT' : '' }})</span></span><strong>{{ Money::format(0) }}</strong></li>
+        <li><span>Pas encore facturé <span class="muted small">(prévu {{ Money::format($job['planned']) }}{{ $assujetti ? ' HT' : '' }})</span></span><strong>{{ Money::format(0) }}</strong></li>
     @endif
     <li><span>Frais du chantier{{ $assujetti ? ' HT' : '' }}</span><strong>− {{ Money::format($job['expenses_total']) }}</strong></li>
     <li class="remaining"><span>Il vous reste</span><strong class="{{ $job['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining']) }}@if ($rate !== null) <span class="badge {{ $job['remaining'] < 0 ? 'badge-danger' : 'badge-success' }}">{{ $rate }} %</span>@endif</strong></li>

@@ -78,6 +78,12 @@ class Invoice extends Model
         return $this->belongsTo(Client::class)->withTrashed();
     }
 
+    /** Chantier (frais, et autres devis ou factures du même chantier). */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
     public function worksite(): BelongsTo
     {
         return $this->belongsTo(Worksite::class)->withTrashed();

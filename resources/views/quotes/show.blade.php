@@ -152,12 +152,14 @@
     @endunless
 
     @if (auth()->user()->isAdmin() && app(\App\Services\JobCostService::class)->isJob($quote))
-        @php $job = app(\App\Services\JobCostService::class)->job($quote, null); @endphp
+        @php $jobs = app(\App\Services\JobCostService::class); $job = $jobs->job($jobs->projectForQuote($quote)); @endphp
         <div class="card" id="frais">
             <div class="card-head">
                 <h2>Frais du chantier</h2>
                 <span class="badge">Visible par vous seul</span>
             </div>
+            @include('expenses._documents', ['job' => $job, 'current' => 'q'.$quote->id])
+            @include('expenses._attach', ['job' => $job, 'clientId' => $quote->client_id, 'what' => 'ce devis', 'action' => route('expenses.attach.quote', $quote)])
             @include('expenses._panel', ['job' => $job, 'action' => route('expenses.quote.store', $quote), 'retour' => 'devis'])
         </div>
     @endif

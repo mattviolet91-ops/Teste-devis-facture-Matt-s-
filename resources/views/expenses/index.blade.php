@@ -38,7 +38,7 @@
                     <a class="list-item" href="{{ $job['url'] }}">
                         <span class="list-main">
                             <strong>{{ $job['client']?->displayName() }} · {{ $job['title'] }}</strong>
-                            <span class="muted small">{{ $job['quote'] ? 'Devis '.$job['quote']->number.' · ' : '' }}{{ $job['numbers'] }}{{ $job['address'] ? ' · '.$job['address'] : '' }}</span>
+                            <span class="muted small">{{ $job['quotes']->isNotEmpty() ? ($job['quotes']->count() > 1 ? $job['quotes']->count().' devis' : 'Devis '.$job['quotes']->first()->number).' · ' : '' }}{{ $job['numbers'] }}{{ $job['address'] ? ' · '.$job['address'] : '' }}</span>
                             <span class="small">{{ $job['expenses_count'] }} frais · {{ Money::format($job['expenses_total']) }}</span>
                         </span>
                         <span class="list-meta">

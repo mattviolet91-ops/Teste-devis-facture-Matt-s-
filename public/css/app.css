@@ -222,7 +222,7 @@ img { max-width: 100%; }
 .kpi-accent { border-top: 4px solid var(--brand-accent); }
 
 .stat-list { list-style: none; margin: 0; padding: 0; }
-.stat-list li { display: flex; justify-content: space-between; padding: .625rem 0; border-bottom: 1px solid var(--border); }
+.stat-list li { display: flex; justify-content: space-between; gap: .75rem; padding: .625rem 0; border-bottom: 1px solid var(--border); }
 .stat-list li:last-child { border-bottom: 0; }
 .stat-list strong { font-variant-numeric: tabular-nums; }
 

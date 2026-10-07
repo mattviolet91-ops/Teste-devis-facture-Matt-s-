@@ -99,6 +99,8 @@ class QuoteService
     {
         $copy = $this->copy($quote, $quote->client_id, $quote->worksite_id);
         $copy->replaces_id = $quote->id;
+        // La nouvelle version reste dans le même chantier.
+        $copy->project_id = $quote->project_id;
         $copy->save();
 
         ActivityLogger::log('quote.revised', "Nouvelle version en préparation pour le devis {$quote->number}", $quote);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\Quote;
 use App\Services\ActivityLogger;
 use App\Services\JobCostService;
@@ -57,25 +58,18 @@ class ExpenseController extends Controller
     /** Enregistrement depuis « + Nouveau → Frais ». */
     public function storeAny(Request $request): RedirectResponse
     {
-        $request->validate(['job' => ['required', 'string', 'regex:/^(devis-\d+|facture-\d+|general)$/']], ['job.required' => 'Choisissez le chantier (ou « Frais généraux »).'], ['job' => 'chantier']);
-        [$kind, $id] = array_pad(explode('-', (string) $request->input('job')), 2, null);
+        $request->validate(['job' => ['required', 'string', 'regex:/^(chantier-\d+|general)$/']], ['job.required' => 'Choisissez le chantier (ou « Frais généraux »).'], ['job' => 'chantier']);
 
-        if ($kind === 'devis') {
-            $quote = Quote::query()->findOrFail((int) $id);
-            abort_unless($this->jobs->isJob($quote), 404);
-            $this->createExpense($request, $quote->id, null, $quote);
-            $back = route('expenses.quote', $quote);
-        } elseif ($kind === 'facture') {
-            $invoice = Invoice::query()->findOrFail((int) $id);
-            abort_if($invoice->isCredit(), 404);
-            $this->createExpense($request, $invoice->quote_id, $invoice->id, $invoice);
-            $back = route('expenses.invoice', $invoice);
-        } else {
-            $this->createExpense($request, null, null, null);
-            $back = route('expenses.general');
+        if ($request->input('job') === 'general') {
+            $this->createExpense($request, null, null, null, null);
+
+            return redirect()->route('expenses.general')->with('status', 'Frais enregistré.');
         }
 
-        return redirect()->to($back)->with('status', 'Frais enregistré.');
+        $project = Project::query()->findOrFail((int) substr((string) $request->input('job'), 9));
+        $this->createExpense($request, $project, null, null, $project);
+
+        return redirect()->route('expenses.project', $project)->with('status', 'Frais enregistré.');
     }
 
     /** Frais généraux : sans chantier (outillage, carburant, assurance véhicule…). */
@@ -86,37 +80,60 @@ class ExpenseController extends Controller
 
     public function storeGeneral(Request $request): RedirectResponse
     {
-        $this->createExpense($request, null, null, null);
+        $this->createExpense($request, null, null, null, null);
 
         return redirect()->to(route('expenses.general').'#ajouter')->with('status', 'Frais général ajouté.');
     }
 
-    /** Frais d'un chantier fait à partir d'un devis. */
-    public function quote(Quote $quote): View
+    /** Page d'un chantier : ses devis, ses factures et ses frais. */
+    public function project(Project $project): View
+    {
+        $job = $this->jobs->job($project);
+
+        return view('expenses.show', ['job' => $job]);
+    }
+
+    /** Ajout depuis la page du chantier. */
+    public function storeForProject(Request $request, Project $project): RedirectResponse
+    {
+        $this->createExpense($request, $project, null, null, $project);
+
+        return redirect()->to(route('expenses.project', $project).'#ajouter')->with('status', 'Frais ajouté au chantier.');
+    }
+
+    /** Nom du chantier (ex. « Toiture de la maison » quand il regroupe plusieurs devis). */
+    public function renameProject(Request $request, Project $project): RedirectResponse
+    {
+        $data = $request->validate(['title' => ['required', 'string', 'max:160']], [], ['title' => 'nom du chantier']);
+        $project->update(['title' => $data['title']]);
+
+        return redirect()->route('expenses.project', $project)->with('status', 'Chantier renommé.');
+    }
+
+    /** Ancien lien « chantier d'un devis » : page du chantier de ce devis. */
+    public function quote(Quote $quote): RedirectResponse
     {
         abort_unless($this->jobs->isJob($quote), 404);
 
-        return view('expenses.show', ['job' => $this->jobs->job($quote, null)]);
+        return redirect()->route('expenses.project', $this->jobs->projectForQuote($quote));
     }
 
-    /** Frais d'une facture faite sans devis. */
-    public function invoice(Invoice $invoice): RedirectResponse|View
+    /** Ancien lien « chantier d'une facture » : page du chantier de cette facture. */
+    public function invoice(Invoice $invoice): RedirectResponse
     {
-        if ($invoice->quote_id && $invoice->quote) {
-            return redirect()->route('expenses.quote', $invoice->quote);
-        }
-        abort_if($invoice->isCredit() || ! in_array($invoice->status, Invoice::ISSUED, true), 404);
+        abort_if($invoice->isCredit(), 404);
 
-        return view('expenses.show', ['job' => $this->jobs->job(null, $invoice)]);
+        return redirect()->route('expenses.project', $this->jobs->projectForInvoice($invoice));
     }
 
-    /** Ajout depuis la page du chantier (devis facturé). */
+    /** Ajout depuis le devis accepté. */
     public function storeForQuote(Request $request, Quote $quote): RedirectResponse
     {
         abort_unless($this->jobs->isJob($quote), 404);
-        $this->createExpense($request, $quote->id, null, $quote);
+        $project = $this->jobs->projectForQuote($quote);
+        $this->createExpense($request, $project, $quote->id, null, $quote);
 
-        return redirect()->to($request->input('retour') === 'devis' ? route('quotes.show', $quote).'#frais' : route('expenses.quote', $quote).'#ajouter')
+        return redirect()->to($request->input('retour') === 'devis' ? route('quotes.show', $quote).'#frais' : route('expenses.project', $project).'#ajouter')
             ->with('status', 'Frais ajouté au chantier.');
     }
 
@@ -124,13 +141,44 @@ class ExpenseController extends Controller
     public function store(Request $request, Invoice $invoice): RedirectResponse
     {
         abort_if($invoice->isCredit(), 404);
-        $this->createExpense($request, $invoice->quote_id, $invoice->id, $invoice);
+        $project = $this->jobs->projectForInvoice($invoice);
+        $this->createExpense($request, $project, $invoice->quote_id, $invoice->id, $invoice);
 
-        return redirect()->to($request->input('retour') === 'chantier' ? route('expenses.invoice', $invoice).'#ajouter' : route('invoices.show', $invoice).'#frais')
+        return redirect()->to($request->input('retour') === 'chantier' ? route('expenses.project', $project).'#ajouter' : route('invoices.show', $invoice).'#frais')
             ->with('status', 'Frais ajouté au chantier.');
     }
 
-    private function createExpense(Request $request, ?int $quoteId, ?int $invoiceId, Quote|Invoice|null $subject): Expense
+    /** Range un devis dans un autre chantier du même client (ou dans un chantier à part). */
+    public function attachQuote(Request $request, Quote $quote): RedirectResponse
+    {
+        abort_unless($this->jobs->isJob($quote), 404);
+        $target = $this->target($request, $quote->client_id);
+        $project = $this->jobs->attachQuote($quote, $target);
+
+        return redirect()->to(url()->previous().'#frais')->with('status', 'Devis rangé dans le chantier « '.$project->title.' ».');
+    }
+
+    public function attachInvoice(Request $request, Invoice $invoice): RedirectResponse
+    {
+        abort_if($invoice->isCredit() || $invoice->quote_id, 404);
+        $target = $this->target($request, $invoice->client_id);
+        $project = $this->jobs->attachInvoice($invoice, $target);
+
+        return redirect()->to(url()->previous().'#frais')->with('status', 'Facture rangée dans le chantier « '.$project->title.' ».');
+    }
+
+    /** Chantier choisi : un chantier du même client, ou « à part » (null). */
+    private function target(Request $request, ?int $clientId): ?Project
+    {
+        $data = $request->validate(['project' => ['required', 'string', 'regex:/^(\d+|apart)$/']], [], ['project' => 'chantier']);
+        if ($data['project'] === 'apart') {
+            return null;
+        }
+
+        return Project::query()->whereKey((int) $data['project'])->where('client_id', $clientId)->firstOrFail();
+    }
+
+    private function createExpense(Request $request, ?Project $project, ?int $quoteId, ?int $invoiceId, Quote|Invoice|Project|null $subject): Expense
     {
         $data = $request->validate([
             'expense_label' => ['required', 'string', 'max:160'],
@@ -158,6 +206,7 @@ class ExpenseController extends Controller
             'spent_on' => $data['expense_date'] ?? today(),
             'invoice_id' => $invoiceId,
             'quote_id' => $quoteId,
+            'project_id' => $project?->id,
         ]);
         if ($request->hasFile('receipt')) {
             $file = $request->file('receipt');

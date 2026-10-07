@@ -195,8 +195,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/frais', [ExpenseController::class, 'storeAny'])->name('expenses.store.any');
     Route::get('/frais/generaux', [ExpenseController::class, 'general'])->name('expenses.general');
     Route::post('/frais/generaux', [ExpenseController::class, 'storeGeneral'])->name('expenses.general.store');
-    Route::get('/frais/chantier/{quote}', [ExpenseController::class, 'quote'])->whereNumber('quote')->name('expenses.quote');
-    Route::post('/frais/chantier/{quote}', [ExpenseController::class, 'storeForQuote'])->whereNumber('quote')->name('expenses.quote.store');
+    Route::get('/frais/chantier/{project}', [ExpenseController::class, 'project'])->whereNumber('project')->name('expenses.project');
+    Route::post('/frais/chantier/{project}', [ExpenseController::class, 'storeForProject'])->whereNumber('project')->name('expenses.project.store');
+    Route::put('/frais/chantier/{project}', [ExpenseController::class, 'renameProject'])->whereNumber('project')->name('expenses.project.rename');
+    Route::get('/frais/devis/{quote}', [ExpenseController::class, 'quote'])->whereNumber('quote')->name('expenses.quote');
+    Route::post('/frais/devis/{quote}', [ExpenseController::class, 'storeForQuote'])->whereNumber('quote')->name('expenses.quote.store');
+    Route::post('/devis/{quote}/chantier', [ExpenseController::class, 'attachQuote'])->whereNumber('quote')->name('expenses.attach.quote');
+    Route::post('/factures/{invoice}/chantier', [ExpenseController::class, 'attachInvoice'])->whereNumber('invoice')->name('expenses.attach.invoice');
     Route::get('/frais/facture/{invoice}', [ExpenseController::class, 'invoice'])->whereNumber('invoice')->name('expenses.invoice');
     Route::post('/factures/{invoice}/frais', [ExpenseController::class, 'store'])->whereNumber('invoice')->name('expenses.store');
     Route::delete('/frais/{expense}', [ExpenseController::class, 'destroy'])->whereNumber('expense')->name('expenses.destroy');
