@@ -18,6 +18,3 @@ Schedule::command('app:review-requests')->dailyAt('10:00');
 Schedule::command('app:planning-notifications --rappels')->dailyAt('09:00');
 Schedule::command('app:import-site-requests')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('app:quote-follow-ups')->dailyAt('10:30');
-// Espace Argent : dépenses fixes chaque matin, mise à jour depuis les devis et bilan chaque lundi.
-Schedule::command('app:argent-jour')->dailyAt('06:10');
-Schedule::command('app:argent-semaine')->weeklyOn(1, '07:00');

@@ -23,8 +23,6 @@ final class Navigation
         'photos' => ['Photos', 'camera', 'photos.index', ['photos.*']],
         'entretiens' => ['Entretiens', 'tool', 'maintenance.index', ['maintenance.*']],
         'statistiques' => ['Stats', 'chart', 'statistics', ['statistics']],
-        // Espace Argent : visible du seul gérant propriétaire (voir RestrictByRole::allows).
-        'argent' => ['Argent', 'piggy', 'money.dashboard', ['money.*']],
         'prestations' => ['Prestations', 'book', 'catalog.index', ['catalog.*']],
         'emails' => ['Emails', 'mail', 'emails.index', ['emails.*']],
         'avis' => ['Avis', 'check', 'reviews.index', ['reviews.*']],
@@ -57,11 +55,10 @@ final class Navigation
         $keys = array_values(array_filter((array) app(Settings::class)->get('layout.bottom_nav', self::DEFAULT_BOTTOM), fn ($k) => isset(self::ITEMS[$k])));
         $keys = count($keys) === 3 ? $keys : self::DEFAULT_BOTTOM;
 
-        // Compte commercial (ou espace Argent d'un autre) : les raccourcis qu'il ne peut pas ouvrir sont remplacés.
+        // Compte commercial : les raccourcis qu'il ne peut pas ouvrir sont remplacés.
         $user = auth()->user();
-        $allowed = $user ? array_values(array_filter($keys, fn ($k) => $user->canOpen(self::ITEMS[$k][2]))) : $keys;
-        if (count($allowed) < count($keys)) {
-            $keys = $allowed;
+        if ($user && ! $user->isAdmin()) {
+            $keys = array_values(array_filter($keys, fn ($k) => $user->canOpen(self::ITEMS[$k][2])));
             foreach (['dashboard', 'clients', 'planning', 'documents', 'demandes'] as $fallback) {
                 if (count($keys) < 3 && ! in_array($fallback, $keys, true)) {
                     $keys[] = $fallback;
