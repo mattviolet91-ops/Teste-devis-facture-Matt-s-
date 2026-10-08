@@ -14,6 +14,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\Money;
 use App\Http\Controllers\MyposNotificationController;
 use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\PaymentController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WixArchiveController;
 use App\Http\Controllers\WorksiteController;
+use App\Http\Middleware\MoneyGate;
 use Illuminate\Support\Facades\Route;
 
 Route::resourceVerbs(['create' => 'nouveau', 'edit' => 'modifier']);
@@ -270,6 +272,65 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/corbeille/devis/{id}', [TrashController::class, 'restoreQuote'])->whereNumber('id')->name('trash.quotes.restore');
     Route::post('/corbeille/clients/{id}', [TrashController::class, 'restoreClient'])->whereNumber('id')->name('trash.clients.restore');
     Route::post('/corbeille/chantiers/{id}', [TrashController::class, 'restoreWorksite'])->whereNumber('id')->name('trash.worksites.restore');
+
+    // Espace Argent : réservé au gérant qui a créé le code Argent, code demandé à chaque ouverture.
+    Route::prefix('argent')->name('money.')->group(function () {
+        Route::middleware(MoneyGate::class.':lock')->group(function () {
+            Route::get('/code', [Money\LockController::class, 'setup'])->name('setup');
+            Route::post('/code', [Money\LockController::class, 'storeSetup'])->middleware('throttle:10,1')->name('setup.store');
+            Route::get('/verrou', [Money\LockController::class, 'unlockForm'])->name('unlock');
+            Route::post('/verrou', [Money\LockController::class, 'unlock'])->middleware('throttle:20,1')->name('unlock.store');
+            Route::post('/verrouiller', [Money\LockController::class, 'lock'])->name('lock');
+            Route::get('/code-oublie', [Money\LockController::class, 'forgot'])->name('forgot');
+            Route::post('/code-oublie', [Money\LockController::class, 'reset'])->middleware('throttle:5,1')->name('forgot.store');
+        });
+
+        Route::middleware(MoneyGate::class)->group(function () {
+            Route::get('/', Money\DashboardController::class)->name('dashboard');
+
+            Route::get('/mouvements', [Money\TransactionController::class, 'index'])->name('transactions.index');
+            Route::post('/mouvements', [Money\TransactionController::class, 'store'])->name('transactions.store');
+            Route::get('/mouvements/{transaction}/modifier', [Money\TransactionController::class, 'edit'])->whereNumber('transaction')->name('transactions.edit');
+            Route::put('/mouvements/{transaction}', [Money\TransactionController::class, 'update'])->whereNumber('transaction')->name('transactions.update');
+            Route::delete('/mouvements/{transaction}', [Money\TransactionController::class, 'destroy'])->whereNumber('transaction')->name('transactions.destroy');
+
+            Route::get('/comptes', [Money\AccountController::class, 'index'])->name('accounts.index');
+            Route::post('/comptes', [Money\AccountController::class, 'store'])->name('accounts.store');
+            Route::get('/comptes/{account}', [Money\AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
+            Route::put('/comptes/{account}', [Money\AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
+            Route::delete('/comptes/{account}', [Money\AccountController::class, 'destroy'])->whereNumber('account')->name('accounts.destroy');
+
+            Route::get('/budgets', [Money\CategoryController::class, 'index'])->name('categories.index');
+            Route::post('/categories', [Money\CategoryController::class, 'store'])->name('categories.store');
+            Route::put('/categories/{category}', [Money\CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');
+            Route::delete('/categories/{category}', [Money\CategoryController::class, 'destroy'])->whereNumber('category')->name('categories.destroy');
+
+            Route::get('/objectifs', [Money\GoalController::class, 'index'])->name('goals.index');
+            Route::post('/objectifs', [Money\GoalController::class, 'store'])->name('goals.store');
+            Route::put('/objectifs/{goal}', [Money\GoalController::class, 'update'])->whereNumber('goal')->name('goals.update');
+            Route::post('/objectifs/{goal}/versement', [Money\GoalController::class, 'contribute'])->whereNumber('goal')->name('goals.contribute');
+            Route::delete('/objectifs/{goal}', [Money\GoalController::class, 'destroy'])->whereNumber('goal')->name('goals.destroy');
+
+            Route::get('/fixes', [Money\RecurringController::class, 'index'])->name('recurrings.index');
+            Route::post('/fixes', [Money\RecurringController::class, 'store'])->name('recurrings.store');
+            Route::put('/fixes/{recurring}', [Money\RecurringController::class, 'update'])->whereNumber('recurring')->name('recurrings.update');
+            Route::delete('/fixes/{recurring}', [Money\RecurringController::class, 'destroy'])->whereNumber('recurring')->name('recurrings.destroy');
+
+            Route::get('/releve', [Money\ImportController::class, 'create'])->name('import.create');
+            Route::post('/releve/apercu', [Money\ImportController::class, 'preview'])->middleware('throttle:20,1')->name('import.preview');
+            Route::get('/releve/apercu', [Money\ImportController::class, 'show'])->name('import.show');
+            Route::post('/releve', [Money\ImportController::class, 'store'])->name('import.store');
+
+            Route::get('/bilans', [Money\ReportController::class, 'index'])->name('reports.index');
+            Route::get('/bilans/{report}', [Money\ReportController::class, 'show'])->whereNumber('report')->name('reports.show');
+
+            Route::get('/reglages', [Money\SettingsController::class, 'edit'])->name('settings');
+            Route::put('/reglages', [Money\SettingsController::class, 'update'])->name('settings.update');
+            Route::put('/reglages/code', [Money\SettingsController::class, 'updateCode'])->middleware('throttle:10,1')->name('settings.code');
+            Route::post('/mise-a-jour', [Money\SettingsController::class, 'sync'])->middleware('throttle:10,1')->name('sync');
+            Route::get('/export', [Money\SettingsController::class, 'export'])->middleware('throttle:10,1')->name('export');
+        });
+    });
 
     Route::prefix('reglages')->name('settings.')->group(function () {
         Route::redirect('/', '/reglages/entreprise')->name('index');

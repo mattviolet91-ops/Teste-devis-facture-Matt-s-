@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\MoneyLockService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,6 +54,10 @@ class RestrictByRole
     /** Le compte peut-il ouvrir cette page ? (sert aussi à masquer les menus) */
     public static function allows(?User $user, string $routeName): bool
     {
+        // Espace Argent : le gérant qui a créé le code Argent, et lui seul.
+        if (str_starts_with($routeName, 'money.')) {
+            return app(MoneyLockService::class)->canSee($user);
+        }
         if (! $user || $user->role !== 'commercial') {
             return true;
         }

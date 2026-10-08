@@ -13,6 +13,7 @@
         ['planning', 'Planning', 'calendar', route('planning.index')],
         ['entretiens', 'Entretiens', 'tool', route('maintenance.index')],
         ['statistiques', 'Statistiques', 'chart', route('statistics')],
+        ['argent', 'Argent', 'piggy', route('money.dashboard')],
         ['photos', 'Photos', 'camera', route('photos.index')],
         ['prestations', 'Prestations', 'book', route('catalog.index')],
         ['emails', 'Emails', 'mail', route('emails.index')],
@@ -35,6 +36,7 @@
         'statistiques' => request()->routeIs('statistics'),
         'entretiens' => request()->routeIs('maintenance.*'),
         'planning' => request()->routeIs('planning.*'),
+        'argent' => request()->routeIs('money.*'),
         default => false,
     };
 @endphp
@@ -142,7 +144,7 @@
             // 6 raccourcis principaux (hors ceux déjà dans la barre du bas), le reste dans « Autres ».
             $inBar = \App\Support\Navigation::bottom();
             $coveredByDocuments = in_array('documents', $inBar, true) ? ['devis', 'factures', 'demandes'] : [];
-            $priority = ['planning', 'paiements', 'relances', 'photos', 'statistiques', 'entretiens', 'frais', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
+            $priority = ['argent', 'planning', 'paiements', 'relances', 'photos', 'statistiques', 'entretiens', 'frais', 'avis', 'demandes', 'devis', 'factures', 'clients', 'prestations', 'emails'];
             $available = array_values(array_filter($priority, fn ($k) => ! in_array($k, $inBar, true) && ! in_array($k, $coveredByDocuments, true)
                 && $user->canOpen(\App\Support\Navigation::ITEMS[$k][2])));
             $main = array_slice($available, 0, 6);

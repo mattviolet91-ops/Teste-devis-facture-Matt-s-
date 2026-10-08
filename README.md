@@ -12,6 +12,7 @@ sans toucher au site WordPress.
 - [Base de données](docs/BASE_DE_DONNEES.md)
 
 - [Installation de test sur o2switch](docs/INSTALLATION_TEST.md)
+- [Espace Argent (comptes perso et pro)](docs/ARGENT.md)
 
 La procédure d'installation définitive sera rédigée à la phase 15. L'archive
 à envoyer sur le serveur se fabrique avec `scripts/build-release.sh`.
@@ -33,6 +34,7 @@ La procédure d'installation définitive sera rédigée à la phase 15. L'archiv
 | 13 | Sauvegardes | ✅ |
 | 14 | Recette (docs/RECETTE.md) | ✅ |
 | 15 | Mise en service (docs/MISE_EN_SERVICE.md) | prête, à lancer |
+| + | Espace Argent privé (docs/ARGENT.md) | ✅ |
 
 ## Développement
 

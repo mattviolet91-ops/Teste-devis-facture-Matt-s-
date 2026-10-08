@@ -32,6 +32,13 @@ phase par phase ; la colonne « Phase » indique quand.
 | `email_log` | Emails envoyés | 10 |
 | `view_log` | Consultations par le client | 11 |
 | `acceptances` | Acceptations signées (nom, signature, IP, navigateur, date, empreinte) | 11 |
+| `money_accounts` | Espace Argent : comptes perso / pro (solde de départ à une date) | Argent |
+| `money_categories` | Catégories de dépenses et revenus, budget mensuel | Argent |
+| `money_transactions` | Mouvements (montant signé ; virements en 2 lignes liées ; origine devis / relevé / fixe) | Argent |
+| `money_goals` | Objectifs (épargne, encaissé, gain, plafond de dépenses) | Argent |
+| `money_recurrings` | Dépenses et revenus fixes | Argent |
+| `money_rules` | Mot du libellé bancaire → catégorie (appris à l'import) | Argent |
+| `money_weekly_reports` | Bilan figé de chaque semaine | Argent |
 
 ## Règles d'intégrité
 

@@ -13,8 +13,8 @@ self.addEventListener('activate', function (event) {
   }).then(function () { return self.clients.claim(); }));
 });
 
-// Jamais en cache : espace client, déconnexion, sauvegardes, jeton, liste des pages.
-var SKIP = [/^\/d\//, /^\/f\//, /^\/deconnexion/, /^\/reglages\/sauvegardes\//, /^\/hors-ligne\/(jeton|pages)/, /^\/connexion/, /^\/photos\/\d+\/original/];
+// Jamais en cache : espace client, déconnexion, sauvegardes, jeton, liste des pages, espace Argent (privé).
+var SKIP = [/^\/argent(\/|$)/, /^\/d\//, /^\/f\//, /^\/deconnexion/, /^\/reglages\/sauvegardes\//, /^\/hors-ligne\/(jeton|pages)/, /^\/connexion/, /^\/photos\/\d+\/original/];
 var STATIC_PATH = /^\/(css|js|fonts|icons|marque|images\/guide)\/|\.(css|js|png|svg|woff2?|webmanifest)$/;
 
 // Réseau mobile instable : une demande qui échoue est retentée une fois (ou deux)

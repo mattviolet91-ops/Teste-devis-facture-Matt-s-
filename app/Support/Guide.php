@@ -44,6 +44,7 @@ final class Guide
         'catalog.*' => 'prestations',
         'emails.*' => 'emails',
         'statistics' => 'statistiques',
+        'money.*' => 'argent',
         'site-stats.*' => 'statistiques',
         'trash.*' => 'corbeille',
         'archives.*' => 'corbeille',
@@ -285,6 +286,22 @@ final class Guide
                     '« Site internet » : visites de votre site, pages les plus vues, provenance des visiteurs et clics sur Appeler, Email, WhatsApp ou Demander un devis.',
                 ],
                 'tips' => ['Le compteur du site n\'utilise pas de cookie et n\'enregistre pas d\'adresse IP.'],
+            ],
+            [
+                'id' => 'argent', 'title' => 'Espace Argent (privé)', 'icon' => 'piggy', 'route' => 'money.dashboard', 'link' => 'Ouvrir l\'espace Argent',
+                'intro' => 'Vos comptes perso et pro au même endroit : combien vous avez, combien vous avez gagné et dépensé, vos budgets et vos objectifs. Protégé par un code à part : personne d\'autre ne peut l\'ouvrir.',
+                'steps' => [
+                    'Première ouverture : choisissez votre code Argent (4 à 8 chiffres) et le solde de vos comptes. Les paiements et frais déjà saisis dans les devis arrivent tout seuls.',
+                    '« + Ajouter » : une dépense, un revenu ou un virement entre vos comptes, en quelques secondes.',
+                    'Mouvements → « Importer un relevé » : le fichier CSV ou OFX de votre banque, sans rien retaper. Les catégories choisies sont retenues pour la fois suivante.',
+                    'Budgets : un montant à ne pas dépasser par mois et par catégorie. Objectifs : mettre de côté pour un projet, encaisser ou gagner un montant.',
+                    'Fixes : loyer, crédit, abonnements, salaire… notés tout seuls à leur date et comptés dans le solde prévu en fin de mois.',
+                    'Chaque lundi matin : mise à jour depuis les devis et bilan de la semaine passée (onglet Bilans), avec une notification.',
+                ],
+                'tips' => [
+                    'Espace Argent : l\'œil barré en haut floute tous les montants (pratique pour montrer l\'écran à quelqu\'un).',
+                    'Espace Argent : indiquez votre taux de cotisations dans ses réglages pour voir ce qu\'il faut mettre de côté pour l\'URSSAF.',
+                ],
             ],
             [
                 'id' => 'hors-ligne', 'title' => 'Sans réseau (hors connexion)', 'icon' => 'shield', 'route' => null, 'link' => null,

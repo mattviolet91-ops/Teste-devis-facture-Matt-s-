@@ -20,6 +20,9 @@ final class BackLink
         'search', 'trash.index', 'archives.index', 'documents',
         // Signature sur place : écran tendu au client, avec son propre lien de retour.
         'quotes.on-site',
+        // Espace Argent : onglets et écrans du verrou.
+        'money.dashboard', 'money.transactions.index', 'money.accounts.index', 'money.categories.index', 'money.goals.index',
+        'money.recurrings.index', 'money.reports.index', 'money.settings', 'money.setup', 'money.unlock', 'money.forgot',
     ];
 
     public static function for(Request $request): ?string
@@ -53,6 +56,10 @@ final class BackLink
             $name === 'emails.show' => route('emails.index'),
             $name === 'archives.show' => route('archives.index'),
             in_array($name, ['catalog.create', 'catalog.edit'], true) => route('catalog.index'),
+            $name === 'money.accounts.show' => route('money.accounts.index'),
+            $name === 'money.reports.show' => route('money.reports.index'),
+            in_array($name, ['money.transactions.edit', 'money.import.create', 'money.import.show'], true) => route('money.transactions.index'),
+            str_starts_with($name, 'money.') => route('money.dashboard'),
             default => route('dashboard'),
         };
     }
