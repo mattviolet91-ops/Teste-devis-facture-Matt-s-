@@ -34,7 +34,7 @@ final class Navigation
     /** Blocs de la page d'accueil : clé => libellé. */
     public const HOME_BLOCKS = [
         'today' => 'Aujourd\'hui (rendez-vous du jour, itinéraire, météo, appels)',
-        'kpis' => 'Chiffres clés (à encaisser, devis en attente, encaissé)',
+        'kpis' => 'Chiffres clés (à encaisser, devis en attente, encaissé, frais et gain)',
         'requests' => 'Demandes de devis reçues (site internet)',
         'activity' => 'Activité de la période',
         'todo' => 'À faire (factures en retard, devis sans réponse)',

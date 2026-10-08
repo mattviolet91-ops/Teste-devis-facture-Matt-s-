@@ -136,17 +136,35 @@
                     @if ($kpis['pending_amount'])<span class="muted small">{{ Money::format($kpis['pending_amount']) }} au total</span>@endif
                 </a>
                 <a class="card kpi kpi-accent kpi-link" href="{{ route('payments.index') }}">
-                    <span class="label">Encaissé {{ $periodLabel }}</span>
+                    <span class="label">Encaissé {{ $periodLabel }} (TTC)</span>
                     <span class="value">{{ Money::format($kpis['collected']) }}</span>
                 </a>
             </div>
+            @if (auth()->user()->isAdmin())
+                <div class="grid grid-2">
+                    <a class="card kpi kpi-link" href="{{ route('expenses.index') }}">
+                        <span class="label">Frais {{ $periodLabel }} (TTC)</span>
+                        <span class="value">{{ Money::format($kpis['spent']) }}</span>
+                        <span class="muted small">Chantiers et frais généraux</span>
+                    </a>
+                    <a class="card kpi kpi-link" href="{{ route('expenses.index') }}">
+                        <span class="label">Gain {{ $periodLabel }} (TTC)</span>
+                        <span class="value" @if ($kpis['gain'] < 0) style="color:var(--danger, #c0392b)" @endif>{{ Money::format($kpis['gain']) }}</span>
+                        <span class="muted small">Encaissé {{ Money::format($kpis['collected']) }} − frais {{ Money::format($kpis['spent']) }}</span>
+                    </a>
+                </div>
+            @endif
                 @break
             @case('activity')
             <div class="card">
                 <div class="card-head"><h2>Activité {{ $periodLabel }}</h2><a class="small" href="{{ route('statistics') }}">Provenance</a></div>
                 <ul class="stat-list">
                     <li><span>CA facturé (HT)</span><strong>{{ Money::format($kpis['revenue']) }}</strong></li>
-                    <li><span>Encaissé</span><strong>{{ Money::format($kpis['collected']) }}</strong></li>
+                    <li><span>Encaissé (TTC)</span><strong>{{ Money::format($kpis['collected']) }}</strong></li>
+                    @if (auth()->user()->isAdmin())
+                        <li><span>Frais (TTC)</span><strong>{{ Money::format($kpis['spent']) }}</strong></li>
+                        <li><span>Gain (TTC)</span><strong>{{ Money::format($kpis['gain']) }}</strong></li>
+                    @endif
                     <li><span>Devis envoyés</span><strong>{{ $stats['sent_quotes'] }}</strong></li>
                     <li><span>Devis acceptés</span><strong>{{ $stats['accepted_quotes'] }}{{ $stats['accepted_amount'] ? ' · '.Money::format($stats['accepted_amount']) : '' }}</strong></li>
                     <li><span>Devis refusés</span><strong>{{ $stats['refused_quotes'] }}</strong></li>

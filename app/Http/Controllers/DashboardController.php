@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesPeriod;
 use App\Models\ActivityLog;
+use App\Models\Expense;
 use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -32,6 +33,9 @@ class DashboardController extends Controller
         [$period, $from, $to] = $this->period($request);
 
         $open = Invoice::query()->invoices()->whereIn('status', Invoice::OPEN);
+        $collected = (int) Payment::query()->counted()->whereDate('paid_at', '>=', $from)->whereDate('paid_at', '<=', $to)->sum('amount');
+        // Frais de la période (chantiers et frais généraux), TTC comme les encaissements.
+        $spent = (int) Expense::query()->whereDate('spent_on', '>=', $from)->whereDate('spent_on', '<=', $to)->sum('amount_ttc');
 
         return view('dashboard', [
             'insuranceAlert' => $insurance->message(),
@@ -48,7 +52,10 @@ class DashboardController extends Controller
                 'pending_quotes' => Quote::query()->pending()->count(),
                 'pending_amount' => (int) Quote::query()->pending()->sum('total_ttc'),
                 'revenue' => $this->revenue($from, $to),
-                'collected' => (int) Payment::query()->counted()->whereDate('paid_at', '>=', $from)->whereDate('paid_at', '<=', $to)->sum('amount'),
+                'collected' => $collected,
+                'spent' => $spent,
+                // Gain TTC : ce qui est encaissé, moins les frais payés sur la période.
+                'gain' => $collected - $spent,
             ],
             'stats' => [
                 'sent_quotes' => Quote::query()->whereNotNull('sent_at')->whereBetween('sent_at', [$from, $to->copy()->endOfDay()])->count(),
