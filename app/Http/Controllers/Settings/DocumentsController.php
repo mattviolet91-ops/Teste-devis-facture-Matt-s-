@@ -18,6 +18,7 @@ class DocumentsController extends Controller
         return view('settings.documents', [
             'pdf' => $settings->group('pdf'),
             'mediator' => $settings->get('company.mediator_name'),
+            'host' => $settings->get('company.host'),
             'certificate' => app(PdfService::class)->certificatePath() !== null,
         ]);
     }
@@ -29,9 +30,14 @@ class DocumentsController extends Controller
             'pdf.waste_facility' => ['nullable', 'string', 'max:300'],
             'pdf.cgv' => ['nullable', 'string', 'max:20000'],
             'pdf.presentation_text' => ['nullable', 'string', 'max:5000'],
+            'pdf.refund_policy' => ['nullable', 'string', 'max:20000'],
+            'company.host' => ['nullable', 'string', 'max:300'],
         ], [], ['pdf.waste_mention' => 'mention sur les déchets']);
 
         $values = collect($data)->dot()->map(fn ($v) => $v ?? '')->all();
+        if (array_key_exists('pdf.refund_policy', $values) && trim($values['pdf.refund_policy']) === '') {
+            unset($values['pdf.refund_policy']);
+        }
         $values['pdf.cgv_enabled'] = $request->boolean('pdf.cgv_enabled');
         $values['pdf.cover_quotes'] = $request->boolean('pdf.cover_quotes');
         $values['pdf.cover_invoices'] = $request->boolean('pdf.cover_invoices');

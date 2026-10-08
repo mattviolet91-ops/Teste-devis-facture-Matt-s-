@@ -21,6 +21,7 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\PortalPagesController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuickQuoteController;
 use App\Http\Controllers\QuoteController;
@@ -63,6 +64,14 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::match(['get', 'post'], '/f/{token}/paiement-ok', [ClientPortalController::class, 'paid'])->name('portal.invoice.paid');
     Route::match(['get', 'post'], '/f/{token}/paiement-annule', [ClientPortalController::class, 'payCancelled'])->name('portal.invoice.pay-cancel');
 });
+
+// Pages publiques de l'adresse client : accueil, CGV, remboursement, mentions légales, paiement.
+Route::get('/accueil', [PortalPagesController::class, 'home'])->name('portal.home');
+Route::get('/conditions-generales-de-vente', [PortalPagesController::class, 'cgv'])->name('portal.cgv');
+Route::get('/remboursement-et-annulation', [PortalPagesController::class, 'refunds'])->name('portal.refunds');
+Route::get('/mentions-legales', [PortalPagesController::class, 'legal'])->name('portal.legal');
+Route::get('/paiement-en-ligne', [PortalPagesController::class, 'payment'])->name('portal.payment');
+Route::post('/paiement-en-ligne', [PortalPagesController::class, 'findInvoice'])->middleware('throttle:10,1')->name('portal.payment.find');
 
 // Statistiques du site internet : visites et clics envoyés par le script « s.js » (sans cookie).
 Route::post('/stats/collect', SiteStatsCollectController::class)->middleware('throttle:120,1')->name('portal.site.collect');

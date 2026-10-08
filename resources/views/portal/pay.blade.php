@@ -8,6 +8,8 @@
         @if ($test)<div class="alert alert-warning">Mode TEST : aucun argent réel ne sera débité.</div>@endif
         <p>{{ $invoice->kindLabel() }} {{ $invoice->number }} — <strong>{{ Money::format($invoice->balance()) }}</strong></p>
         <p class="muted small">Vous allez être redirigé vers la page de paiement sécurisée de notre prestataire myPOS.</p>
+        @include('portal.pages._cards')
+        <p class="small muted">En payant, vous acceptez nos <a href="{{ route('portal.cgv') }}">conditions générales de vente</a> et notre <a href="{{ route('portal.refunds') }}">politique de remboursement et d'annulation</a>.</p>
         <form method="POST" action="{{ $form['action'] }}" data-autosubmit>
             @foreach ($form['fields'] as $name => $value)
                 <input type="hidden" name="{{ $name }}" value="{{ $value }}">

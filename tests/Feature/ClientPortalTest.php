@@ -263,9 +263,53 @@ class ClientPortalTest extends TestCase
 
         $this->get('https://devis.matts-couverture.fr/connexion')->assertNotFound();
         $this->get('https://devis.matts-couverture.fr/devis')->assertNotFound();
-        $this->get('https://devis.matts-couverture.fr/')->assertRedirect('https://matts-couverture.fr');
+        $this->get('https://devis.matts-couverture.fr/')->assertRedirect(route('portal.home'));
+        foreach (['portal.home', 'portal.cgv', 'portal.refunds', 'portal.legal', 'portal.payment'] as $page) {
+            $this->get('https://devis.matts-couverture.fr'.parse_url(route($page), PHP_URL_PATH))->assertOk();
+        }
 
         // L'espace de gestion reste sur son adresse.
         $this->get('https://test.matts-couverture.fr/connexion')->assertOk();
+    }
+
+    public function test_public_pages_required_for_card_payments(): void
+    {
+        // Accueil : présentation, paiement par carte, liens vers les pages obligatoires.
+        $home = $this->get(route('portal.home'))->assertOk()->assertSee('Paiement en ligne')->assertSee('myPOS')->assertSee('Mastercard')
+            ->assertSee(route('portal.cgv'))->assertSee(route('portal.refunds'))->assertSee(route('portal.legal'))->assertSee(route('portal.request'));
+
+        // Conditions générales et politique de remboursement : articles affichés avec leur titre.
+        $this->get(route('portal.cgv'))->assertOk()->assertSee('Conditions générales de vente')->assertSee('3. Droit de rétractation')->assertSee('SIRET');
+        $this->get(route('portal.refunds'))->assertOk()->assertSee('Remboursement et annulation')
+            ->assertSee('2. Droit de rétractation')->assertSee('6. Modalités de remboursement')->assertSee('recrédité sur la carte utilisée');
+        $this->get(route('portal.legal'))->assertOk()->assertSee('Mentions légales')->assertSee('o2switch')->assertSee('Hébergeur');
+
+        // Modifiable dans les réglages.
+        $this->actingAs($this->admin());
+        $this->get(route('settings.documents'))->assertSee('Politique de remboursement et d&#039;annulation', false);
+        $this->put(route('settings.documents'), ['pdf' => ['waste_mention' => 'Déchets évacués.', 'refund_policy' => '1. Essai. Texte de remboursement modifié.']])->assertSessionHasNoErrors();
+        auth()->logout();
+        $this->get(route('portal.refunds'))->assertSee('1. Essai')->assertSee('Texte de remboursement modifié');
+
+        // Pied de page de chaque page client : liens obligatoires.
+        $quote = $this->sentQuote();
+        $this->get(route('portal.quote', $quote->public_token))->assertSee(route('portal.refunds'))->assertSee(route('portal.cgv'))->assertSee(route('portal.legal'));
+    }
+
+    public function test_client_finds_an_invoice_to_pay_with_its_number_and_email(): void
+    {
+        $quote = $this->sentQuote();
+        $this->actingAs($this->admin());
+        $this->post(route('quotes.accept', $quote));
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
+        $invoice = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $invoice));
+        $invoice = $invoice->fresh();
+        auth()->logout();
+
+        $this->post(route('portal.payment.find'), ['number' => strtolower($invoice->number), 'check' => 'HELENE@example.com'])
+            ->assertRedirect(route('portal.invoice', $invoice->public_token));
+        $this->post(route('portal.payment.find'), ['number' => $invoice->number, 'check' => 'autre@example.com'])->assertSessionHasErrors('number');
+        $this->post(route('portal.payment.find'), ['number' => 'FAC-2099-9999', 'check' => 'helene@example.com'])->assertSessionHasErrors('number');
     }
 }

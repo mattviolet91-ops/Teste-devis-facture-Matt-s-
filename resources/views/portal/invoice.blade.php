@@ -23,6 +23,8 @@
             <p>Reste à régler : <strong>{{ Money::format($invoice->balance()) }}</strong>. Paiement sécurisé chez notre prestataire de paiement.
                 @unless ($invoice->payment_link || $cardUrl === route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) Indiquez le montant et la référence <strong>{{ $invoice->number }}</strong>.@endunless</p>
             <a class="btn" href="{{ $cardUrl }}" @if ($cardUrl !== route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) target="_blank" rel="noopener noreferrer" @endif><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
+            @include('portal.pages._cards')
+            <p class="small muted" style="margin-bottom:0">En payant, vous acceptez nos <a href="{{ route('portal.cgv') }}">conditions générales de vente</a> et notre <a href="{{ route('portal.refunds') }}">politique de remboursement et d'annulation</a>.</p>
         </div>
     @endif
 

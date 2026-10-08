@@ -880,3 +880,10 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .nav-pref { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; font-weight: 600; }
 .nav-pref select { margin-left: auto; width: auto; max-width: 60%; }
 #frais, #ajouter { scroll-margin-top: 4.5rem; }
+/* Pages publiques de l'adresse client */
+.portal-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-bottom: .75rem; }
+.portal-links a { color: inherit; }
+.card-brands { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.card-brand { display: inline-block; padding: .15rem .55rem; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; font-size: .8rem; letter-spacing: .02em; background: var(--surface); }
+.legal-text h2 { font-size: 1.05rem; margin: 1.25rem 0 .35rem; }
+.legal-text p { margin: 0 0 .5rem; line-height: 1.55; }

@@ -52,6 +52,18 @@
 
     </div>
 
+    <div class="card" id="pages-publiques">
+        <h2>Pages publiques (adresse client)</h2>
+        <p class="muted small">Exigées par les réseaux de cartes pour le paiement en ligne. Visibles sur <a href="{{ route('portal.home') }}" target="_blank" rel="noopener">l'accueil de l'adresse client</a> :
+            <a href="{{ route('portal.cgv') }}" target="_blank" rel="noopener">conditions générales</a>,
+            <a href="{{ route('portal.refunds') }}" target="_blank" rel="noopener">remboursement et annulation</a>,
+            <a href="{{ route('portal.legal') }}" target="_blank" rel="noopener">mentions légales</a>.</p>
+        <div class="form-grid">
+            <x-field name="pdf.refund_policy" label="Politique de remboursement et d'annulation" type="textarea" rows="12" :value="$pdf['refund_policy'] ?? ''" hint="Un article par ligne (« 3. Titre. Texte »). À relire : elle doit correspondre à vos conditions générales." />
+            <x-field name="company.host" label="Hébergeur (mentions légales)" :value="$host" />
+        </div>
+    </div>
+
     <div class="form-actions">
         <button class="btn" type="submit">Enregistrer</button>
     </div>

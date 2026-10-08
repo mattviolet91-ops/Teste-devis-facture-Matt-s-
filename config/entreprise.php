@@ -27,6 +27,8 @@ return [
         'agreements' => 'Agréé Dalep et Velux',
         'mediator_name' => '',
         'mediator_url' => '',
+        // Hébergeur du site (mentions légales de l'adresse client).
+        'host' => 'o2switch, Chemin des Pardiaux, 63000 Clermont-Ferrand, France — www.o2switch.fr',
     ],
 
     'bank' => [
@@ -94,6 +96,17 @@ CGV,
         'insurance_invoices' => true,
         // Texte de présentation facultatif, imprimé sur la couverture.
         'presentation_text' => '',
+        // Politique de remboursement et d'annulation (page publique de l'adresse client,
+        // exigée par les réseaux de cartes pour le paiement en ligne). Un article par ligne.
+        'refund_policy' => <<<'TXT'
+1. Paiement en ligne. Les factures et les acomptes peuvent être réglés par carte bancaire (Visa, Mastercard, CB) sur la page de paiement sécurisée de notre prestataire myPOS, à partir du lien reçu avec la facture. Les données de la carte sont saisies chez myPOS et ne nous sont jamais transmises. Le montant payé est celui indiqué sur la facture ; aucun paiement n'est demandé avant la signature du devis.
+2. Droit de rétractation. Lorsque le devis est signé au domicile du client ou à distance (en ligne, par email), le client dispose de 14 jours à compter de la signature pour se rétracter, sans motif et sans frais, par toute déclaration claire (courrier, email). Toutes les sommes versées lui sont alors remboursées dans les 14 jours suivant la rétractation. Si le client a demandé par écrit que les travaux commencent avant la fin de ce délai, il paie la part des travaux déjà réalisée. Il n'y a pas de droit de rétractation pour une réparation urgente expressément demandée par le client à son domicile.
+3. Annulation par le client. Après le délai de rétractation, le client peut annuler les travaux par écrit avant leur début. L'acompte versé reste acquis à l'entreprise. Si des matériaux commandés spécialement pour le chantier coûtent plus que l'acompte, la différence reste due, sur justificatif. Les sommes versées au-delà sont remboursées.
+4. Annulation ou report par l'entreprise. Les travaux peuvent être reportés en cas d'intempéries rendant le travail en toiture dangereux, de force majeure ou de retard de livraison des matériaux ; une nouvelle date est alors fixée avec le client. Si l'entreprise ne peut pas réaliser les travaux, toutes les sommes versées pour des travaux non réalisés sont remboursées intégralement dans les 14 jours.
+5. Paiement en double ou erreur de montant. Un paiement en double ou supérieur au montant dû est remboursé dans les 14 jours suivant sa constatation, sur simple demande.
+6. Modalités de remboursement. Le remboursement est fait par le même moyen de paiement que celui utilisé par le client : un paiement par carte est recrédité sur la carte utilisée, via myPOS. Aucun frais n'est facturé au client. Le délai d'apparition sur le compte dépend ensuite de la banque du client.
+7. Réclamations. Pour toute demande de remboursement ou d'annulation, le client contacte l'entreprise par téléphone ou par email (coordonnées ci-dessous) en indiquant le numéro de la facture. Une réponse lui est apportée sous 7 jours.
+TXT,
     ],
 
     // Envoi des emails via Gmail (Réglages → Emails). Le mot de passe

@@ -25,9 +25,9 @@ class ClientHostOnly
             return $next($request);
         }
 
-        // Page d'accueil de l'adresse client : renvoi vers le site de l'entreprise.
-        if ($request->path() === '/' && ($website = config('entreprise.company.website'))) {
-            return redirect()->away($website);
+        // Page d'accueil de l'adresse client : présentation, paiement en ligne et pages légales.
+        if ($request->path() === '/') {
+            return redirect()->route('portal.home');
         }
 
         abort(404);
