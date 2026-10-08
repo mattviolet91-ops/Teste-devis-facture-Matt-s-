@@ -128,9 +128,6 @@
                     <li><span>Gain des chantiers</span><strong><x-money-amount :value="$quotes['gain']" signed /></strong></li>
                     <li><a href="{{ route('invoices.index', ['status' => 'unpaid']) }}">Reste à encaisser</a><strong><x-money-amount :value="$quotes['to_collect']" /></strong></li>
                     <li><a href="{{ route('quotes.index') }}">Devis en attente ({{ $quotes['pending_quotes'] }})</a><strong><x-money-amount :value="$quotes['pending_amount']" /></strong></li>
-                    @if ($taxReserve !== null)
-                        <li><span>À mettre de côté (URSSAF, impôts · {{ \App\Support\Percent::format($taxRate) }})</span><strong class="m-neg"><x-money-amount :value="$taxReserve" /></strong></li>
-                    @endif
                 </ul>
                 <div class="money-row" style="margin-top:.75rem">
                     <span class="small muted">
@@ -145,9 +142,6 @@
                         <button class="btn btn-sm btn-secondary" type="submit"><x-icon name="repeat" /> Mettre à jour</button>
                     </form>
                 </div>
-                @if ($taxReserve === null)
-                    <p class="money-note">Astuce : indiquez votre taux de cotisations dans les <a href="{{ route('money.settings') }}">réglages</a> pour voir ce qu'il faut mettre de côté.</p>
-                @endif
             </div>
         @endif
 

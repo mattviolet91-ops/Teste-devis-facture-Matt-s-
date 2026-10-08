@@ -225,12 +225,6 @@ class MoneyStatsService
         return $balance + (int) $upcoming->sum(fn ($item) => $item['recurring']->amount);
     }
 
-    /** Taux à mettre de côté pour l'URSSAF et les impôts (centièmes de %), 0 = désactivé. */
-    public function taxRate(): int
-    {
-        return max(0, min(10000, (int) $this->settings->get('argent.tax_rate', 0)));
-    }
-
     /**
      * Chiffres en direct du logiciel de devis (TTC, comme les paiements).
      *

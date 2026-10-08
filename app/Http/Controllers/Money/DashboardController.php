@@ -35,8 +35,6 @@ class DashboardController extends Controller
         $previous = $stats->totals($scope, $prevFrom, $prevTo);
         $accounts = $stats->accounts($scope);
         $quotes = $scope !== 'perso' ? $stats->quotes($from, $to) : null;
-        $taxRate = $stats->taxRate();
-        $proIncome = $scope === 'perso' ? 0 : ($scope === 'pro' ? $totals['income'] : $stats->totals('pro', $from, $to)['income']);
         $lastSync = $settings->get('argent.last_sync_at');
 
         return view('money.dashboard', [
@@ -57,8 +55,6 @@ class DashboardController extends Controller
                 ->filter(fn ($item) => $scope === 'all' || $item['recurring']->account?->scope === $scope)->take(6),
             'forecast' => $stats->endOfMonthForecast($scope),
             'quotes' => $quotes,
-            'taxReserve' => $taxRate ? (int) round($proIncome * $taxRate / 10000) : null,
-            'taxRate' => $taxRate,
             'syncAccount' => $sync->account(),
             'lastSync' => $lastSync ? Carbon::parse($lastSync) : null,
             'latest' => MoneyTransaction::query()->inScope($scope)->with(['account', 'category'])

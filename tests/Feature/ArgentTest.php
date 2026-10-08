@@ -16,7 +16,6 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Services\MoneyImportService;
 use App\Services\MoneySyncService;
-use App\Services\Settings;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -225,15 +224,13 @@ class ArgentTest extends TestCase
 
         $this->post(route('payments.store', Invoice::query()->sole()), ['amount' => '250', 'paid_at' => '2026-10-13', 'method' => 'especes'])->assertSessionHasNoErrors();
         $cash = MoneyAccount::query()->create(['name' => 'Caisse', 'kind' => 'especes', 'scope' => 'pro', 'opening_on' => '2026-10-01']);
-        $this->put(route('money.settings.update'), ['lock_minutes' => 15, 'sync_account_id' => $this->account('pro')->id, 'cash_account_id' => $cash->id, 'tax_rate' => '21,2', 'weekly_push' => 1])
+        $this->put(route('money.settings.update'), ['lock_minutes' => 15, 'sync_account_id' => $this->account('pro')->id, 'cash_account_id' => $cash->id, 'weekly_push' => 1])
             ->assertSessionHasNoErrors();
         $sync->run();
         $line = MoneyTransaction::query()->where('source_ref', 'like', 'payment:%')->sole();
         $this->assertSame($cash->id, $line->account_id);
         $this->assertSame(25000, $cash->balance());
-        $this->assertSame(2120, (int) app(Settings::class)->get('argent.tax_rate'));
-        // 21,2 % de ce qui est encaissé en pro ce mois-ci (250 €).
-        $this->get(route('money.dashboard', ['vue' => 'pro']))->assertSee(Money::format(5300));
+        $this->get(route('money.dashboard', ['vue' => 'pro']))->assertOk()->assertSee(Money::format(25000))->assertDontSee('URSSAF, impôts ·');
     }
 
     public function test_fixed_expenses_are_written_on_their_due_dates_and_forecast(): void

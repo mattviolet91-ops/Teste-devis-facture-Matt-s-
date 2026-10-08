@@ -9,7 +9,6 @@ use App\Services\ActivityLogger;
 use App\Services\MoneyLockService;
 use App\Services\MoneySyncService;
 use App\Services\Settings;
-use App\Support\Percent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/** Réglages de l'espace Argent : code, verrouillage, lien avec les devis, URSSAF, notifications, export. */
+/** Réglages de l'espace Argent : code, verrouillage, lien avec les devis, notifications, export. */
 class SettingsController extends Controller
 {
     public function __construct(private readonly Settings $settings, private readonly MoneyLockService $lock) {}
@@ -34,7 +33,6 @@ class SettingsController extends Controller
             'lastSync' => $last ? Carbon::parse($last) : null,
             'lastResult' => (array) $this->settings->get('argent.last_sync', []),
             'lockMinutes' => $this->lock->lockMinutes(),
-            'taxRate' => (int) $this->settings->get('argent.tax_rate', 0),
             'weeklyPush' => (bool) $this->settings->get('argent.weekly_push', true),
             'pushAmounts' => (bool) $this->settings->get('argent.push_amounts', false),
         ]);
@@ -46,19 +44,12 @@ class SettingsController extends Controller
             'lock_minutes' => ['required', 'integer', Rule::in(array_keys(MoneyLockService::DELAYS))],
             'sync_account_id' => ['nullable', 'integer', Rule::exists('money_accounts', 'id')],
             'cash_account_id' => ['nullable', 'integer', Rule::exists('money_accounts', 'id')],
-            'tax_rate' => ['nullable', 'string', 'max:6'],
-        ], [], ['sync_account_id' => 'compte', 'tax_rate' => 'taux']);
-        $rate = trim((string) $request->input('tax_rate', ''));
-        $rate = $rate === '' ? 0 : Percent::parse($rate);
-        if ($rate === null || $rate < 0 || $rate > 10000) {
-            throw ValidationException::withMessages(['tax_rate' => 'Taux entre 0 et 100 % (ex. 21,2).']);
-        }
+        ], [], ['sync_account_id' => 'compte']);
 
         $this->settings->set([
             'argent.lock_minutes' => (int) $request->input('lock_minutes'),
             'argent.sync_account_id' => $request->integer('sync_account_id') ?: null,
             'argent.cash_account_id' => $request->integer('cash_account_id') ?: null,
-            'argent.tax_rate' => $rate,
             'argent.weekly_push' => $request->boolean('weekly_push'),
             'argent.push_amounts' => $request->boolean('push_amounts'),
         ]);

@@ -29,7 +29,6 @@
                     @endforeach
                 </select>
             </div>
-            <x-field name="tax_rate" label="À mettre de côté pour l'URSSAF et les impôts (%)" :value="$taxRate ? \App\Support\Percent::input($taxRate) : ''" inputmode="decimal" placeholder="ex. 21,2" hint="Appliqué à ce qui est encaissé sur les comptes pro. Vide : ne pas afficher." />
         </div>
 
         <h2 style="margin-top:1.5rem">Sécurité</h2>

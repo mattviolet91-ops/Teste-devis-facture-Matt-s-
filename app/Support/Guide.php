@@ -300,7 +300,6 @@ final class Guide
                 ],
                 'tips' => [
                     'Espace Argent : l\'œil barré en haut floute tous les montants (pratique pour montrer l\'écran à quelqu\'un).',
-                    'Espace Argent : indiquez votre taux de cotisations dans ses réglages pour voir ce qu\'il faut mettre de côté pour l\'URSSAF.',
                 ],
             ],
             [
