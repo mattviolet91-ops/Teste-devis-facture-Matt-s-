@@ -14,7 +14,11 @@
     @if ($newToken)
         <div class="card" style="border-color: var(--success)">
             <h2>Votre nouvelle clé</h2>
-            <p class="small">Copiez-la maintenant et collez-la dans les réglages de votre environnement Claude (voir ci-dessous). <strong>Elle ne sera plus jamais affichée.</strong> Ne l'envoyez jamais dans une conversation, un email ou un SMS.</p>
+            @if ($newTokenScope === 'argent')
+                <p class="small">Copiez-la maintenant et collez-la dans l'app Argent : Réglages → Lien avec l'app de devis, avec l'adresse <strong>{{ rtrim((string) config('app.url'), '/') }}</strong>. <strong>Elle ne sera plus jamais affichée.</strong> Ne l'envoyez jamais dans une conversation, un email ou un SMS.</p>
+            @else
+                <p class="small">Copiez-la maintenant et collez-la dans les réglages de votre environnement Claude (voir ci-dessous). <strong>Elle ne sera plus jamais affichée.</strong> Ne l'envoyez jamais dans une conversation, un email ou un SMS.</p>
+            @endif
             <div class="copy-field">
                 <input type="text" value="{{ $newToken }}" readonly aria-label="Clé d'accès" data-copy-source>
                 <button class="btn btn-secondary btn-sm" type="button" data-copy>Copier</button>
@@ -30,8 +34,8 @@
             <ul class="stat-list">
                 @foreach ($tokens as $token)
                     <li>
-                        <span>{{ $token->name }} <span class="muted small">· créée le {{ $token->created_at->format('d/m/Y') }} · {{ $token->last_used_at ? 'utilisée le '.$token->last_used_at->format('d/m/Y à H:i') : 'jamais utilisée' }}</span></span>
-                        <form method="POST" action="{{ route('settings.api.destroy', $token) }}" data-confirm="Révoquer la clé « {{ $token->name }} » ? Claude ne pourra plus créer de devis avec.">
+                        <span>{{ $token->name }} <span class="badge">{{ ($token->scope ?? 'claude') === 'argent' ? 'App Argent' : 'Claude' }}</span> <span class="muted small">· créée le {{ $token->created_at->format('d/m/Y') }} · {{ $token->last_used_at ? 'utilisée le '.$token->last_used_at->format('d/m/Y à H:i') : 'jamais utilisée' }}</span></span>
+                        <form method="POST" action="{{ route('settings.api.destroy', $token) }}" data-confirm="Révoquer la clé « {{ $token->name }} » ? {{ ($token->scope ?? 'claude') === 'argent' ? 'L\'app Argent ne recevra plus les paiements et frais.' : 'Claude ne pourra plus créer de devis avec.' }}">
                             @csrf
                             @method('DELETE')
                             <button class="link-danger" type="submit">Révoquer</button>
@@ -44,6 +48,17 @@
             @csrf
             <x-field name="name" label="Nom de la clé" value="Claude" required />
             <div class="field" style="align-self:end"><button class="btn" type="submit">Créer une clé</button></div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>App Argent</h2>
+        <p class="small">Votre application Argent (comptes perso et pro) lit chaque semaine les <strong>paiements reçus</strong>, les <strong>frais</strong> et ce qui <strong>reste à encaisser</strong>. Sa clé ne permet que cette lecture : ni modifier, ni créer, ni voir les clients en détail.</p>
+        <form method="POST" action="{{ route('settings.api.store') }}">
+            @csrf
+            <input type="hidden" name="scope" value="argent">
+            <input type="hidden" name="name" value="App Argent">
+            <button class="btn" type="submit">Créer la clé de l'app Argent</button>
         </form>
     </div>
 

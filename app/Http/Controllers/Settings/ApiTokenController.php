@@ -9,7 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-/** Réglages → Accès Claude : clés permettant à Claude de créer des devis brouillons. */
+/** Réglages → Accès Claude : clés pour Claude (devis brouillons) et pour l'app Argent (lecture seule). */
 class ApiTokenController extends Controller
 {
     public function index(Request $request): View
@@ -19,6 +19,7 @@ class ApiTokenController extends Controller
         return view('settings.api', [
             'tokens' => ApiToken::query()->with('user')->latest('id')->get(),
             'newToken' => session('new_api_token'),
+            'newTokenScope' => session('new_api_token_scope', 'claude'),
             'apiUrl' => rtrim((string) config('app.url'), '/').'/api/v1',
         ]);
     }
@@ -26,13 +27,17 @@ class ApiTokenController extends Controller
     public function store(Request $request): RedirectResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
-        $data = $request->validate(['name' => ['required', 'string', 'max:80']], [], ['name' => 'nom de la clé']);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+            'scope' => ['nullable', 'in:'.implode(',', array_keys(ApiToken::SCOPES))],
+        ], [], ['name' => 'nom de la clé']);
+        $scope = $data['scope'] ?? 'claude';
 
-        $plain = ApiToken::issue($request->user(), $data['name']);
-        ActivityLogger::log('api.token.created', 'Clé d\'accès créée : '.$data['name']);
+        $plain = ApiToken::issue($request->user(), $data['name'], $scope);
+        ActivityLogger::log('api.token.created', 'Clé d\'accès créée : '.$data['name'].' ('.ApiToken::SCOPES[$scope].')');
 
         // Affichée une seule fois : elle n'est enregistrée que sous forme d'empreinte.
-        return redirect()->route('settings.api')->with('new_api_token', $plain)
+        return redirect()->route('settings.api')->with('new_api_token', $plain)->with('new_api_token_scope', $scope)
             ->with('status', 'Clé créée. Copiez-la maintenant : elle ne sera plus jamais affichée.');
     }
 

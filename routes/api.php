@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ArgentApiController;
 use App\Http\Controllers\Api\QuoteApiController;
 use App\Http\Middleware\AuthenticateApiToken;
 use Illuminate\Support\Facades\Route;
@@ -11,4 +12,9 @@ Route::prefix('v1')->middleware([AuthenticateApiToken::class, 'throttle:30,1'])-
     Route::post('/devis/apercu', [QuoteApiController::class, 'preview']);
     Route::post('/devis', [QuoteApiController::class, 'store']);
     Route::post('/devis/complet', [QuoteApiController::class, 'storeStructured']);
+});
+
+// App Argent (application séparée) : lecture seule des paiements reçus, des frais et des montants en attente.
+Route::prefix('v1')->middleware([AuthenticateApiToken::class.':argent', 'throttle:30,1'])->group(function () {
+    Route::get('/argent', ArgentApiController::class);
 });
