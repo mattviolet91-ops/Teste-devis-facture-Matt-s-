@@ -6,6 +6,8 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -35,7 +37,10 @@ class PreventDuplicateSubmission
 
         // Compte connecté (stable même si la session change), sinon la session du visiteur.
         $owner = $request->user()?->getAuthIdentifier() ? 'u'.$request->user()->getAuthIdentifier() : 's'.$request->session()->getId();
-        $key = 'once:'.hash('sha256', $owner.'|'.$request->path().'|'.$once);
+        // Seul un envoi au contenu identique est un doublon. Même identifiant mais contenu
+        // différent (formulaire retrouvé par un retour arrière puis modifié) : nouvel envoi,
+        // traité normalement — sinon la saisie serait perdue.
+        $key = 'once:'.hash('sha256', $owner.'|'.$request->path().'|'.$once.'|'.$this->fingerprint($request));
         if (! Cache::add($key, ['state' => 'pending'], self::TTL)) {
             return $this->replay($request, $key);
         }
@@ -60,6 +65,17 @@ class PreventDuplicateSubmission
         }
 
         return $response;
+    }
+
+    /** Empreinte du contenu envoyé (champs et fichiers joints), hors jeton de sécurité. */
+    private function fingerprint(Request $request): string
+    {
+        $files = array_map(
+            fn ($file) => $file instanceof UploadedFile ? [$file->getClientOriginalName(), $file->getSize()] : null,
+            Arr::flatten($request->allFiles()),
+        );
+
+        return hash('sha256', serialize([Arr::except($request->request->all(), ['_token']), $files]));
     }
 
     /** Second envoi du même formulaire : résultat du premier, sans rien refaire. */

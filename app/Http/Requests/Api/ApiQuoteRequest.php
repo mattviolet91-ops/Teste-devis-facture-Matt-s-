@@ -11,6 +11,8 @@ use App\Http\Requests\QuoteRequest;
  */
 class ApiQuoteRequest extends QuoteRequest
 {
+    protected bool $ignoreBlankLines = false;
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

@@ -17,6 +17,9 @@ use Illuminate\Validation\Validator;
  */
 abstract class DocumentRequest extends FormRequest
 {
+    /** Éditeur : une ligne laissée vide est ignorée (l'API, elle, la signale comme une erreur). */
+    protected bool $ignoreBlankLines = true;
+
     public function authorize(): bool
     {
         return true;
@@ -72,8 +75,11 @@ abstract class DocumentRequest extends FormRequest
                 $validator->errors()->add('discount_value', 'Remise invalide.');
             }
 
-            foreach ($this->input('lines', []) as $index => $line) {
+            foreach (array_values((array) $this->input('lines', [])) as $index => $line) {
                 $number = $index + 1;
+                if (! is_array($line) || ($this->ignoreBlankLines && self::isBlank($line))) {
+                    continue;
+                }
                 if (in_array($line['type'] ?? '', ['item', 'section'], true) && trim((string) ($line['title'] ?? '')) === '') {
                     $validator->errors()->add("lines.$index.title", "Ligne $number : la désignation est obligatoire.");
                 }
@@ -127,7 +133,7 @@ abstract class DocumentRequest extends FormRequest
     {
         $defaultRate = (int) (VatRate::query()->where('is_default', true)->value('rate') ?? 0);
 
-        return collect($this->input('lines', []))->map(function (array $line) use ($defaultRate) {
+        return collect($this->input('lines', []))->reject(fn ($line) => $this->ignoreBlankLines && self::isBlank($line))->map(function (array $line) use ($defaultRate) {
             $type = $line['type'];
             $base = [
                 'type' => $type,
@@ -151,6 +157,23 @@ abstract class DocumentRequest extends FormRequest
                 'catalog_item_id' => ($line['catalog_item_id'] ?? null) ?: null,
             ];
         })->values()->all();
+    }
+
+    /**
+     * Ligne ajoutée puis laissée vide (bouton touché deux fois…) : ignorée à
+     * l'enregistrement plutôt que de bloquer tout le devis.
+     */
+    private static function isBlank(array $line): bool
+    {
+        $filled = fn (string $key) => trim((string) ($line[$key] ?? '')) !== '';
+
+        return match ($line['type'] ?? '') {
+            'section' => ! $filled('title'),
+            'text' => ! $filled('description'),
+            'item' => ! $filled('title') && ! $filled('description') && ! $filled('unit_price')
+                && in_array(trim((string) ($line['quantity'] ?? '')), ['', '1'], true) && ! $filled('discount_percent') && ! $filled('catalog_item_id'),
+            default => false,
+        };
     }
 
     /** Champ vide = 0 €. Un montant négatif est permis (déduction d'acompte, reprise…). */

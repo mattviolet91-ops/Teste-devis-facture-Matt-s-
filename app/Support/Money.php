@@ -22,7 +22,7 @@ final class Money
         return str_replace(["\u{202F}", "\u{00A0}"], ' ', self::format($cents));
     }
 
-    /** « 1 234,56 » ou « 1234.5 » → 123456. Retourne null si la saisie est invalide. */
+    /** « 1 234,56 », « 1.234,56 » ou « 1234.5 » → 123456. Retourne null si la saisie est invalide. */
     public static function parse(string|int|float|null $input): ?int
     {
         if ($input === null || $input === '') {
@@ -30,6 +30,10 @@ final class Money
         }
 
         $value = preg_replace('/[\s\x{00A0}\x{202F}€]/u', '', (string) $input);
+        // « 1.500 » ou « 1.500,50 » : le point sépare les milliers (jamais plus de 2 décimales).
+        if (is_string($input) && preg_match('/^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/', $value)) {
+            $value = str_replace('.', '', $value);
+        }
         $value = str_replace(',', '.', $value);
 
         if (! preg_match('/^-?\d+(\.\d{1,2})?$/', $value)) {

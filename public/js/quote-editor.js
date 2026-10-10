@@ -14,10 +14,13 @@
 
   // ---------- Nombres saisis à la française ----------
 
-  function parseDecimal(value, decimals) {
-    value = String(value || '').replace(/[\s  €%]/g, '').replace(',', '.');
+  function parseDecimal(value, decimals, signed) {
+    value = String(value || '').replace(/[\s  €%]/g, '');
+    // Prix « 1.500 » ou « 1.500,50 » : le point sépare les milliers (comme côté serveur).
+    if (decimals === 2 && /^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(value)) { value = value.replace(/\./g, ''); }
+    value = value.replace(',', '.');
     if (value === '') { return 0; }
-    if (!/^\d+(\.\d+)?$/.test(value)) { return null; }
+    if (!(signed ? /^-?\d+(\.\d+)?$/ : /^\d+(\.\d+)?$/).test(value)) { return null; }
     var factor = Math.pow(10, decimals);
     return Math.round(parseFloat(value) * factor);
   }
@@ -83,6 +86,9 @@
       }
     } else if (button.hasAttribute('data-duplicate')) {
       var copy = line.cloneNode(true);
+      // cloneNode ne recopie pas le choix des listes (unité, TVA) : on le reporte.
+      var sources = line.querySelectorAll('select');
+      copy.querySelectorAll('select').forEach(function (select, i) { select.value = sources[i].value; });
       line.after(copy);
     } else if (button.getAttribute('data-move') === 'up' && line.previousElementSibling) {
       line.previousElementSibling.before(line);
@@ -265,7 +271,7 @@
       if (type !== 'item') { totalBox.textContent = ''; return; }
 
       var qty = parseDecimal(field(line, 'quantity').value, 3);
-      var price = parseDecimal(field(line, 'unit_price').value, 2);
+      var price = parseDecimal(field(line, 'unit_price').value, 2, true);
       var discount = parseDecimal(field(line, 'discount_percent').value, 2);
       if (qty === null || price === null || discount === null) { totalBox.textContent = 'Saisie invalide'; return; }
 
@@ -340,6 +346,25 @@
 
   form.addEventListener('input', function (event) { if (event.target.matches('[data-calc]')) { recalc(); } });
   form.addEventListener('change', function (event) { if (event.target.matches('[data-calc]')) { recalc(); } });
+
+  // Touche Entrée (ou « OK » du clavier du téléphone) dans un champ : on passe au champ
+  // suivant au lieu d'enregistrer le devis à moitié rempli. Dans la recherche client,
+  // elle choisit le premier client trouvé.
+  form.addEventListener('keydown', function (event) {
+    var target = event.target;
+    if (event.key !== 'Enter' || event.isComposing || !target.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]), select')) { return; }
+    event.preventDefault();
+    if (target === clientSearch) {
+      var first = clientResults.querySelector('.client-search-item');
+      if (first) { first.click(); }
+      return;
+    }
+    var fields = Array.prototype.filter.call(form.querySelectorAll('input:not([type="hidden"]), select, textarea'), function (el) {
+      return !el.disabled && el.offsetParent !== null && !el.matches('[data-step-picker], .template-picker');
+    });
+    var next = fields[fields.indexOf(target) + 1];
+    if (next) { next.focus(); } else { target.blur(); }
+  });
 
   // Avant l'envoi : champs renumérotés dans l'ordre affiché.
   form.addEventListener('submit', renumber);
