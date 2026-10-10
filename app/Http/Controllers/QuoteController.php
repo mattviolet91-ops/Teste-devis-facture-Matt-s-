@@ -154,8 +154,8 @@ class QuoteController extends Controller
     {
         abort_unless($quote->isDraft(), 403);
 
-        if ($quote->lines()->where('type', 'item')->doesntExist()) {
-            return back()->withErrors(['send' => 'Ajoutez au moins une prestation avant d\'envoyer le devis.']);
+        if ($problems = $this->quotes->sendingProblems($quote)) {
+            return back()->withErrors(['send' => $problems[0]]);
         }
 
         $this->quotes->send($quote);
@@ -190,8 +190,8 @@ class QuoteController extends Controller
         ]);
 
         if ($quote->isDraft()) {
-            if ($quote->lines()->where('type', 'item')->doesntExist()) {
-                return back()->withErrors(['signature' => 'Ajoutez au moins une prestation avant de faire signer le devis.']);
+            if ($problems = $this->quotes->sendingProblems($quote)) {
+                return back()->withErrors(['signature' => str_replace('d\'envoyer le devis', 'de faire signer le devis', $problems[0])]);
             }
             // Le brouillon reçoit son numéro définitif avant la signature.
             $this->quotes->send($quote);

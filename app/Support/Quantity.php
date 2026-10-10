@@ -32,9 +32,9 @@ final class Quantity
         return rtrim(rtrim($formatted, '0'), ',');
     }
 
-    /** Valeur pour un champ de saisie : 1500 → « 1.5 ». */
+    /** Valeur pour un champ de saisie : 1500 → « 1,5 » (virgule, comme les prix). */
     public static function input(int $milli): string
     {
-        return rtrim(rtrim(number_format($milli / 1000, 3, '.', ''), '0'), '.');
+        return rtrim(rtrim(number_format($milli / 1000, 3, ',', ''), '0'), ',');
     }
 }

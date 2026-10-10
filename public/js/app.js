@@ -365,6 +365,15 @@
   window.addEventListener('hashchange', openTarget);
   openTarget();
 
+  // Onglets qui défilent (réglages) : l'onglet ouvert est visible, même au bout de la rangée.
+  // (après le chargement des polices : avant, les largeurs ne sont pas encore les bonnes).
+  window.addEventListener('load', function () {
+    document.querySelectorAll('.tabs .is-active, .chips .chip.is-active').forEach(function (tab) {
+      var row = tab.parentNode;
+      if (row.scrollWidth > row.clientWidth) { row.scrollLeft += tab.getBoundingClientRect().left - row.getBoundingClientRect().left - 16; }
+    });
+  });
+
   // ---- GPS : Apple Plans, Waze ou Google Maps (choix retenu sur ce téléphone si demandé) ----
   var NAV_APPS = {
     apple: function (a) { return 'https://maps.apple.com/?daddr=' + encodeURIComponent(a) + '&dirflg=d'; },

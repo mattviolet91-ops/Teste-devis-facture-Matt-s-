@@ -251,6 +251,7 @@ img { max-width: 100%; }
 .icon { width: 22px; height: 22px; flex: none; }
 
 .chips { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+.chips-wrap { flex-wrap: wrap; overflow-x: visible; }
 .chip {
   flex: none; padding: .375rem .875rem; border-radius: 999px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);

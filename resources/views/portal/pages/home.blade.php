@@ -8,7 +8,7 @@
         @if (! empty($company['slogan']))<p class="muted" style="margin-top:0">{{ $company['slogan'] }}</p>@endif
         @if (! empty($pdf['presentation_text']))<p class="pre-line">{{ $pdf['presentation_text'] }}</p>@endif
         @if (! empty($company['agreements']))<p class="small">{{ $company['agreements'] }}</p>@endif
-        <div class="chips" style="margin-top:.75rem">
+        <div class="chips chips-wrap" style="margin-top:.75rem">
             <a class="btn" href="{{ route('portal.request') }}"><x-icon name="file" /> Demander un devis</a>
             <a class="btn btn-secondary" href="{{ route('portal.payment') }}"><x-icon name="wallet" /> Régler une facture</a>
         </div>

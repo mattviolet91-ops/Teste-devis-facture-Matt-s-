@@ -18,7 +18,7 @@
         @csrf
         @if ($intervention->exists) @method('PUT') @endif
         <div class="card">
-            <div class="chips" role="radiogroup" aria-label="Type" style="margin-bottom:1rem">
+            <div class="chips chips-wrap" role="radiogroup" aria-label="Type" style="margin-bottom:1rem">
                 @foreach (\App\Models\Intervention::KINDS as $key => $label)
                     <label class="chip chip-radio"><input type="radio" name="kind" value="{{ $key }}" @checked(old('kind', $intervention->kind) === $key) data-planning-kind>
                         <x-icon :name="$key === 'rdv' ? 'users' : 'tool'" /> {{ $label }}</label>

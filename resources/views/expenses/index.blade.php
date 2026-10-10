@@ -27,7 +27,7 @@
         <div class="card">
             <ul class="stat-list">
                 <li><span>Facturé{{ $q ? '' : ' (tous chantiers)' }}</span><strong>{{ Money::format($totals['invoiced']) }}</strong></li>
-                <li><span>Frais</span><strong>− {{ Money::format($totals['expenses']) }}</strong></li>
+                <li><span>Frais</span><strong>{{ $totals['expenses'] ? '− ' : '' }}{{ Money::format($totals['expenses']) }}</strong></li>
                 <li class="remaining"><span>Il vous reste</span><strong class="{{ $totals['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($totals['remaining']) }}</strong></li>
             </ul>
         </div>
@@ -38,7 +38,10 @@
                     <a class="list-item" href="{{ $job['url'] }}">
                         <span class="list-main">
                             <strong>{{ $job['client']?->displayName() }} · {{ $job['title'] }}</strong>
-                            <span class="muted small">{{ $job['quotes']->isNotEmpty() ? ($job['quotes']->count() > 1 ? $job['quotes']->count().' devis' : 'Devis '.$job['quotes']->first()->number).' · ' : '' }}{{ $job['numbers'] }}{{ $job['address'] ? ' · '.$job['address'] : '' }}</span>
+                            <span class="muted small">{{ collect([
+                                $job['quotes']->isNotEmpty() ? ($job['quotes']->count() > 1 ? $job['quotes']->count().' devis' : 'Devis '.$job['quotes']->first()->number) : null,
+                                $job['numbers'], $job['address'],
+                            ])->filter()->implode(' · ') }}</span>
                             <span class="small">{{ $job['expenses_count'] }} frais · {{ Money::format($job['expenses_total']) }}</span>
                         </span>
                         <span class="list-meta">

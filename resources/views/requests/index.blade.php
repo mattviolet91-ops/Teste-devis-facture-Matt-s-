@@ -28,7 +28,7 @@
 
     <div class="card">
         <h2>Lien du formulaire</h2>
-        <p class="small muted">Votre site a déjà un formulaire ? Reliez-le dans <a href="{{ route('settings.site-form') }}">Réglages → Formulaire du site</a>.</p>
+        @if (auth()->user()->canOpen('settings.site-form'))<p class="small muted">Votre site a déjà un formulaire ? Reliez-le dans <a href="{{ route('settings.site-form') }}">Réglages → Formulaire du site</a>.</p>@endif
         <p class="small muted">Sinon, ce lien est à mettre sur votre site internet (bouton « Demander un devis »), sur Google, Facebook ou dans vos SMS.</p>
         <div class="copy-field">
             <input type="text" value="{{ $formUrl }}" readonly aria-label="Lien du formulaire" data-copy-source>

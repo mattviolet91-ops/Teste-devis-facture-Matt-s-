@@ -76,6 +76,11 @@ class JobCostService
     {
         return DB::transaction(function () use ($quote, $target) {
             $old = $this->projectForQuote($quote);
+            // Déjà seul dans son chantier : « à part » ne change rien (et garde son nom).
+            if ($target === null && ! $old->quotes()->whereKeyNot($quote->id)->exists()
+                && ! $old->invoices()->where(fn ($q) => $q->whereNull('quote_id')->orWhere('quote_id', '!=', $quote->id))->exists()) {
+                return $old;
+            }
             $target ??= Project::query()->create([
                 'client_id' => $quote->client_id, 'worksite_id' => $quote->worksite_id,
                 'title' => mb_substr(trim((string) $quote->title) ?: 'Devis '.$quote->number, 0, 160),
@@ -97,6 +102,9 @@ class JobCostService
     {
         return DB::transaction(function () use ($invoice, $target) {
             $old = $this->projectForInvoice($invoice);
+            if ($target === null && ! $old->quotes()->exists() && ! $old->invoices()->whereKeyNot($invoice->id)->exists()) {
+                return $old;
+            }
             $target ??= Project::query()->create([
                 'client_id' => $invoice->client_id, 'worksite_id' => $invoice->worksite_id,
                 'title' => mb_substr(trim((string) $invoice->title) ?: 'Facture '.$invoice->number, 0, 160),

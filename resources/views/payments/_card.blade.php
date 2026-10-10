@@ -46,7 +46,7 @@
                         <x-field name="paid_at" label="Date" type="date" :value="today()->toDateString()" required />
                         <div class="field span-2">
                             <label>Moyen de paiement</label>
-                            <div class="chips" role="radiogroup">
+                            <div class="chips chips-wrap" role="radiogroup">
                                 @foreach (\App\Models\Payment::METHODS as $key => $label)
                                     <label class="chip chip-radio"><input type="radio" name="method" value="{{ $key }}" @checked(old('method', 'virement') === $key)> {{ $label }}</label>
                                 @endforeach

@@ -10,7 +10,7 @@
     @else
         <li><span>Pas encore facturé <span class="muted small">(prévu {{ Money::format($job['planned']) }}{{ $assujetti ? ' HT' : '' }})</span></span><strong>{{ Money::format(0) }}</strong></li>
     @endif
-    <li><span>Frais du chantier{{ $assujetti ? ' HT' : '' }}</span><strong>− {{ Money::format($job['expenses_total']) }}</strong></li>
+    <li><span>Frais du chantier{{ $assujetti ? ' HT' : '' }}</span><strong>{{ $job['expenses_total'] ? '− ' : '' }}{{ Money::format($job['expenses_total']) }}</strong></li>
     <li class="remaining"><span>Il vous reste</span><strong class="{{ $job['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining']) }}@if ($rate !== null) <span class="badge {{ $job['remaining'] < 0 ? 'badge-danger' : 'badge-success' }}">{{ $rate }} %</span>@endif</strong></li>
     @unless ($job['fully'])
         <li><span class="muted">Une fois tout facturé, il vous restera</span><span class="{{ $job['expected'] < 0 ? 'text-danger' : 'muted' }}">{{ Money::format($job['expected']) }}</span></li>

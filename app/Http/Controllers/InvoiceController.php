@@ -197,6 +197,12 @@ class InvoiceController extends Controller
 
         $invoice = $this->invoices->createFromQuote($quote, $data['kind'], $percent);
 
-        return redirect()->route('invoices.edit', $invoice)->with('status', 'Brouillon préparé depuis le devis : vérifiez-le puis enregistrez.');
+        $message = 'Brouillon préparé depuis le devis : vérifiez-le puis enregistrez.';
+        if ($invoice->lines()->where('is_optional', true)->exists()) {
+            // Une facture ne peut pas contenir d'option : à trier avant l'envoi.
+            $message .= ' Le devis contenait des options : décochez « Option » sur celles choisies par le client et supprimez les autres.';
+        }
+
+        return redirect()->route('invoices.edit', $invoice)->with('status', $message);
     }
 }

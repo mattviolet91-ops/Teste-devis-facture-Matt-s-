@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Quote;
 use App\Services\Concerns\HandlesDocumentLines;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,23 @@ class QuoteService
 
             return $this->recalculate($quote);
         });
+    }
+
+    /** Raisons qui empêchent l'envoi d'un brouillon (liste vide = envoi possible). */
+    public function sendingProblems(Quote $quote): array
+    {
+        $problems = [];
+        if ($quote->lines()->where('type', 'item')->doesntExist()) {
+            $problems[] = 'Ajoutez au moins une prestation avant d\'envoyer le devis.';
+        }
+        // Nouvelle version préparée, mais le client a signé l'ancienne entre-temps :
+        // l'envoyer effacerait un devis accepté.
+        $previous = $quote->replaces;
+        if ($previous && ($previous->status === 'accepted' || $previous->invoices()->whereIn('status', Invoice::ISSUED)->exists())) {
+            $problems[] = "Le devis {$previous->number} a été accepté entre-temps : cette nouvelle version ne peut plus le remplacer. Mettez-la à la corbeille, ou dupliquez-la pour en faire un devis séparé.";
+        }
+
+        return $problems;
     }
 
     /** Envoi : attribue le numéro, fixe les dates et remplace l'éventuelle version précédente. */

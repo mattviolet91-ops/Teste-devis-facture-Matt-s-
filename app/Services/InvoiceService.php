@@ -96,7 +96,13 @@ class InvoiceService
                 if ($kind === 'final') {
                     // La remise globale du devis devient une ligne : elle ne doit
                     // pas s'appliquer aux déductions d'acomptes.
-                    $lines = array_merge($lines, $this->discountLines($quote), $this->deductionLines($quote));
+                    $discount = $this->discountLines($quote);
+                    // Devis découpé en sections : la remise globale forme sa propre section,
+                    // sinon elle serait comptée dans le sous-total de la dernière.
+                    if ($discount && $quote->lines->contains('type', 'section')) {
+                        array_unshift($discount, ['type' => 'section', 'title' => 'Remise', 'quantity' => 0, 'unit_price' => 0, 'vat_rate' => 0]);
+                    }
+                    $lines = array_merge($lines, $discount, $this->deductionLines($quote));
                 } else {
                     $invoice->fill($quote->only(['discount_type', 'discount_value']));
                 }

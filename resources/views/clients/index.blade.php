@@ -4,7 +4,7 @@
     <div class="page-head">
         <h1>Clients</h1>
         <div class="action-bar" style="margin:0">
-            <a class="btn btn-secondary" href="{{ route('clients.import') }}">Importer</a>
+            @if (auth()->user()->canOpen('clients.import'))<a class="btn btn-secondary" href="{{ route('clients.import') }}">Importer</a>@endif
             <a class="btn" href="{{ route('clients.create') }}"><x-icon name="plus" /> Nouveau client</a>
         </div>
     </div>

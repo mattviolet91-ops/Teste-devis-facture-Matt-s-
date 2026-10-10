@@ -27,9 +27,9 @@
             @endforeach
         </select>
         <div class="line-grid">
-            <div class="field"><label>Quantité <button type="button" class="link-btn small" data-roof-calc title="Calculer une surface de toiture">📐 m²</button></label><input type="text" inputmode="decimal" name="{{ $n }}[quantity]" value="{{ $l['quantity'] }}" data-calc></div>
+            <div class="field"><label>Quantité <button type="button" class="link-btn small" data-roof-calc title="Calculer une surface de toiture">📐 m²</button></label><input type="text" inputmode="decimal" name="{{ $n }}[quantity]" value="{{ $l['quantity'] }}" aria-label="Quantité" data-calc></div>
             <div class="field"><label>Unité</label>
-                <select name="{{ $n }}[unit]">
+                <select name="{{ $n }}[unit]" aria-label="Unité">
                     @foreach ($units as $code => $label)
                         <option value="{{ $code }}" @selected($l['unit'] === $code)>{{ $code }}</option>
                     @endforeach
@@ -38,15 +38,15 @@
                     @endif
                 </select>
             </div>
-            <div class="field"><label>Prix unitaire HT</label><input type="text" inputmode="decimal" name="{{ $n }}[unit_price]" value="{{ $l['unit_price'] }}" placeholder="0,00" data-calc></div>
+            <div class="field"><label>Prix unitaire HT</label><input type="text" inputmode="decimal" name="{{ $n }}[unit_price]" value="{{ $l['unit_price'] }}" placeholder="0,00" aria-label="Prix unitaire HT" data-calc></div>
             <div class="field" data-vat-field @if ($franchise) hidden @endif><label>TVA</label>
-                <select name="{{ $n }}[vat_rate]" data-calc>
+                <select name="{{ $n }}[vat_rate]" aria-label="TVA" data-calc>
                     @foreach ($vatRates as $rate)
                         <option value="{{ $rate->rate }}" @selected((int) $l['vat_rate'] === $rate->rate)>{{ $rate->percentLabel() }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="field"><label>Remise %</label><input type="text" inputmode="decimal" name="{{ $n }}[discount_percent]" value="{{ $l['discount_percent'] }}" placeholder="0" data-calc></div>
+            <div class="field"><label>Remise %</label><input type="text" inputmode="decimal" name="{{ $n }}[discount_percent]" value="{{ $l['discount_percent'] }}" placeholder="0" aria-label="Remise %" data-calc></div>
         </div>
         <div class="line-flags">
             <label class="check small"><input type="checkbox" name="{{ $n }}[is_optional]" value="1" @checked($l['is_optional']) data-calc> <span>Option (hors total, au choix du client)</span></label>

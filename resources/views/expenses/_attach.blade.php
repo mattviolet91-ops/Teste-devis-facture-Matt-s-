@@ -1,6 +1,7 @@
 {{-- Ranger ce devis (ou cette facture sans devis) dans un autre chantier du même client. --}}
 @php $others = app(\App\Services\JobCostService::class)->otherProjects($clientId, $job['project']); @endphp
-@if ($others->isNotEmpty() || $job['quotes']->count() + $job['invoices']->whereNull('quote_id')->count() > 1)
+@php $shared = $job['quotes']->count() + $job['invoices']->whereNull('quote_id')->count() > 1; @endphp
+@if ($others->isNotEmpty() || $shared)
     <details class="small" style="margin-bottom:.75rem">
         <summary>Ranger {{ $what }} dans un autre chantier</summary>
         <form method="POST" action="{{ $action }}" class="form-grid cols-2" style="margin-top:.5rem">
@@ -11,7 +12,7 @@
                     @foreach ($others as $other)
                         <option value="{{ $other->id }}">{{ $other->title }}</option>
                     @endforeach
-                    <option value="apart">Un chantier à part (séparé)</option>
+                    @if ($shared)<option value="apart">Un chantier à part (séparé)</option>@endif
                 </select>
                 <span class="hint">Plusieurs devis du même chantier : leurs factures et leurs frais sont additionnés.</span>
             </div>

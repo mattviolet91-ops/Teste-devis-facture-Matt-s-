@@ -76,7 +76,7 @@
     </div>
     <div class="form-actions">
         <button class="btn btn-secondary" type="submit">Déconnecter mes autres appareils</button>
-        <a class="btn btn-secondary" href="{{ route('settings.journal', ['connexions' => 1]) }}">Voir les connexions</a>
+        @if (auth()->user()->canOpen('settings.journal'))<a class="btn btn-secondary" href="{{ route('settings.journal', ['connexions' => 1]) }}">Voir les connexions</a>@endif
     </div>
 </form>
 @endsection

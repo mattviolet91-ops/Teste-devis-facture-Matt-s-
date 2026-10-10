@@ -11,7 +11,9 @@ use App\Models\SentEmail;
 use App\Services\EmailComposer;
 use App\Services\EmailService;
 use App\Services\InsuranceService;
+use App\Services\InvoiceService;
 use App\Services\MailSettings;
+use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Validator;
@@ -88,6 +90,16 @@ class EmailController extends Controller
         $to = $this->addresses($data['to']);
         $cc = $this->addresses($data['cc'] ?? '');
         $invalid = array_filter(array_merge($to, $cc), fn ($a) => ! filter_var($a, FILTER_VALIDATE_EMAIL));
+
+        // Un brouillon envoyé par email reçoit son numéro : mêmes vérifications que « Marquer comme envoyé ».
+        $problems = match (true) {
+            $document instanceof Quote && $document->isDraft() => app(QuoteService::class)->sendingProblems($document),
+            $document instanceof Invoice && $document->isDraft() => app(InvoiceService::class)->sendingProblems($document->load('lines')),
+            default => [],
+        };
+        if ($problems) {
+            return back()->withInput()->withErrors(['to' => $problems[0]]);
+        }
 
         validator([], [])->after(function (Validator $v) use ($invalid, $to, $mail) {
             if ($to === []) {

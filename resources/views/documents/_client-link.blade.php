@@ -26,7 +26,7 @@
         <label for="share-message-{{ $document->id }}">Message</label>
         <textarea id="share-message-{{ $document->id }}" rows="7" data-share-message>{{ $message }}</textarea>
     </div>
-    <div class="chips" style="margin-top:.5rem">
+    <div class="chips chips-wrap" style="margin-top:.5rem">
         <a class="chip" href="#" data-share-to="whatsapp" data-phone="{{ $whatsappPhone }}"><x-icon name="message" /> WhatsApp</a>
         <a class="chip" href="#" data-share-to="sms" data-phone="{{ $phone }}"><x-icon name="message" /> SMS</a>
         <button class="chip" type="button" data-share-to="copy"><x-icon name="copy" /> Copier le message</button>

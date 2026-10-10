@@ -31,7 +31,11 @@
     @if ($quote->replacedBy)
         <div class="alert alert-warning">Ce devis a été remplacé par le devis <a href="{{ route('quotes.show', $quote->replacedBy) }}">{{ $quote->replacedBy->displayNumber() }}</a>.</div>
     @endif
-    @if ($quote->replaces)
+    @if ($quote->replaces && $quote->isDraft() && $quote->replaces->status === 'accepted')
+        <div class="alert alert-warning" role="alert">
+            Le client a accepté le devis <a href="{{ route('quotes.show', $quote->replaces) }}">{{ $quote->replaces->displayNumber() }}</a> entre-temps : cette nouvelle version ne peut plus le remplacer. Mettez-la à la corbeille, ou dupliquez-la pour en faire un devis séparé.
+        </div>
+    @elseif ($quote->replaces)
         <div class="alert alert-info">
             Nouvelle version du devis <a href="{{ route('quotes.show', $quote->replaces) }}">{{ $quote->replaces->displayNumber() }}</a>{{ $quote->isDraft() ? ' : il sera marqué « remplacé » à l\'envoi de celui-ci.' : '.' }}
         </div>
@@ -105,7 +109,7 @@
             <p>Ce devis a des factures. Supprimez d'abord ses factures (bouton « Supprimer » sur chaque facture), puis revenez supprimer le devis.</p>
             <ul class="stat-list">
                 @foreach ($quote->invoices->whereIn('status', ['draft', ...\App\Models\Invoice::ISSUED]) as $invoice)
-                    <li><a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a></li>
+                    <li>@if (auth()->user()->canOpen('invoices.show'))<a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a>@else{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}@endif</li>
                 @endforeach
             </ul>
         </dialog>

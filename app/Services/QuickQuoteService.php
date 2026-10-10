@@ -178,7 +178,11 @@ class QuickQuoteService
             return [$exact->first(), []];
         }
         if ($candidates->count() === 1 && count($terms) >= 2) {
-            return [$candidates->first(), []];
+            // Le nom de la bibliothèque dit plus que le texte (« remplacement velux » →
+            // « Remplacement d'un raccord Velux ») : reprise, mais signalée pour vérification.
+            $item = $candidates->first();
+
+            return [$item, ['reconnue comme « '.$item->name.' » (votre bibliothèque) : vérifiez que c\'est la bonne prestation.']];
         }
         if ($candidates->isEmpty()) {
             return [null, []];
@@ -341,7 +345,7 @@ class QuickQuoteService
 
         // « … € le m² », « /ml », « de l'heure », « l'unité » : l'unité du prix, pas une quantité.
         $priceUnit = null;
-        if (preg_match('/(?:\/\s*|'.$L.'(?:le|la|du|par|au|pour|de\s+l\'|l\'|chaque)\s+|'.$L.'l\')(m²|ml|m|mètre|metre|unité|unite|u|pièce|piece|heure|h)'.$R.'/iu', $s, $m)) {
+        if (preg_match('/(?:\/\s*|(?<=€)\s*|'.$L.'(?:le|la|du|par|au|pour|de\s+l\'|l\'|chaque)\s+|'.$L.'l\')(m²|ml|m|mètre|metre|unité|unite|u|pièce|piece|heure|h)'.$R.'/iu', $s, $m)) {
             $priceUnit = match (mb_strtolower($m[1])) {
                 'm²' => 'm²', 'ml', 'm', 'mètre', 'metre' => 'ml', 'heure', 'h' => 'h', default => 'u',
             };
@@ -377,18 +381,26 @@ class QuickQuoteService
         }
 
         // Un seul nombre restant devant un mot : « 3 faîtières », « pose de 2 velux ».
+        $bare = null;
         if ($quantity === null && preg_match_all('/'.$L.$num.$R.'/u', $s, $all, PREG_SET_ORDER) === 1) {
-            $quantity = $all[0][1];
-            $s = str_replace($all[0][0], ' ', $s);
+            $quantity = $bare = $all[0][1];
+            $s = preg_replace('/'.$L.preg_quote($bare, '/').$R.'/u', "\u{1}", $s, 1) ?? $s;
         }
 
         // « forfait » : quantité 1, unité forfait.
         if (preg_match('/'.$L.'(?:au\s+|en\s+)?(forfaits?|ensemble)'.$R.'/iu', $s, $m)) {
+            // « pose de 2 velux forfait 1 800 € » : un forfait de 1 800 € pour les deux,
+            // pas 2 × 1 800 € ; le nombre reste dans la désignation.
+            if ($unit === null && $bare !== null) {
+                $s = str_replace("\u{1}", $bare, $s);
+                $quantity = $bare = null;
+            }
             if ($unit === null && ($quantity === null || $quantity === '1')) {
                 $unit = 'forfait';
             }
             $s = str_replace($m[0], ' ', $s);
         }
+        $s = str_replace("\u{1}", ' ', $s);
 
         // Désignation : ce qui reste, sans les petits mots de liaison aux extrémités.
         $designation = trim(preg_replace('/\s+/u', ' ', $s) ?? '');
