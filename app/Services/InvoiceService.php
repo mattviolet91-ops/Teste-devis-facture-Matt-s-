@@ -126,6 +126,10 @@ class InvoiceService
             $invoice->sent_at = now();
             $invoice->issue_date = today();
             $invoice->due_date = today()->addDays($invoice->due_days);
+            // Devis signé chez un particulier il y a moins de 7 jours : payable à partir du 8e jour.
+            if (($from = $invoice->paymentWaitUntil()) && $from->gt($invoice->due_date)) {
+                $invoice->due_date = $from;
+            }
             $invoice->save();
 
             ActivityLogger::log('invoice.sent', "{$invoice->fullTitle()} envoyée", $invoice);

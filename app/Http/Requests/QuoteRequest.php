@@ -12,6 +12,7 @@ class QuoteRequest extends DocumentRequest
             'work_start' => ['nullable', 'string', 'max:120'],
             'work_duration' => ['nullable', 'string', 'max:120'],
             'waste_estimate' => ['nullable', 'string', 'max:200'],
+            'urgent_repair' => ['nullable', 'boolean'],
         ];
     }
 
@@ -23,6 +24,7 @@ class QuoteRequest extends DocumentRequest
     /** @return array<string, mixed> */
     public function quoteAttributes(): array
     {
-        return $this->headerAttributes(['validity_days', 'work_start', 'work_duration', 'waste_estimate']);
+        return $this->headerAttributes(['validity_days', 'work_start', 'work_duration', 'waste_estimate'])
+            + ['urgent_repair' => $this->boolean('urgent_repair')];
     }
 }

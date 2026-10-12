@@ -118,6 +118,9 @@ class ClientPortalController extends Controller
         if (! $mypos->visibleTo($request) || ! $invoice->acceptsPayments() || $invoice->balance() <= 0) {
             return redirect()->route('portal.invoice', $token);
         }
+        if ($from = $invoice->paymentWaitUntil()) {
+            return redirect()->route('portal.invoice', $token)->with('status', 'Le paiement de cette facture sera possible à partir du '.$from->format('d/m/Y').' (délai légal de 7 jours après la signature du devis).');
+        }
 
         $attempt = $mypos->start($invoice);
         $form = $mypos->purchaseForm(

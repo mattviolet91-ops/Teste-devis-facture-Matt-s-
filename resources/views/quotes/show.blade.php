@@ -40,6 +40,9 @@
             Nouvelle version du devis <a href="{{ route('quotes.show', $quote->replaces) }}">{{ $quote->replaces->displayNumber() }}</a>{{ $quote->isDraft() ? ' : il sera marqué « remplacé » à l\'envoi de celui-ci.' : '.' }}
         </div>
     @endif
+    @if ($quote->urgent_repair)
+        <div class="alert alert-info">Réparation urgente demandée par le client : paiement possible sans attendre 7 jours (mention imprimée sur le devis).</div>
+    @endif
     @if ($quote->status === 'refused' && $quote->refusal_reason)
         <div class="alert alert-error">Motif du refus : {{ $quote->refusal_reason }}</div>
     @endif
@@ -214,6 +217,9 @@
                     <h2 id="invoice-title">Facturer le devis</h2>
                     <button class="icon-btn" type="button" data-close-sheet><x-icon name="x" /><span class="visually-hidden">Fermer</span></button>
                 </div>
+                @if (($payFrom = $quote->paymentAllowedFrom()) && $payFrom->isFuture())
+                    <p class="alert alert-info small">Devis signé chez le client le {{ $quote->signed_at->format('d/m/Y') }} : vous pouvez facturer dès maintenant. La facture sera payable à partir du <strong>{{ $payFrom->format('d/m/Y') }}</strong> (délai légal de 7 jours), sauf réparation urgente.</p>
+                @endif
                 <fieldset class="choice-list">
                     <legend class="visually-hidden">Type de facture</legend>
                     <label class="check"><input type="radio" name="kind" value="deposit" @checked(! $hasPartial) data-kind-percent> <span><strong>Acompte</strong><br><span class="small muted">Un pourcentage du devis, à la signature.</span></span></label>

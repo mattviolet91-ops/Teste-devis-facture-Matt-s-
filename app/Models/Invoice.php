@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -218,9 +219,30 @@ class Invoice extends Model
     }
 
     /** Lien de paiement par carte proposé au client (celui de la facture, sinon le lien général). */
+    /**
+     * Devis signé chez un particulier il y a moins de 7 jours : la facture peut être
+     * envoyée, mais aucun paiement ne peut être reçu avant cette date (voir Quote).
+     */
+    public function paymentWaitUntil(): ?Carbon
+    {
+        $from = $this->isCredit() ? null : $this->quote?->paymentAllowedFrom();
+
+        return $from && $from->isFuture() ? $from : null;
+    }
+
+    /** Envoyée avec une échéance repoussée par le délai légal de 7 jours : date à partir de laquelle elle est payable. */
+    public function legalPaymentFrom(): ?Carbon
+    {
+        if (! $this->due_date || ! $this->issue_date) {
+            return null;
+        }
+
+        return $this->due_date->gt($this->issue_date->copy()->addDays((int) $this->due_days)) ? $this->due_date : null;
+    }
+
     public function cardPaymentUrl(): ?string
     {
-        if ($this->isCredit() || ! $this->acceptsPayments() || $this->balance() <= 0) {
+        if ($this->isCredit() || ! $this->acceptsPayments() || $this->balance() <= 0 || $this->paymentWaitUntil()) {
             return null;
         }
 

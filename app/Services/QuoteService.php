@@ -117,6 +117,7 @@ class QuoteService
     {
         $copy = $this->copy($quote, $quote->client_id, $quote->worksite_id);
         $copy->replaces_id = $quote->id;
+        $copy->urgent_repair = $quote->urgent_repair;
         // La nouvelle version reste dans le même chantier.
         $copy->project_id = $quote->project_id;
         $copy->save();

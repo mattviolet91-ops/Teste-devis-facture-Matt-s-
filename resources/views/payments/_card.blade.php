@@ -30,12 +30,8 @@
 
         @if ($invoice->acceptsPayments())
             @error('amount')<div class="alert alert-error">{{ $message }}</div>@enderror
-            @php
-                $quote = $invoice->quote;
-                $recent = $quote?->signed_at && $quote->signed_at->gt(now()->subDays(7)) && $invoice->client?->isIndividual();
-            @endphp
-            @if ($recent)
-                <div class="alert alert-info small">Rappel : devis signé le {{ $quote->signed_at->format('d/m/Y') }}. Pour un contrat conclu chez un particulier, aucun paiement ne peut être exigé avant 7 jours.</div>
+            @if ($waitUntil = $invoice->paymentWaitUntil())
+                <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation). L'échéance de la facture est fixée à cette date et le paiement par carte n'est proposé au client qu'à partir de là. Exception : réparation urgente demandée par le client (case à cocher sur le devis).</div>
             @endif
             <details @if ($errors->hasAny(['amount', 'paid_at', 'method', 'method_detail']) || request('encaisser')) open @endif>
                 <summary class="btn"><x-icon name="wallet" /> Encaisser un paiement</summary>

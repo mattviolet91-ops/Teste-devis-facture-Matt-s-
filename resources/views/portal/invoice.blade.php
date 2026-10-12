@@ -6,7 +6,7 @@
     <div class="page-head">
         <div>
             <h1>{{ $invoice->kindLabel() }} {{ $invoice->number }}</h1>
-            <p>{{ Money::format($invoice->total_ttc) }}@if (! $invoice->isCredit()) — {{ $invoice->due_days === 0 ? 'payable à réception' : 'à régler avant le '.$invoice->due_date?->format('d/m/Y') }}@endif</p>
+            <p>{{ Money::format($invoice->total_ttc) }}@if (! $invoice->isCredit()) — {{ $invoice->legalPaymentFrom() ? 'payable à partir du '.$invoice->legalPaymentFrom()->format('d/m/Y') : ($invoice->due_days === 0 ? 'payable à réception' : 'à régler avant le '.$invoice->due_date?->format('d/m/Y')) }}@endif</p>
         </div>
         <a class="btn" href="{{ route('portal.invoice.pdf', $invoice->public_token) }}" target="_blank" rel="noopener"><x-icon name="file" /> Télécharger le PDF</a>
     </div>
@@ -15,6 +15,13 @@
         <div class="card portal-status"><h2>Facture annulée</h2><p>Cette facture a été annulée et remplacée. Utilisez le lien reçu avec la nouvelle facture.</p></div>
     @elseif ($invoice->status === 'paid')
         <div class="card portal-status portal-ok"><h2><x-icon name="check" /> Facture réglée</h2><p>Merci pour votre règlement.</p></div>
+    @endif
+
+    @if ($invoice->acceptsPayments() && $invoice->paymentWaitUntil())
+        <div class="card portal-status">
+            <h2>Paiement à partir du {{ $invoice->paymentWaitUntil()->format('d/m/Y') }}</h2>
+            <p>Le devis a été signé à votre domicile : la loi prévoit un délai de 7 jours avant tout paiement. Vous pourrez régler cette facture à partir de cette date.</p>
+        </div>
     @endif
 
     @if ($cardUrl = $invoice->cardPaymentUrl())
@@ -37,6 +44,7 @@
         ])
         <div class="doc-footer">
             @if ($invoice->payment_terms && ! $invoice->isCredit())<p><strong>Conditions de paiement :</strong> {{ $invoice->payment_terms }}</p>@endif
+            @if (! $invoice->isCredit() && $invoice->legalPaymentFrom())<p><strong>Paiement à partir du {{ $invoice->legalPaymentFrom()->format('d/m/Y') }}</strong> : délai de 7 jours après la signature du devis à votre domicile (art. L221-10 du Code de la consommation).</p>@endif
             @if ($invoice->show_bank && $settings->get('bank.iban'))
                 <p><strong>Règlement par virement :</strong> IBAN {{ trim(chunk_split($settings->get('bank.iban'), 4, ' ')) }}@if ($settings->get('bank.bic')) — BIC {{ $settings->get('bank.bic') }}@endif — référence {{ $invoice->number }}</p>
             @endif

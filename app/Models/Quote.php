@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class Quote extends Model
@@ -29,7 +30,7 @@ class Quote extends Model
 
     protected $fillable = [
         'client_id', 'worksite_id', 'title', 'validity_days', 'discount_type', 'discount_value', 'vat_regime',
-        'work_start', 'work_duration', 'waste_estimate', 'show_bank', 'payment_terms', 'notes', 'internal_notes',
+        'work_start', 'work_duration', 'waste_estimate', 'show_bank', 'payment_terms', 'notes', 'internal_notes', 'urgent_repair',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class Quote extends Model
             'viewed_at' => 'datetime',
             'signed_at' => 'datetime',
             'signed_on_site' => 'boolean',
+            'urgent_repair' => 'boolean',
             'follow_up_count' => 'integer',
             'last_follow_up_at' => 'datetime',
             'change_requested_at' => 'datetime',
@@ -134,6 +136,22 @@ class Quote extends Model
     public function isSigned(): bool
     {
         return $this->signed_at !== null;
+    }
+
+    /**
+     * Devis signé chez un particulier (signature sur place, dans l'application) : la loi
+     * interdit de recevoir un paiement avant 7 jours (art. L221-10 du Code de la
+     * consommation). Le jour de la signature ne compte pas : paiement possible à partir
+     * du 8e jour. Sans objet pour une signature en ligne (contrat à distance) ou une
+     * réparation urgente demandée par le client.
+     */
+    public function paymentAllowedFrom(): ?Carbon
+    {
+        if (! $this->signed_at || ! $this->signed_on_site || $this->urgent_repair || ! $this->client?->isIndividual()) {
+            return null;
+        }
+
+        return $this->signed_at->copy()->startOfDay()->addDays(8);
     }
 
     /** Le client peut encore accepter en ligne. */

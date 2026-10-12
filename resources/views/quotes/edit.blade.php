@@ -36,6 +36,11 @@
                     <x-field name="work_duration" label="Durée estimée" :value="$quote->work_duration" placeholder="ex. 2 jours" />
                     <x-field name="waste_estimate" label="Déchets estimés" :value="$quote->waste_estimate" placeholder="ex. environ 2 m³ de tuiles et gravats" hint="Imprimé dans la mention sur les déchets." />
                     @include('documents._bank', ['document' => $quote])
+                    <div class="field span-2">
+                        <label class="check"><input type="checkbox" name="urgent_repair" value="1" @checked(session()->hasOldInput() ? old('urgent_repair') : $quote->urgent_repair)>
+                            <span>Réparation urgente demandée par le client (fuite, tuiles envolées…)</span></label>
+                        <span class="hint">Pour une urgence au domicile d'un particulier : paiement possible sans attendre 7 jours, et pas de délai de rétractation pour les travaux strictement nécessaires. La mention est imprimée sur le devis. Sans urgence, un devis signé chez le client ne peut être payé qu'à partir du 8e jour.</span>
+                    </div>
                     @include('documents._texts', ['document' => $quote])
                 </div>
             </fieldset>
