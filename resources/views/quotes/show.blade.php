@@ -40,8 +40,24 @@
             Nouvelle version du devis <a href="{{ route('quotes.show', $quote->replaces) }}">{{ $quote->replaces->displayNumber() }}</a>{{ $quote->isDraft() ? ' : il sera marqué « remplacé » à l\'envoi de celui-ci.' : '.' }}
         </div>
     @endif
-    @if ($quote->urgent_repair)
+    @if ($quote->urgent_confirmed_at)
+        <div class="alert alert-info">Intervention urgente confirmée par {{ $quote->urgent_signed_name }} {{ $quote->urgent_confirmed_on_site ? 'sur place' : 'en ligne' }} le {{ $quote->urgent_confirmed_at->format('d/m/Y à H:i') }} : « {{ $quote->urgent_reason }} ». Paiement possible sans attendre 7 jours.
+            <a href="{{ route('quotes.urgent-signature', $quote) }}" target="_blank" rel="noopener">Voir sa signature</a></div>
+    @elseif ($quote->urgent_repair)
         <div class="alert alert-info">Réparation urgente demandée par le client : paiement possible sans attendre 7 jours (mention imprimée sur le devis).</div>
+    @endif
+    @if ($quote->canConfirmUrgent())
+        <div class="card" id="urgence">
+            <div class="card-head"><h2>Intervention urgente ?</h2></div>
+            <p class="small muted" style="margin-top:0">Devis signé chez le client le {{ $quote->signed_at->format('d/m/Y') }} : paiement possible à partir du {{ $quote->paymentAllowedFrom()->format('d/m/Y') }}.
+                Si le client vous a demandé d'intervenir en urgence (fuite, tuiles envolées…), il peut le confirmer en signant : le paiement est alors possible tout de suite.
+                Uniquement pour une vraie urgence demandée par le client ; sa confirmation est gardée comme preuve, le devis signé ne change pas.</p>
+            <div class="form-actions" style="margin-top:0"><a class="btn btn-secondary" href="{{ route('quotes.urgent', $quote) }}"><x-icon name="phone" /> Le client confirme sur mon téléphone</a></div>
+            <div class="copy-field" style="margin-top:.75rem">
+                <input type="text" value="{{ $quote->publicUrl() }}/urgence" readonly aria-label="Lien de confirmation pour le client" data-copy-source>
+                <button class="btn btn-secondary btn-sm" type="button" data-copy>Copier le lien pour le client</button>
+            </div>
+        </div>
     @endif
     @if ($quote->status === 'refused' && $quote->refusal_reason)
         <div class="alert alert-error">Motif du refus : {{ $quote->refusal_reason }}</div>

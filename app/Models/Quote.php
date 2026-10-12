@@ -45,6 +45,8 @@ class Quote extends Model
             'signed_at' => 'datetime',
             'signed_on_site' => 'boolean',
             'urgent_repair' => 'boolean',
+            'urgent_confirmed_at' => 'datetime',
+            'urgent_confirmed_on_site' => 'boolean',
             'follow_up_count' => 'integer',
             'last_follow_up_at' => 'datetime',
             'change_requested_at' => 'datetime',
@@ -152,6 +154,15 @@ class Quote extends Model
         }
 
         return $this->signed_at->copy()->startOfDay()->addDays(8);
+    }
+
+    /**
+     * Devis signé chez le client, sans urgence, dans le délai de 7 jours : le client
+     * peut encore confirmer qu'il a demandé une intervention urgente.
+     */
+    public function canConfirmUrgent(): bool
+    {
+        return ($from = $this->paymentAllowedFrom()) !== null && $from->isFuture() && in_array($this->status, ['accepted'], true);
     }
 
     /** Le client peut encore accepter en ligne. */

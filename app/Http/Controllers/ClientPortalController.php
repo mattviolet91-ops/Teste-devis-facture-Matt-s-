@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UrgentConfirmationRequest;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
 use App\Models\Quote;
@@ -72,6 +73,36 @@ class ClientPortalController extends Controller
         }
 
         return redirect()->route('portal.quote', $token)->with('status', 'Merci ! Votre accord a bien été enregistré.');
+    }
+
+    /** Lien envoyé par l'artisan : le client confirme avoir demandé une intervention urgente. */
+    public function urgent(string $token): View|RedirectResponse
+    {
+        $quote = $this->findQuote($token);
+        if (! $quote->canConfirmUrgent()) {
+            return redirect()->route('portal.quote', $token);
+        }
+
+        return view('quotes.urgent', [
+            'quote' => $quote->load('client'),
+            'action' => route('portal.quote.urgent.confirm', $token),
+            'back' => route('portal.quote', $token),
+        ]);
+    }
+
+    public function confirmUrgent(UrgentConfirmationRequest $request, string $token): RedirectResponse
+    {
+        $quote = $this->findQuote($token);
+        abort_unless($quote->canConfirmUrgent(), 409, 'Cette confirmation n\'est plus possible.');
+        $data = $request->validated();
+
+        try {
+            $this->links->confirmUrgent($quote, trim($data['name']), trim($data['reason']), $data['signature'], $request->ip(), onSite: false);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['signature' => 'La signature n\'a pas pu être lue. Effacez et signez de nouveau.']);
+        }
+
+        return redirect()->route('portal.quote', $token)->with('status', 'Merci ! Votre demande d\'intervention urgente est confirmée.');
     }
 
     public function refuse(Request $request, string $token): RedirectResponse

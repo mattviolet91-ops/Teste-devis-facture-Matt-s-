@@ -56,6 +56,8 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::post('/d/{token}/accepter', [ClientPortalController::class, 'sign'])->middleware('throttle:10,1')->name('portal.quote.sign');
     Route::post('/d/{token}/refuser', [ClientPortalController::class, 'refuse'])->middleware('throttle:10,1')->name('portal.quote.refuse');
     Route::post('/d/{token}/modification', [ClientPortalController::class, 'requestChange'])->middleware('throttle:10,1')->name('portal.quote.change');
+    Route::get('/d/{token}/urgence', [ClientPortalController::class, 'urgent'])->name('portal.quote.urgent');
+    Route::post('/d/{token}/urgence', [ClientPortalController::class, 'confirmUrgent'])->middleware('throttle:10,1')->name('portal.quote.urgent.confirm');
     Route::get('/f/{token}', [ClientPortalController::class, 'invoice'])->name('portal.invoice');
     Route::get('/r/{token}', [ClientPortalController::class, 'report'])->name('portal.report');
     Route::get('/f/{token}/pdf', [ClientPortalController::class, 'invoicePdf'])->name('portal.invoice.pdf');
@@ -149,6 +151,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::get('/signature', [QuoteController::class, 'signature'])->name('signature');
         Route::get('/signer-sur-place', [QuoteController::class, 'onSite'])->name('on-site');
         Route::post('/signer-sur-place', [QuoteController::class, 'signOnSite'])->middleware('throttle:10,1')->name('on-site.sign');
+        Route::get('/urgence', [QuoteController::class, 'urgent'])->name('urgent');
+        Route::post('/urgence', [QuoteController::class, 'confirmUrgent'])->middleware('throttle:10,1')->name('urgent.confirm');
+        Route::get('/urgence/signature', [QuoteController::class, 'urgentSignature'])->name('urgent-signature');
     });
 
     Route::resource('factures', InvoiceController::class)

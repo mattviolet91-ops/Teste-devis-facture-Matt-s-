@@ -31,7 +31,7 @@
         @if ($invoice->acceptsPayments())
             @error('amount')<div class="alert alert-error">{{ $message }}</div>@enderror
             @if ($waitUntil = $invoice->paymentWaitUntil())
-                <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation).{{ $invoice->legalPaymentFrom() ? ' L\'échéance de la facture est fixée à cette date.' : '' }} Le paiement par carte n'est proposé au client et les relances automatiques ne partent qu'à partir de là. Exception : réparation urgente demandée par le client (case à cocher sur le devis).</div>
+                <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation).{{ $invoice->legalPaymentFrom() ? ' L\'échéance de la facture est fixée à cette date.' : '' }} Le paiement par carte n'est proposé au client et les relances automatiques ne partent qu'à partir de là. Exception : intervention urgente demandée par le client (<a href="{{ route('quotes.show', $invoice->quote) }}#urgence">le client peut la confirmer depuis le devis</a>).</div>
             @endif
             <details @if ($errors->hasAny(['amount', 'paid_at', 'method', 'method_detail']) || request('encaisser')) open @endif>
                 <summary class="btn"><x-icon name="wallet" /> Encaisser un paiement</summary>

@@ -84,6 +84,51 @@ class ClientLinkService
         });
     }
 
+    /**
+     * Intervention urgente déclarée après la signature : le client confirme, en signant,
+     * l'avoir expressément demandée (art. L221-10 et L221-28 du Code de la consommation).
+     * Le paiement devient possible sans attendre 7 jours ; les factures déjà envoyées
+     * retrouvent leur échéance normale. Le devis signé n'est pas modifié.
+     */
+    public function confirmUrgent(Quote $quote, string $name, string $reason, string $signatureDataUrl, ?string $ip, bool $onSite): Quote
+    {
+        $png = $this->decodeSignature($signatureDataUrl);
+
+        return DB::transaction(function () use ($quote, $name, $reason, $png, $ip, $onSite) {
+            $path = 'signatures/'.$quote->number.'-urgence-'.Str::random(8).'.png';
+            Storage::disk('local')->put($path, $png);
+
+            $quote->forceFill([
+                'urgent_repair' => true,
+                'urgent_confirmed_at' => now(),
+                'urgent_reason' => $reason,
+                'urgent_signed_name' => $name,
+                'urgent_signature_path' => $path,
+                'urgent_confirmed_ip' => $ip,
+                'urgent_confirmed_on_site' => $onSite,
+            ])->save();
+
+            foreach ($quote->invoices()->whereIn('status', Invoice::OPEN)->get() as $invoice) {
+                if ($invoice->legalPaymentFrom()) {
+                    $invoice->forceFill(['due_date' => $invoice->issue_date->copy()->addDays((int) $invoice->due_days)])->save();
+                    $this->pdf->regenerate($invoice);
+                }
+            }
+
+            ActivityLogger::log('quote.urgent', "Intervention urgente confirmée par $name ".($onSite ? 'sur place' : 'en ligne')." : $reason", $quote, ['ip' => $ip]);
+
+            if (! $onSite) {
+                $this->notify(
+                    "Devis {$quote->number} : urgence confirmée",
+                    "{$quote->client?->displayName()} a confirmé en ligne avoir demandé une intervention urgente ($reason). Le paiement est possible sans attendre 7 jours.",
+                    $quote,
+                );
+            }
+
+            return $quote;
+        });
+    }
+
     public function refuse(Quote $quote, ?string $comment): Quote
     {
         $this->quotes->refuse($quote, $comment ? 'Refus en ligne : '.$comment : 'Refusé en ligne par le client');

@@ -307,10 +307,13 @@
         <p><b>Date des travaux :</b> {{ $document->work_period }}</p>
     @endif
     @if ($document->payment_terms && ! $isCredit)<p><b>Conditions de paiement :</b> {{ $document->payment_terms }}</p>@endif
+    @if (! $isQuote && ! $isCredit && $document->quote?->urgent_repair)
+        <p><b>Intervention urgente</b> expressément demandée par le client à son domicile{{ $document->quote->urgent_confirmed_at ? ' (confirmée par sa signature le '.$document->quote->urgent_confirmed_at->format('d/m/Y').')' : '' }} : paiement sans délai de 7 jours (art. L221-10 du Code de la consommation).</p>
+    @endif
     @if (! $isQuote && ! $isCredit && $document->legalPaymentFrom())
         <p><b>Paiement à partir du {{ $document->legalPaymentFrom()->format('d/m/Y') }}</b> : délai de 7 jours après la signature du devis au domicile du client (art. L221-10 du Code de la consommation).</p>
     @endif
-    @if ($isQuote && $document->urgent_repair)
+    @if ($isQuote && $document->urgent_repair && ! $document->urgent_confirmed_at)
         <p><b>Intervention urgente</b> expressément demandée par le client à son domicile : pas de délai de 7 jours avant le paiement ni de droit de rétractation pour les travaux strictement nécessaires à l'urgence (art. L221-10 et L221-28 du Code de la consommation).</p>
     @endif
     @if ($document->notes)<p>{!! nl2br(e($document->notes)) !!}</p>@endif

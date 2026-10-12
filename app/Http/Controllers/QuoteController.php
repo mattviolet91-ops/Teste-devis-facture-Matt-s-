@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ProvidesEditorData;
 use App\Http\Requests\QuoteRequest;
+use App\Http\Requests\UrgentConfirmationRequest;
 use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -204,6 +205,45 @@ class QuoteController extends Controller
         }
 
         return redirect()->route('quotes.show', $quote)->with('status', "Devis {$quote->fresh()->number} signé sur place. Vous pouvez l'envoyer au client par email.");
+    }
+
+    /**
+     * Intervention urgente déclarée après la signature : écran tendu au client, qui
+     * confirme l'avoir demandée en signant sur le téléphone de l'artisan.
+     */
+    public function urgent(Quote $quote): View|RedirectResponse
+    {
+        if (! $quote->canConfirmUrgent()) {
+            return redirect()->route('quotes.show', $quote);
+        }
+
+        return view('quotes.urgent', [
+            'quote' => $quote->load('client'),
+            'action' => route('quotes.urgent.confirm', $quote),
+            'back' => route('quotes.show', $quote),
+        ]);
+    }
+
+    public function confirmUrgent(UrgentConfirmationRequest $request, Quote $quote, ClientLinkService $links): RedirectResponse
+    {
+        abort_unless($quote->canConfirmUrgent(), 409, 'L\'intervention urgente ne peut plus être déclarée pour ce devis.');
+        $data = $request->validated();
+
+        try {
+            $links->confirmUrgent($quote, trim($data['name']), trim($data['reason']), $data['signature'], $request->ip(), onSite: true);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['signature' => 'La signature n\'a pas pu être lue. Effacez et signez de nouveau.']);
+        }
+
+        return redirect()->route('quotes.show', $quote)->with('status', 'Intervention urgente confirmée par le client : le paiement est possible tout de suite.');
+    }
+
+    /** Image de la signature de confirmation d'urgence (espace de gestion uniquement). */
+    public function urgentSignature(Quote $quote): Response
+    {
+        abort_unless($quote->urgent_signature_path && Storage::disk('local')->exists($quote->urgent_signature_path), 404);
+
+        return Storage::disk('local')->response($quote->urgent_signature_path, null, ['Cache-Control' => 'private, max-age=86400']);
     }
 
     /** Image de la signature du client (espace de gestion uniquement). */

@@ -171,6 +171,78 @@ class LegalPaymentDelayTest extends TestCase
         $this->get(route('portal.invoice.pay', $invoice->public_token))->assertOk();
     }
 
+    public function test_urgent_intervention_confirmed_by_the_client_after_signature(): void
+    {
+        $quote = $this->quote();
+        $this->signOnSite($quote);
+        $invoice = $this->invoice($quote->fresh());
+        $this->assertSame('2026-10-20', $invoice->due_date->toDateString());
+        $signedPdf = $quote->fresh()->snapshots()->latest('id')->value('id');
+
+        $this->get(route('quotes.show', $quote))->assertSee('Intervention urgente ?')->assertSee($quote->fresh()->publicUrl().'/urgence');
+        $this->get(route('quotes.urgent', $quote))->assertOk()->assertSee("Nature de l'urgence", false)->assertSee('L221-28');
+
+        // Il faut la nature de l'urgence, le nom, la signature et la case cochée.
+        $this->post(route('quotes.urgent.confirm', $quote), ['name' => 'M. Martin', 'signature' => $this->signature()])
+            ->assertSessionHasErrors(['reason', 'agree']);
+        $this->assertFalse($quote->fresh()->urgent_repair);
+
+        $this->post(route('quotes.urgent.confirm', $quote), [
+            'reason' => 'Fuite dans la chambre après l\'orage', 'name' => 'M. Martin', 'signature' => $this->signature(), 'agree' => '1',
+        ])->assertRedirect(route('quotes.show', $quote))->assertSessionHasNoErrors();
+
+        $quote = $quote->fresh();
+        $this->assertTrue($quote->urgent_repair && $quote->urgent_confirmed_on_site);
+        $this->assertSame(['M. Martin', 'Fuite dans la chambre après l\'orage'], [$quote->urgent_signed_name, $quote->urgent_reason]);
+        $this->assertFalse($quote->canConfirmUrgent());
+        // Le devis signé n'est pas modifié ; la facture retrouve son échéance et le paiement par carte.
+        $this->assertSame($signedPdf, $quote->snapshots()->latest('id')->value('id'));
+        $invoice = $invoice->fresh();
+        $this->assertSame(['2026-10-12', null], [$invoice->due_date->toDateString(), $invoice->paymentWaitUntil()]);
+        $this->assertNotNull($invoice->cardPaymentUrl());
+        $this->get(route('quotes.show', $quote))->assertSee('Intervention urgente confirmée par M. Martin sur place')->assertDontSee('Intervention urgente ?');
+        $this->get(route('quotes.urgent-signature', $quote))->assertOk();
+        $this->get(route('invoices.show', $invoice))->assertDontSee('la loi interdit de recevoir un paiement');
+    }
+
+    public function test_client_confirms_the_urgent_intervention_from_a_link(): void
+    {
+        $quote = $this->quote();
+        $this->signOnSite($quote);
+        $token = $quote->fresh()->public_token;
+        auth()->logout();
+
+        $this->get(route('portal.quote.urgent', $token))->assertOk()->assertSee('Je confirme');
+        $this->post(route('portal.quote.urgent.confirm', $token), [
+            'reason' => 'Tuiles envolées', 'name' => 'M. Martin', 'signature' => $this->signature(), 'agree' => '1',
+        ])->assertRedirect(route('portal.quote', $token))->assertSessionHas('status');
+
+        $quote = $quote->fresh();
+        $this->assertTrue($quote->urgent_repair);
+        $this->assertFalse($quote->urgent_confirmed_on_site);
+        $this->assertNotNull($quote->urgent_confirmed_ip);
+
+        // Plus rien à confirmer ensuite.
+        $this->get(route('portal.quote.urgent', $token))->assertRedirect(route('portal.quote', $token));
+    }
+
+    public function test_urgency_cannot_be_added_without_waiting_period(): void
+    {
+        // Signé en ligne : pas de délai, donc rien à confirmer.
+        $online = $this->quote();
+        $this->post(route('quotes.send', $online));
+        $this->post(route('portal.quote.sign', $online->fresh()->public_token), ['name' => 'M. Martin', 'signature' => $this->signature(), 'agree' => '1']);
+        $this->get(route('quotes.show', $online))->assertDontSee('Intervention urgente ?');
+        $this->get(route('quotes.urgent', $online))->assertRedirect(route('quotes.show', $online));
+        $this->post(route('quotes.urgent.confirm', $online), ['reason' => 'Fuite', 'name' => 'M. Martin', 'signature' => $this->signature(), 'agree' => '1'])->assertStatus(409);
+
+        // Signé sur place, mais délai déjà passé.
+        $home = $this->quote();
+        $this->signOnSite($home);
+        Carbon::setTestNow('2026-10-20 09:00');
+        $this->assertFalse($home->fresh()->canConfirmUrgent());
+    }
+
     public function test_after_seven_days_the_invoice_is_due_normally(): void
     {
         $quote = $this->quote();
