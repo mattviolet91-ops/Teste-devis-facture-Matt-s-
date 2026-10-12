@@ -67,7 +67,8 @@ class DashboardController extends Controller
                 'overdue_invoices' => Invoice::query()->overdue()->count(),
                 'year_revenue' => $this->revenue(today()->startOfYear(), today()),
             ],
-            'overdue' => Invoice::query()->overdue()->with('client')->orderBy('due_date')->limit(5)->get(),
+            'overdue' => Invoice::query()->overdue()->with('client', 'quote.client')->orderBy('due_date')->limit(8)->get()
+                ->reject(fn (Invoice $invoice) => $invoice->paymentWaitUntil())->take(5)->values(),
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
             'newRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->count(),
             'latestRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->with(['client', 'worksite'])->latest('id')->limit(5)->get(),

@@ -31,7 +31,7 @@
         @if ($invoice->acceptsPayments())
             @error('amount')<div class="alert alert-error">{{ $message }}</div>@enderror
             @if ($waitUntil = $invoice->paymentWaitUntil())
-                <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation). L'échéance de la facture est fixée à cette date et le paiement par carte n'est proposé au client qu'à partir de là. Exception : réparation urgente demandée par le client (case à cocher sur le devis).</div>
+                <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation).{{ $invoice->legalPaymentFrom() ? ' L\'échéance de la facture est fixée à cette date.' : '' }} Le paiement par carte n'est proposé au client et les relances automatiques ne partent qu'à partir de là. Exception : réparation urgente demandée par le client (case à cocher sur le devis).</div>
             @endif
             <details @if ($errors->hasAny(['amount', 'paid_at', 'method', 'method_detail']) || request('encaisser')) open @endif>
                 <summary class="btn"><x-icon name="wallet" /> Encaisser un paiement</summary>
@@ -56,7 +56,7 @@
                 </form>
             </details>
             @if (app(\App\Services\MyposGateway::class)->isEnabled())
-                <p class="small muted" style="margin-top:.75rem">💳 Paiement par carte myPOS activé : le client peut payer {{ Money::format($invoice->balance()) }} depuis sa facture en ligne, le paiement s'enregistre tout seul.</p>
+                <p class="small muted" style="margin-top:.75rem">💳 Paiement par carte myPOS activé : le client {{ $waitUntil ? 'pourra payer' : 'peut payer' }} {{ Money::format($invoice->balance()) }} depuis sa facture en ligne{{ $waitUntil ? ' à partir du '.$waitUntil->format('d/m/Y') : '' }}, le paiement s'enregistre tout seul.</p>
             @else
             <details style="margin-top:.75rem" @if ($errors->has('payment_link')) open @endif>
                 <summary class="small">Paiement par carte en ligne{{ $invoice->cardPaymentUrl() ? ' : proposé au client' : '' }}</summary>

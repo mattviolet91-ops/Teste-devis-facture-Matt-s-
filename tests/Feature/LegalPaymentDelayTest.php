@@ -8,6 +8,7 @@ use App\Models\Quote;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
@@ -116,6 +117,58 @@ class LegalPaymentDelayTest extends TestCase
         $pro = $this->quote('professionnel');
         $this->signOnSite($pro);
         $this->assertNull($this->invoice($pro->fresh())->paymentWaitUntil());
+    }
+
+    public function test_invoice_sent_before_the_update_is_never_claimed_during_the_seven_days(): void
+    {
+        $quote = $this->quote();
+        $this->signOnSite($quote);
+        $invoice = $this->invoice($quote->fresh());
+        // Facture envoyée « à réception » avant cette version (échéance non repoussée).
+        $invoice->forceFill(['due_date' => '2026-10-12'])->save();
+        Mail::fake();
+        $this->put(route('settings.emails'), ['username' => 'mv.entreprise91@gmail.com', 'password' => 'abcdabcdabcdabcd']);
+        app(Settings::class)->set(['reminders.auto_enabled' => true, 'reminders.first_after_days' => 1, 'reminders.repeat_days' => 7, 'reminders.max' => 2]);
+        $invoice->client->forceFill(['email' => 'martin@example.com'])->save();
+
+        Carbon::setTestNow('2026-10-16 10:00');
+        $invoice = $invoice->fresh();
+        $this->assertFalse($invoice->isOverdue());
+        $this->get(route('invoices.show', $invoice))->assertSee('20/10/2026')->assertDontSee('L&#039;échéance de la facture est fixée', false);
+        $this->get(route('dashboard'))->assertDontSee($invoice->number);
+        $this->artisan('app:payment-reminders')->expectsOutputToContain('0 relance');
+        $this->assertSame(0, $invoice->fresh()->reminder_count);
+        Mail::assertNothingSent();
+
+        // À partir du 20/10 : relance possible.
+        Carbon::setTestNow('2026-10-20 10:00');
+        $this->assertTrue($invoice->fresh()->isOverdue());
+        $this->artisan('app:payment-reminders')->expectsOutputToContain('1 relance');
+    }
+
+    public function test_mypos_card_payment_waits_for_the_eighth_day(): void
+    {
+        $merchant = openssl_pkey_new(['private_key_bits' => 1024]);
+        openssl_pkey_export($merchant, $merchantPem);
+        $mypos = openssl_pkey_new(['private_key_bits' => 1024]);
+        $package = base64_encode(json_encode([
+            'sid' => '000000000000123', 'cn' => '61938166610', 'pk' => $merchantPem,
+            'pc' => openssl_pkey_get_details($mypos)['key'], 'idx' => 1,
+        ]));
+        $this->put(route('settings.payments'), ['enabled' => '1', 'package' => $package])->assertSessionHasNoErrors();
+
+        $quote = $this->quote();
+        $this->signOnSite($quote);
+        $invoice = $this->invoice($quote->fresh());
+
+        $this->get(route('invoices.show', $invoice))->assertSee('le client pourra payer')->assertSee('à partir du 20/10/2026');
+        $this->get(route('portal.invoice.pay', $invoice->public_token))
+            ->assertRedirect(route('portal.invoice', $invoice->public_token))
+            ->assertSessionHas('status', fn ($s) => str_contains($s, 'à partir du 20/10/2026'));
+
+        Carbon::setTestNow('2026-10-20 08:00');
+        $this->get(route('invoices.show', $invoice))->assertSee('le client peut payer');
+        $this->get(route('portal.invoice.pay', $invoice->public_token))->assertOk();
     }
 
     public function test_after_seven_days_the_invoice_is_due_normally(): void

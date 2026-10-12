@@ -52,8 +52,10 @@ class SendPaymentReminders extends Command
             ->where('reminder_count', '<', $max)
             ->where(fn ($q) => $q->whereNull('last_reminder_at')->orWhere('last_reminder_at', '<=', now()->subDays($repeat)->endOfDay()))
             ->whereHas('client', fn ($q) => $q->whereNotNull('email')->where('email', '!=', ''))
-            ->with('client')
-            ->get();
+            ->with('client', 'quote.client')
+            ->get()
+            // Délai légal de 7 jours encore en cours (devis signé chez le client) : rien à réclamer.
+            ->reject(fn (Invoice $invoice) => $invoice->paymentWaitUntil());
 
         $sent = 0;
         foreach ($invoices as $invoice) {

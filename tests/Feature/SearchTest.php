@@ -17,13 +17,15 @@ class SearchTest extends TestCase
 
         $dupont = Client::factory()->create([
             'first_name' => 'Hélène', 'last_name' => 'Dupont', 'phone' => '06 12 34 56 78',
-            'email' => 'helene@example.com', 'city' => 'Massy',
+            'email' => 'helene@example.com', 'address' => '12 rue des Tilleuls', 'city' => 'Massy',
         ]);
         Worksite::factory()->for($dupont)->create(['address' => '12 rue des Tilleuls', 'city' => 'Massy']);
 
         Client::factory()->company('syndic')->create([
             'company_name' => 'Cabinet Martin Gestion', 'first_name' => 'Julien', 'last_name' => 'Martin',
             'phone' => '01 69 00 11 22', 'email' => 'gestion@cabinet.example', 'city' => 'Palaiseau',
+            // Adresse fixe : une rue tirée au hasard peut s'appeler « rue Dupont ».
+            'address' => '3 place de la Gare',
         ]);
     }
 

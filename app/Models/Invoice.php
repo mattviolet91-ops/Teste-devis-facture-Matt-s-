@@ -210,7 +210,7 @@ class Invoice extends Model
 
     public function isOverdue(): bool
     {
-        return ! $this->isCredit() && in_array($this->status, self::OPEN, true) && $this->due_date?->lt(today());
+        return ! $this->isCredit() && in_array($this->status, self::OPEN, true) && $this->due_date?->lt(today()) && ! $this->paymentWaitUntil();
     }
 
     public function balance(): int
