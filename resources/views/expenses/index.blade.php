@@ -1,6 +1,10 @@
 @extends('layouts.app', ['title' => 'Frais par chantier'])
 
-@php use App\Support\Money; @endphp
+@php
+    use App\Support\Money;
+    // Montants TTC (ce qui est réellement encaissé et payé) ; sans TVA, HT = TTC.
+    $ttc = app(\App\Services\Settings::class)->get('vat.regime') === 'assujetti' || $jobs->contains(fn ($job) => ! $job['franchise']) ? ' TTC' : '';
+@endphp
 
 @section('content')
     <div class="page-head">
@@ -26,9 +30,9 @@
     @else
         <div class="card">
             <ul class="stat-list">
-                <li><span>Facturé{{ $q ? '' : ' (tous chantiers)' }}</span><strong>{{ Money::format($totals['invoiced']) }}</strong></li>
-                <li><span>Frais</span><strong>{{ $totals['expenses'] ? '− ' : '' }}{{ Money::format($totals['expenses']) }}</strong></li>
-                <li class="remaining"><span>Il vous reste</span><strong class="{{ $totals['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($totals['remaining']) }}</strong></li>
+                <li><span>Facturé{{ $ttc }}{{ $q ? '' : ' (tous chantiers)' }}</span><strong>{{ Money::format($totals['invoiced']) }}</strong></li>
+                <li><span>Frais{{ $ttc }}</span><strong>{{ $totals['expenses'] ? '− ' : '' }}{{ Money::format($totals['expenses']) }}</strong></li>
+                <li class="remaining"><span>Il vous reste{{ $ttc }}</span><strong class="{{ $totals['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($totals['remaining']) }}</strong></li>
             </ul>
         </div>
 
@@ -42,13 +46,13 @@
                                 $job['quotes']->isNotEmpty() ? ($job['quotes']->count() > 1 ? $job['quotes']->count().' devis' : 'Devis '.$job['quotes']->first()->number) : null,
                                 $job['numbers'], $job['address'],
                             ])->filter()->implode(' · ') }}</span>
-                            <span class="small">{{ $job['expenses_count'] }} frais · {{ Money::format($job['expenses_total']) }}</span>
+                            <span class="small">{{ $job['expenses_count'] }} frais · {{ Money::format($job['expenses_ttc']) }}</span>
                         </span>
                         <span class="list-meta">
                             @if ($job['billed'])
-                                <strong class="amount {{ $job['remaining'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining']) }}</strong>
+                                <strong class="amount {{ $job['remaining_ttc'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['remaining_ttc']) }}</strong>
                             @else
-                                <strong class="amount muted {{ $job['expected'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['expected']) }} <span class="small">prévu</span></strong>
+                                <strong class="amount muted {{ $job['expected_ttc'] < 0 ? 'text-danger' : '' }}">{{ Money::format($job['expected_ttc']) }} <span class="small">prévu</span></strong>
                             @endif
                             @if ($job['fully'])
                                 <span class="badge badge-success">Facturé entièrement</span>
@@ -67,7 +71,7 @@
     @unless ($q)
         <a class="card list-item" href="{{ route('expenses.general') }}" style="margin-top:1rem">
             <span class="list-main"><strong>Frais généraux</strong><span class="muted small">Sans chantier : outillage, carburant, assurance du véhicule…</span></span>
-            <span class="list-meta"><strong class="amount">{{ Money::format($general['expenses_total']) }}</strong><span class="small muted">{{ $general['expenses']->count() }} frais</span></span>
+            <span class="list-meta"><strong class="amount">{{ Money::format($general['expenses_ttc']) }}</strong><span class="small muted">{{ $general['expenses']->count() }} frais</span></span>
         </a>
     @endunless
 @endsection

@@ -251,4 +251,30 @@ class ExpenseTest extends TestCase
         $other = Project::query()->create(['client_id' => $this->invoice->client_id, 'title' => 'Autre client']);
         $this->post(route('expenses.attach.quote', $gouttieres), ['project' => (string) $other->id])->assertNotFound();
     }
+
+    public function test_job_amounts_are_shown_including_vat(): void
+    {
+        $client = Client::factory()->create(['last_name' => 'Charon']);
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Recherche et réparation de fuite', 'validity_days' => 30, 'vat_regime' => 'assujetti',
+            'lines' => [['type' => 'item', 'title' => 'Recherche de fuite', 'quantity' => '1', 'unit_price' => '279,99', 'vat_rate' => 1000]]])->assertSessionHasNoErrors();
+        $quote = Quote::query()->latest('id')->first();
+        $this->post(route('quotes.send', $quote));
+        $this->post(route('quotes.accept', $quote));
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard']);
+        $invoice = Invoice::query()->latest('id')->first();
+        $this->post(route('invoices.send', $invoice));
+        $this->assertSame(30799, $invoice->fresh()->total_ttc);
+
+        // 80 € payés (sans TVA indiquée) et 120 € TTC dont 20 € de TVA.
+        $this->post(route('expenses.store', $invoice), ['expense_label' => 'Etan', 'expense_amount' => '80', 'category' => 'autre'])->assertSessionHasNoErrors();
+        $this->post(route('expenses.store', $invoice), ['expense_label' => 'Tuiles', 'expense_amount' => '120', 'expense_vat' => '20'])->assertSessionHasNoErrors();
+
+        $project = app(JobCostService::class)->projectForInvoice($invoice->fresh());
+        $this->get(route('expenses.project', $project))->assertOk()
+            ->assertSeeInOrder(['Facturé TTC', Money::format(30799), 'Frais du chantier TTC', Money::format(20000), 'Il vous reste TTC', Money::format(10799)], false)
+            ->assertSeeInOrder(['Tuiles', Money::format(12000)], false)
+            ->assertDontSee('Facturé HT');
+        $this->get(route('invoices.show', $invoice))->assertSee('Il vous reste TTC');
+        $this->get(route('expenses.index'))->assertSee('Facturé TTC (tous chantiers)')->assertSee(Money::format(10799));
+    }
 }

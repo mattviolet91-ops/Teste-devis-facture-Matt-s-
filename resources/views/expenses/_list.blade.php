@@ -9,7 +9,7 @@
                     @if ($expense->receipt_path) · <a class="small" href="{{ str_ends_with(strtolower((string) $expense->receipt_path), '.pdf') ? \App\Http\Controllers\PdfViewerController::link(route('expenses.receipt', $expense), 'Ticket '.$expense->label) : route('expenses.receipt', $expense) }}" @unless (str_ends_with(strtolower((string) $expense->receipt_path), '.pdf')) target="_blank" rel="noopener" @endunless>ticket</a>@endif
                 </span>
                 <span class="expense-actions">
-                    <strong>{{ Money::format($expense->amountHt()) }}</strong>
+                    <strong>{{ Money::format($expense->amount_ttc) }}</strong>
                     <form method="POST" action="{{ route('expenses.destroy', $expense) }}" data-confirm="Supprimer ce frais ?">
                         @csrf
                         @method('DELETE')

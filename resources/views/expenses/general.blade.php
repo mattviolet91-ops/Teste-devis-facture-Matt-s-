@@ -15,7 +15,7 @@
 
     <div class="card">
         <ul class="stat-list">
-            <li class="remaining"><span>Total des frais généraux{{ $assujetti ? ' HT' : '' }}</span><strong>{{ Money::format($general['expenses_total']) }}</strong></li>
+            <li class="remaining"><span>Total des frais généraux{{ $assujetti ? ' TTC' : '' }}</span><strong>{{ Money::format($general['expenses_ttc']) }}</strong></li>
         </ul>
         @include('expenses._list', ['expenses' => $general['expenses'], 'empty' => 'Aucun frais général pour le moment.'])
         <details id="ajouter" @if ($general['expenses']->isEmpty() || $errors->hasAny(['expense_label', 'expense_amount', 'expense_vat', 'expense_date', 'receipt'])) open @endif>

@@ -179,7 +179,11 @@ class JobCostService
     {
         $expenses = Expense::query()->whereNull('project_id')->whereNull('quote_id')->whereNull('invoice_id')->latest('spent_on')->latest('id')->get();
 
-        return ['expenses' => $expenses, 'expenses_total' => (int) $expenses->sum(fn (Expense $e) => $e->amountHt())];
+        return [
+            'expenses' => $expenses,
+            'expenses_total' => (int) $expenses->sum(fn (Expense $e) => $e->amountHt()),
+            'expenses_ttc' => (int) $expenses->sum('amount_ttc'),
+        ];
     }
 
     /** @return array<string, mixed> */
@@ -194,6 +198,10 @@ class JobCostService
         $planned = (int) $quotes->sum('total_ht') + (int) $invoices->whereNull('quote_id')->sum('total_ht');
         $planned = max($planned, $invoiced);
         $costs = (int) $expenses->sum(fn (Expense $e) => $e->amountHt());
+        // Les mêmes montants TTC (ce qui est réellement encaissé et payé) : affichés au gérant.
+        $invoicedTtc = (int) $invoices->sum('total_ttc');
+        $plannedTtc = max((int) $quotes->sum('total_ttc') + (int) $invoices->whereNull('quote_id')->sum('total_ttc'), $invoicedTtc);
+        $costsTtc = (int) $expenses->sum('amount_ttc');
         $first = $quotes->first() ?? $invoices->first() ?? $project->quotes->first();
 
         return [
@@ -214,6 +222,11 @@ class JobCostService
             'expenses_count' => $expenses->count(),
             'remaining' => $invoiced - $costs,
             'expected' => $planned - $costs,
+            'invoiced_ttc' => $invoicedTtc,
+            'planned_ttc' => $plannedTtc,
+            'expenses_ttc' => $costsTtc,
+            'remaining_ttc' => $invoicedTtc - $costsTtc,
+            'expected_ttc' => $plannedTtc - $costsTtc,
             'franchise' => $first ? $first->isFranchise() : true,
             'last' => $invoices->max('issue_date') ?? $quotes->max('accepted_at') ?? $project->updated_at,
             'url' => route('expenses.project', $project),

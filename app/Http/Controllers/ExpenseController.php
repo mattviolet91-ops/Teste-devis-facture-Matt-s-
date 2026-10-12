@@ -39,9 +39,9 @@ class ExpenseController extends Controller
             'q' => $search,
             'general' => $general,
             'totals' => [
-                'invoiced' => $jobs->sum('invoiced'),
-                'expenses' => $jobs->sum('expenses_total'),
-                'remaining' => $jobs->sum('remaining'),
+                'invoiced' => $jobs->sum('invoiced_ttc'),
+                'expenses' => $jobs->sum('expenses_ttc'),
+                'remaining' => $jobs->sum('remaining_ttc'),
             ],
         ]);
     }
