@@ -277,4 +277,48 @@ class ExpenseTest extends TestCase
         $this->get(route('invoices.show', $invoice))->assertSee('Il vous reste TTC');
         $this->get(route('expenses.index'))->assertSee('Facturé TTC (tous chantiers)')->assertSee(Money::format(10799));
     }
+
+    public function test_a_new_invoice_can_join_an_existing_job(): void
+    {
+        $quote = Quote::query()->sole();
+        $project = app(JobCostService::class)->projectForQuote($quote);
+        $clientId = $quote->client_id;
+        $invoiceForm = fn (array $extra) => array_merge([
+            'client_id' => $clientId, 'title' => 'Travaux supplémentaires', 'due_days' => 0,
+            'lines' => [['type' => 'item', 'title' => 'Bâchage', 'quantity' => '1', 'unit_price' => '300']],
+        ], $extra);
+
+        // Le choix est proposé sur une facture sans devis, pas sur une facture de devis.
+        $this->get(route('invoices.create', ['client' => $clientId]))->assertOk()->assertSee('Chantier (frais et suivi)')->assertSee('Réfection faîtage');
+        $this->get(route('invoices.edit', $this->invoice))->assertDontSee('Chantier (frais et suivi)');
+
+        // Facture supplémentaire : même chantier que le devis.
+        $this->post(route('invoices.store'), $invoiceForm(['project' => (string) $project->id]))->assertSessionHasNoErrors();
+        $extra = Invoice::query()->latest('id')->first();
+        $this->assertSame($project->id, $extra->project_id);
+        $this->post(route('invoices.send', $extra));
+        $job = app(JobCostService::class)->job($project->fresh());
+        $this->assertSame([$this->invoice->id, $extra->id], $job['invoices']->pluck('id')->all());
+        $this->assertSame(230000, $job['invoiced']);
+
+        // « Nouveau chantier » : un chantier à part, créé tout de suite et retrouvé en rouvrant le brouillon.
+        $this->post(route('invoices.store'), $invoiceForm(['project' => 'new', 'title' => 'Autre chantier']))->assertSessionHasNoErrors();
+        $apart = Invoice::query()->latest('id')->first();
+        $this->assertNotNull($apart->project_id);
+        $this->assertNotSame($project->id, $apart->project_id);
+        $this->get(route('invoices.edit', $apart))->assertSee('data-selected="'.$apart->project_id.'"', false);
+
+        // Brouillon déplacé ensuite dans le chantier du devis : ses frais suivent, l'ancien chantier disparaît.
+        $this->post(route('expenses.store', $apart), ['expense_label' => 'Bâche', 'expense_amount' => '40'])->assertSessionHasNoErrors();
+        $old = $apart->project_id;
+        $this->put(route('invoices.update', $apart), $invoiceForm(['project' => (string) $project->id]))->assertSessionHasNoErrors();
+        $this->assertSame($project->id, $apart->fresh()->project_id);
+        $this->assertSame($project->id, Expense::query()->where('label', 'Bâche')->value('project_id'));
+        $this->assertNull(Project::query()->find($old));
+
+        // Chantier d'un autre client : ignoré.
+        $other = Project::query()->create(['client_id' => Client::factory()->create()->id, 'title' => 'Ailleurs']);
+        $this->post(route('invoices.store'), $invoiceForm(['project' => (string) $other->id]))->assertSessionHasNoErrors();
+        $this->assertNotSame($other->id, Invoice::query()->latest('id')->first()->project_id);
+    }
 }

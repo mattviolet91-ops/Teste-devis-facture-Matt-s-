@@ -135,13 +135,7 @@ class JobCostService
      */
     public function jobs(?string $search = null): Collection
     {
-        // Devis acceptés et factures émises sans chantier encore : rangés maintenant.
-        $billedQuoteIds = Invoice::query()->whereIn('status', Invoice::ISSUED)->whereNotNull('quote_id')->pluck('quote_id')->unique();
-        Quote::query()->whereNull('project_id')
-            ->where(fn ($q) => $q->where('status', 'accepted')->orWhereIn('id', $billedQuoteIds))
-            ->get()->each(fn (Quote $q) => $this->projectForQuote($q));
-        Invoice::query()->whereNull('project_id')->whereIn('status', Invoice::ISSUED)->where('kind', '!=', 'credit')
-            ->get()->each(fn (Invoice $i) => $this->projectForInvoice($i));
+        $this->ensureProjects();
 
         $projects = Project::query()
             ->with(['client', 'worksite', 'quotes', 'invoices', 'expenses'])
@@ -158,6 +152,19 @@ class JobCostService
             ->filter(fn (array $job) => $job['quotes']->isNotEmpty() || $job['invoices']->isNotEmpty())
             ->sortByDesc('last')
             ->values();
+    }
+
+    /** Devis acceptés et factures émises sans chantier encore : rangés maintenant. */
+    public function ensureProjects(?int $clientId = null): void
+    {
+        $billedQuoteIds = Invoice::query()->whereIn('status', Invoice::ISSUED)->whereNotNull('quote_id')->pluck('quote_id')->unique();
+        Quote::query()->whereNull('project_id')
+            ->when($clientId, fn ($q) => $q->where('client_id', $clientId))
+            ->where(fn ($q) => $q->where('status', 'accepted')->orWhereIn('id', $billedQuoteIds))
+            ->get()->each(fn (Quote $q) => $this->projectForQuote($q));
+        Invoice::query()->whereNull('project_id')->whereIn('status', Invoice::ISSUED)->where('kind', '!=', 'credit')
+            ->when($clientId, fn ($q) => $q->where('client_id', $clientId))
+            ->get()->each(fn (Invoice $i) => $this->projectForInvoice($i));
     }
 
     /** Un chantier, avec ses frais (du plus récent au plus ancien). */

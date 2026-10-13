@@ -176,6 +176,7 @@ final class Guide
                 'intro' => 'Facturez un devis accepté en un clic, ou créez une facture libre. Le numéro est attribué à l\'envoi.',
                 'steps' => [
                     'Sur un devis accepté : « Facturer » → facture complète, d\'acompte (un pourcentage), de situation ou de solde. Les acomptes déjà facturés sont déduits.',
+                    'Facture sans devis : choisissez son « Chantier » — par défaut le dernier chantier du client à la même adresse, ou « Nouveau chantier ». Plusieurs factures peuvent appartenir au même chantier : leurs montants et leurs frais sont additionnés.',
                     'Vérifiez avec « PDF », puis « Envoyer par email » ou « Marquer comme envoyée » si vous la remettez en main propre.',
                     'Le client reçoit un lien pour voir et télécharger sa facture, et la payer par carte si le paiement en ligne est activé.',
                     '« Encaisser » enregistre un règlement (virement, chèque, espèces, carte, myPOS) ; la facture passe en « Payée » une fois soldée.',

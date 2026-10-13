@@ -29,11 +29,14 @@
                 <span class="hint"><a href="{{ route('clients.create') }}">Créer un nouveau client</a></span>
             </div>
             <div class="field @error('worksite_id') has-error @enderror">
-                <label for="worksite_id">Chantier</label>
+                <label for="worksite_id">Adresse du chantier</label>
                 <select id="worksite_id" name="worksite_id" data-worksite-select data-selected="{{ old('worksite_id', $document->worksite_id) }}">
                     <option value="">— Aucun —</option>
                 </select>
             </div>
+            @if (! empty($projectSelect))
+                @include('invoices._project', ['invoice' => $document, 'clients' => $clients])
+            @endif
             <x-field name="title" :label="$subjectLabel" :value="$document->title" class="span-2" :placeholder="$subjectPlaceholder" />
         </div>
     </fieldset>

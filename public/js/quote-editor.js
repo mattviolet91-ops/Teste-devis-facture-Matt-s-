@@ -157,6 +157,29 @@
   }
   clientSelect.addEventListener('change', function () { fillWorksites(false); });
 
+  // Facture sans devis : chantier existant du client (le dernier à la même adresse) ou nouveau.
+  var projectSelect = form.querySelector('[data-project-select]');
+  if (projectSelect) {
+    var projectData = JSON.parse(document.getElementById('invoice-projects-data').textContent || '{}');
+    var projectChosen = projectSelect.getAttribute('data-selected') !== '';
+    projectSelect.addEventListener('change', function () { projectChosen = true; });
+    var fillProjects = function () {
+      var list = projectData[clientSelect.value] || [];
+      var keep = projectChosen ? projectSelect.value : null;
+      projectSelect.innerHTML = '';
+      list.forEach(function (p) { projectSelect.appendChild(new Option(p.label, p.id)); });
+      projectSelect.appendChild(new Option('Nouveau chantier', 'new'));
+      var site = worksiteSelect.value;
+      var match = list.filter(function (p) { return !site || !p.worksite || String(p.worksite) === String(site); })[0];
+      var known = keep && (keep === 'new' || list.some(function (p) { return String(p.id) === String(keep); }));
+      projectSelect.value = known ? keep : (match ? String(match.id) : 'new');
+    };
+    clientSelect.addEventListener('change', function () { projectChosen = false; fillProjects(); });
+    worksiteSelect.addEventListener('change', function () { if (!projectChosen) { fillProjects(); } });
+    // Au chargement, après le choix du chantier (adresse) : le bon chantier est présélectionné.
+    setTimeout(fillProjects, 0);
+  }
+
   // Recherche d'un client : chaque mot doit se retrouver dans le nom, le téléphone, l'email ou la ville.
   var clientSearch = form.querySelector('[data-client-search]');
   var clientResults = form.querySelector('[data-client-results]');

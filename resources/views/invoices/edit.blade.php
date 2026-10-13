@@ -3,7 +3,9 @@
 @php
     $lines = \App\Support\LineInput::forEditor($invoice, $defaultVatRate);
     $editor = compact('lines', 'clients', 'units', 'vatRates', 'steps', 'franchise', 'catalog', 'defaultVatRate')
-        + ['document' => $invoice, 'subjectLabel' => 'Objet de la facture', 'subjectPlaceholder' => 'ex. Traitement de toiture'];
+        + ['document' => $invoice, 'subjectLabel' => 'Objet de la facture', 'subjectPlaceholder' => 'ex. Traitement de toiture',
+            // Facture sans devis : choix du chantier (une facture de devis suit son devis).
+            'projectSelect' => ! $invoice->quote_id && ! $invoice->isCredit()];
     $dueDays = (int) old('due_days', $invoice->due_days);
 @endphp
 

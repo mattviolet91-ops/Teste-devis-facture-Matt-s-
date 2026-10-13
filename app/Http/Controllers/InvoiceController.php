@@ -7,9 +7,11 @@ use App\Http\Requests\InvoiceRequest;
 use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\Quote;
 use App\Services\ActivityLogger;
 use App\Services\InvoiceService;
+use App\Services\JobCostService;
 use App\Services\Settings;
 use App\Support\Percent;
 use Illuminate\Http\RedirectResponse;
@@ -74,6 +76,7 @@ class InvoiceController extends Controller
     public function store(InvoiceRequest $request): RedirectResponse
     {
         $invoice = $this->invoices->saveDraft($this->invoices->blank(), $request->invoiceAttributes(), $request->lines());
+        $this->applyProject($invoice, $request->input('project'));
         ActivityLogger::log('invoice.created', 'Facture créée (brouillon)', $invoice);
 
         return redirect()->route('invoices.show', $invoice)->with('status', 'Brouillon enregistré.');
@@ -113,9 +116,35 @@ class InvoiceController extends Controller
         abort_unless($invoice->isDraft() && ! $invoice->isCredit(), 403, 'Seul un brouillon peut être modifié.');
 
         $this->invoices->saveDraft($invoice, $request->invoiceAttributes(), $request->lines());
+        $this->applyProject($invoice, $request->input('project'));
         ActivityLogger::log('invoice.updated', 'Brouillon de facture modifié', $invoice);
 
         return redirect()->route('invoices.show', $invoice)->with('status', 'Brouillon enregistré.');
+    }
+
+    /**
+     * Facture sans devis : rangée dans le chantier choisi (une nouvelle facture n'est pas
+     * forcément un nouveau chantier). Une facture de devis suit toujours son devis.
+     */
+    private function applyProject(Invoice $invoice, ?string $choice): void
+    {
+        if ($invoice->quote_id || $choice === null || $choice === '') {
+            return;
+        }
+        $jobs = app(JobCostService::class);
+        if ($choice === 'new') {
+            // Chantier à part, créé tout de suite : le choix est retrouvé en rouvrant le brouillon.
+            $invoice->project_id ? $jobs->attachInvoice($invoice, null) : $jobs->projectForInvoice($invoice);
+
+            return;
+        }
+        $project = Project::query()->where('client_id', $invoice->client_id)->find((int) $choice);
+        if (! $project || $project->id === $invoice->project_id) {
+            return;
+        }
+        $invoice->project_id
+            ? $jobs->attachInvoice($invoice, $project)
+            : $invoice->forceFill(['project_id' => $project->id])->saveQuietly();
     }
 
     public function destroy(Invoice $invoice): RedirectResponse

@@ -10,6 +10,8 @@ class InvoiceRequest extends DocumentRequest
         return $this->documentRules() + [
             'due_days' => ['required', 'integer', 'min:0', 'max:120'],
             'work_period' => ['nullable', 'string', 'max:160'],
+            // Chantier d'une facture sans devis : un chantier existant du client, ou « new ».
+            'project' => ['nullable', 'string', 'regex:/^(\d+|new)$/'],
         ];
     }
 
