@@ -95,6 +95,9 @@
                 @if (session('status'))
                     <div class="alert alert-success" role="status">{{ session('status') }}</div>
                 @endif
+                @if (request()->query('envoi') === 'incomplet')
+                    <div class="alert alert-warning" role="alert">L'envoi n'est pas arrivé en entier (réseau instable). Vérifiez si vos changements apparaissent ci-dessous ; sinon, refaites-les et enregistrez de nouveau.</div>
+                @endif
                 @if ($errors->any())
                     <div class="alert alert-error" role="alert">Certains champs sont à corriger.</div>
                 @endif

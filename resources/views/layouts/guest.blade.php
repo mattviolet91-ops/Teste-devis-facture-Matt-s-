@@ -12,6 +12,9 @@
                 @endif
             </div>
             <div class="card">
+                @if (request()->query('envoi') === 'incomplet')
+                    <div class="alert alert-warning" role="alert">L'envoi n'est pas arrivé en entier (réseau instable) : recommencez.</div>
+                @endif
                 @if (session('status'))
                     <div class="alert alert-success" role="status">{{ session('status') }}</div>
                 @endif

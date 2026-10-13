@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\RestoreExpiredForm;
 use App\Models\Client;
 use App\Models\Quote;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /** Adresse d'un envoi de formulaire ouverte comme une page : jamais d'écran d'erreur anglais. */
@@ -35,10 +39,26 @@ class MethodNotAllowedTest extends TestCase
         $this->get('/mypos/notification')->assertRedirect('/');
     }
 
-    public function test_other_wrong_methods_show_a_french_page(): void
+    public function test_form_arrived_without_its_content_goes_back_to_the_page_with_a_warning(): void
     {
         $this->actingAs($this->admin());
-        $this->post('/paiements')->assertStatus(405)->assertSee('Page à rouvrir')->assertDontSee('Oops');
+
+        // Enregistrement des réglages arrivé vide (sans « modification ») : retour sur la page.
+        $this->post('/reglages/entreprise')->assertStatus(303)->assertRedirect('/reglages/entreprise?envoi=incomplet');
+        $this->get('/reglages/entreprise?envoi=incomplet')->assertOk()->assertSee("L'envoi n'est pas arrivé en entier", false);
+        $this->post('/paiements')->assertRedirect('/paiements?envoi=incomplet');
         $this->getJson('/devis/express/apercu')->assertStatus(405);
+    }
+
+    public function test_empty_submission_with_expired_token_is_not_called_kept(): void
+    {
+        $request = Request::create('/reglages/entreprise', 'POST');
+        $request->headers->set('referer', url('/reglages/entreprise'));
+        $request->setLaravelSession($this->app['session.store']);
+
+        $response = $this->app->make(ExceptionHandler::class)->render($request, new HttpException(419));
+
+        $this->assertSame(url('/reglages/entreprise').'?envoi=incomplet', $response->headers->get('Location'));
+        $this->assertNull($this->app['session.store']->get(RestoreExpiredForm::KEY));
     }
 }

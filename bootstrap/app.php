@@ -38,23 +38,32 @@ return Application::configure(basePath: dirname(__DIR__))
         // Adresse d'un envoi de formulaire ouverte comme une page (page d'aperçu rechargée,
         // rouverte par le téléphone après une pause, retour arrière…) : au lieu d'une erreur,
         // on revient à la page la plus proche qui existe (ex. /devis/express/apercu → /devis/express).
+        //
+        // Formulaire arrivé sans son contenu (réseau instable : l'envoi est parvenu vide ou
+        // incomplet, sans l'indication « modification ») : au lieu d'un écran d'erreur, retour
+        // sur la page du formulaire avec un message demandant de vérifier et de réenregistrer.
         $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
-            if (! in_array($request->getRealMethod(), ['GET', 'HEAD'], true) || $request->expectsJson()) {
+            if ($request->expectsJson()) {
                 return null;
             }
+            $isPage = in_array($request->getRealMethod(), ['GET', 'HEAD'], true);
             $segments = explode('/', trim($request->path(), '/'));
+            if (! $isPage) {
+                $segments[] = ''; // l'adresse elle-même d'abord (ex. /reglages/entreprise)
+            }
             while (array_pop($segments) !== null && $segments !== []) {
                 $candidate = '/'.implode('/', $segments);
                 try {
                     app('router')->getRoutes()->match(Request::create($candidate, 'GET'));
 
-                    return redirect()->to($candidate);
+                    // Pas de session à ce stade : le message passe par l'adresse.
+                    return $isPage ? redirect()->to($candidate) : redirect()->to($candidate.'?envoi=incomplet', 303);
                 } catch (MethodNotAllowedHttpException|NotFoundHttpException) {
                     // Cette adresse n'est pas une page non plus : on remonte d'un cran.
                 }
             }
 
-            return redirect()->to('/');
+            return redirect()->to($isPage ? '/' : '/?envoi=incomplet', $isPage ? 302 : 303);
         });
 
         // Page restée ouverte trop longtemps (session expirée, jeton de sécurité périmé) :
@@ -67,6 +76,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $back = (string) $request->headers->get('referer');
             if ($back === '' || parse_url($back, PHP_URL_HOST) !== $request->getHost()) {
                 return null;
+            }
+            // Envoi arrivé vide (réseau) : rien à garder, on le dit tel quel.
+            if ($request->request->count() === 0) {
+                return redirect()->to(strtok($back, '?').'?envoi=incomplet', 303);
             }
             if (parse_url($back, PHP_URL_PATH) === parse_url(route('login'), PHP_URL_PATH)) {
                 return redirect()->route('login')->with('status', 'La page de connexion était restée ouverte trop longtemps : reconnectez-vous.');
