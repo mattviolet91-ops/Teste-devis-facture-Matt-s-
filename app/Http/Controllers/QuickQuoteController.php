@@ -12,12 +12,14 @@ class QuickQuoteController extends Controller
 {
     public function create(): View
     {
-        return view('quotes.express', ['text' => old('text', ''), 'parsed' => null]);
+        // Dernière phrase prévisualisée (page rechargée, retour arrière…) : pas à retaper.
+        return view('quotes.express', ['text' => old('text', (string) session('quick_quote.text', '')), 'parsed' => null]);
     }
 
     public function preview(Request $request, QuickQuoteService $service): View
     {
         $data = $this->validated($request);
+        $request->session()->put('quick_quote.text', $data['text']);
 
         return view('quotes.express', [
             'text' => $data['text'],
@@ -34,6 +36,7 @@ class QuickQuoteController extends Controller
         }
 
         $quote = $service->create($parsed, $data['title'] ?? null);
+        $request->session()->forget('quick_quote.text');
 
         return redirect()->route('quotes.show', $quote)->with('status', 'Devis brouillon créé. Vérifiez-le, puis envoyez-le.');
     }

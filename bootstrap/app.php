@@ -11,6 +11,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -33,6 +35,28 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Adresse d'un envoi de formulaire ouverte comme une page (page d'aperçu rechargée,
+        // rouverte par le téléphone après une pause, retour arrière…) : au lieu d'une erreur,
+        // on revient à la page la plus proche qui existe (ex. /devis/express/apercu → /devis/express).
+        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
+            if (! in_array($request->getRealMethod(), ['GET', 'HEAD'], true) || $request->expectsJson()) {
+                return null;
+            }
+            $segments = explode('/', trim($request->path(), '/'));
+            while (array_pop($segments) !== null && $segments !== []) {
+                $candidate = '/'.implode('/', $segments);
+                try {
+                    app('router')->getRoutes()->match(Request::create($candidate, 'GET'));
+
+                    return redirect()->to($candidate);
+                } catch (MethodNotAllowedHttpException|NotFoundHttpException) {
+                    // Cette adresse n'est pas une page non plus : on remonte d'un cran.
+                }
+            }
+
+            return redirect()->to('/');
+        });
+
         // Page restée ouverte trop longtemps (session expirée, jeton de sécurité périmé) :
         // au lieu de perdre la saisie (un devis entier…), on la garde et on revient au
         // formulaire, qui sera ré-affiché rempli (RestoreExpiredForm).
