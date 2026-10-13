@@ -23,7 +23,7 @@
             <a href="{{ route('portal.refunds') }}">Remboursement et annulation</a>
             <a href="{{ route('portal.legal') }}">Mentions légales</a>
         </nav>
-        {{ $company['trade_name'] }} ({{ $company['legal_form'] }}) — {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
+        {{ $company['trade_name'] }} ({{ $company['legal_form'] }})@if (! empty($company['legal_name'])) — raison sociale : {{ $company['legal_name'] }}@endif — {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
         SIRET {{ $company['siret'] }} · {{ $company['phone'] }} · {{ $company['email'] }}@if (! empty($company['website'])) · <a href="{{ $company['website'] }}">{{ preg_replace('#^https?://#', '', $company['website']) }}</a>@endif<br>
         Paiement par carte sécurisé par myPOS (Visa, Mastercard, CB).
     </footer>

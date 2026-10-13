@@ -12,6 +12,8 @@
                 <x-field name="company.trade_name" label="Nom commercial" :value="$company['trade_name']" required />
                 <x-field name="company.slogan" label="Slogan" :value="$company['slogan']" />
                 <x-field name="company.legal_form" label="Forme juridique" :value="$company['legal_form']" hint="« EI » est obligatoire sur les documents d'un entrepreneur individuel." required />
+                <x-field name="company.legal_name" label="Raison sociale (nom légal)" :value="$company['legal_name'] ?? ''" class="span-2"
+                    hint="Exigée par myPOS et les réseaux de cartes sur vos pages publiques. Entreprise individuelle : vos prénom et nom suivis de « EI », comme sur votre avis de situation INSEE. Affichée seulement sur les pages publiques (accueil client, paiement, CGV, mentions légales), jamais sur les devis et factures. Vide : non affichée." />
                 <x-field name="company.agreements" label="Agréments / qualifications" :value="$company['agreements']" class="span-2" />
             </div>
         </fieldset>

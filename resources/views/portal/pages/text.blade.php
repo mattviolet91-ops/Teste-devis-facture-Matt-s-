@@ -5,7 +5,7 @@
 @section('content')
     <article class="card legal-text">
         <h1>{{ $title }}</h1>
-        <p class="muted small">{{ $company['trade_name'] }} ({{ $company['legal_form'] }}) — SIRET {{ $company['siret'] }}</p>
+        <p class="muted small">{{ $company['trade_name'] }} ({{ $company['legal_form'] }})@if (! empty($company['legal_name'])) — raison sociale : {{ $company['legal_name'] }}@endif — SIRET {{ $company['siret'] }}</p>
         @forelse (preg_split('/\R+/', $text) as $line)
             @if (preg_match('/^(\d+)\.\s+([^.]{2,90})\.\s*(.*)$/u', trim($line), $m))
                 <h2>{{ $m[1] }}. {{ $m[2] }}</h2>

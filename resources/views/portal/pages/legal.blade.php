@@ -6,11 +6,16 @@
     <article class="card legal-text">
         <h1>Mentions légales</h1>
         <h2>Éditeur</h2>
-        <p>{{ $company['trade_name'] }}, {{ $company['legal_form'] === 'EI' ? 'entreprise individuelle (EI)' : $company['legal_form'] }}<br>
+        <p>@if (! empty($company['legal_name']))<strong>{{ $company['legal_name'] }}</strong> (raison sociale), {{ $company['legal_form'] === 'EI' ? 'entreprise individuelle (EI)' : $company['legal_form'] }}, exerçant sous le nom commercial {{ $company['trade_name'] }}<br>
+            @else{{ $company['trade_name'] }}, {{ $company['legal_form'] === 'EI' ? 'entreprise individuelle (EI)' : $company['legal_form'] }}<br>@endif
             {{ $company['address'] }}, {{ $company['postal_code'] }} {{ $company['city'] }}<br>
             SIRET {{ $company['siret'] }}@if (! empty($company['ape_code'])) — APE {{ $company['ape_code'] }}@endif
             @if (! empty($company['vat_number']))<br>TVA intracommunautaire {{ $company['vat_number'] }}@endif
             <br>Téléphone {{ $company['phone'] }} — Email {{ $company['email'] }}</p>
+        @if (! empty($company['legal_name']))
+            <h2>Directeur de la publication</h2>
+            <p>{{ $company['legal_name'] }}</p>
+        @endif
         <h2>Hébergeur</h2>
         <p>{{ $company['host'] ?? '' }}</p>
         <h2>Paiement en ligne</h2>

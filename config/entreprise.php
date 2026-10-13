@@ -14,6 +14,9 @@ return [
         // Jamais imprimé sur les documents : seul le nom commercial apparaît.
         'owner_name' => '',
         'legal_form' => 'EI',
+        // Raison sociale (nom légal) : exigée par myPOS sur les pages publiques. Vide = non affichée ;
+        // jamais imprimée sur les devis et factures.
+        'legal_name' => '',
         'slogan' => 'Votre couvreur de confiance',
         'address' => '8 chemin de la Plesse',
         'postal_code' => '91140',

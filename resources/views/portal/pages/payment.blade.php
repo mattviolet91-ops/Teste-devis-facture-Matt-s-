@@ -5,6 +5,9 @@
         <h1>Régler une facture par carte</h1>
         <p>Le paiement se fait sur la page sécurisée de notre prestataire <strong>myPOS</strong> : vos données de carte ne nous sont jamais transmises. Vous payez le montant exact de la facture, puis vous recevez la confirmation.</p>
         @include('portal.pages._cards')
+        @if ($settings->get('company.legal_name'))
+            <p class="small">Bénéficiaire des paiements : <strong>{{ $settings->get('company.legal_name') }}</strong> ({{ $settings->get('company.trade_name') }}), SIRET {{ $settings->get('company.siret') }}.</p>
+        @endif
         <ol class="guide-steps">
             <li>Ouvrez le lien reçu avec votre facture (email ou SMS), ou retrouvez-la ci-dessous.</li>
             <li>Touchez « Payer par carte » : la page de paiement myPOS s'ouvre.</li>
