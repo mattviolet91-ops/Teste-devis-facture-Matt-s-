@@ -166,19 +166,29 @@ class Quote extends Model
      * factures du devis comprises (acompte, situations, solde). Les factures annulées ne
      * comptent pas (leurs règlements passent sur la facture corrigée).
      *
-     * @return array{total: int, invoiced: int, paid: int, remaining: int, open: Collection<int, Invoice>}
+     * @return array{total: int, invoiced: int, paid: int, deposits: Collection<int, Invoice>, deposits_paid: int, other_paid: int, remaining: int, open: Collection<int, Invoice>}
      */
     public function paymentSummary(): array
     {
-        $invoices = ($this->relationLoaded('invoices') ? $this->invoices : $this->invoices()->get())
-            ->whereIn('status', Invoice::ISSUED)->values();
+        // Factures de ce devis et de ses versions précédentes (V1 → V2 : l'acompte suit).
+        $ids = [$this->id];
+        for ($previous = $this->replaces; $previous && ! in_array($previous->id, $ids, true); $previous = $previous->replaces) {
+            $ids[] = $previous->id;
+        }
+        $invoices = Invoice::query()->whereIn('quote_id', $ids)->where('kind', '!=', 'credit')
+            ->whereIn('status', Invoice::ISSUED)->orderBy('id')->get();
         $invoiced = (int) $invoices->sum('total_ttc');
         $paid = (int) $invoices->sum('amount_paid');
+        $deposits = $invoices->where('kind', 'deposit')->filter(fn (Invoice $invoice) => $invoice->amount_paid > 0)->values();
 
         return [
             'total' => (int) $this->total_ttc,
             'invoiced' => $invoiced,
             'paid' => $paid,
+            // Acomptes reçus, détaillés ; le reste des règlements (situations, solde…) à part.
+            'deposits' => $deposits,
+            'deposits_paid' => (int) $deposits->sum('amount_paid'),
+            'other_paid' => $paid - (int) $deposits->sum('amount_paid'),
             // Base : le devis, ou plus si des travaux en plus ont été facturés.
             'remaining' => max(0, max((int) $this->total_ttc, $invoiced) - $paid),
             'open' => $invoices->filter(fn (Invoice $invoice) => $invoice->acceptsPayments() && $invoice->balance() > 0)->values(),

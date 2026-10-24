@@ -52,20 +52,20 @@ class QuotePaymentSummaryTest extends TestCase
         $this->post(route('quotes.accept', $quote));
 
         // Accepté, rien de facturé ni de réglé.
-        $this->get(route('quotes.show', $quote))->assertSeeInOrder(['Déjà réglé par le client', Money::format(0), 'Reste à payer', Money::format(200000)], false);
+        $this->get(route('quotes.show', $quote))->assertSeeInOrder(['Acompte reçu', Money::format(0), 'Reste à payer', Money::format(200000)], false);
 
         // Acompte de 30 % réglé.
         $deposit = $this->invoice($quote, 'deposit', '30');
         $this->pay($deposit, '600');
         $this->get(route('quotes.show', $quote))
-            ->assertSeeInOrder(['Déjà réglé par le client', Money::format(60000), 'Reste à payer', Money::format(140000), 'dont pas encore facturé', Money::format(140000)], false);
+            ->assertSeeInOrder(['Acompte reçu', $deposit->number, Money::format(60000), 'Reste à payer', Money::format(140000), 'dont pas encore facturé', Money::format(140000)], false);
 
         // Solde facturé, réglé en partie : le client voit ce qu'il reste et le lien de la facture.
         $final = $this->invoice($quote, 'final');
         $this->pay($final, '400');
         $this->get(route('quotes.show', $quote))->assertSeeInOrder(['Reste à payer', Money::format(100000)], false)->assertDontSee('dont pas encore facturé');
         $this->get(route('portal.quote', $quote->fresh()->public_token))->assertOk()
-            ->assertSeeInOrder(['Règlement', 'Déjà réglé', Money::format(100000), 'Reste à payer', Money::format(100000)], false)
+            ->assertSeeInOrder(['Règlement', 'Acompte reçu', Money::format(60000), 'Autres règlements reçus', Money::format(40000), 'Reste à payer', Money::format(100000)], false)
             ->assertSee(route('portal.invoice', $final->public_token));
 
         // Tout réglé.

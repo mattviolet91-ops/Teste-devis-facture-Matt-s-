@@ -34,7 +34,14 @@
             <h2>Règlement</h2>
             <ul class="stat-list">
                 <li><span>Montant du devis</span><strong>{{ Money::format($pay['total']) }}</strong></li>
-                <li><span>Déjà réglé</span><strong>{{ Money::format($pay['paid']) }}</strong></li>
+                @forelse ($pay['deposits'] as $deposit)
+                    <li><span>Acompte reçu <span class="muted small">· {{ $deposit->number }}</span></span><strong>− {{ Money::format($deposit->amount_paid) }}</strong></li>
+                @empty
+                    <li><span>Acompte reçu</span><strong>{{ Money::format(0) }}</strong></li>
+                @endforelse
+                @if ($pay['other_paid'] > 0)
+                    <li><span>Autres règlements reçus</span><strong>− {{ Money::format($pay['other_paid']) }}</strong></li>
+                @endif
                 <li class="remaining"><span>Reste à payer</span><strong class="{{ $pay['remaining'] > 0 ? '' : 'text-success' }}">{{ $pay['remaining'] > 0 ? Money::format($pay['remaining']) : 'Tout est réglé, merci !' }}</strong></li>
             </ul>
             @foreach ($pay['open'] as $invoice)

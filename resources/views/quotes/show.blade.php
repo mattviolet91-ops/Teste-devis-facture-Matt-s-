@@ -148,7 +148,14 @@
             </div>
             <ul class="stat-list">
                 <li><span>Montant du devis</span><strong>{{ Money::format($pay['total']) }}</strong></li>
-                <li><span>Déjà réglé par le client</span><strong>{{ Money::format($pay['paid']) }}</strong></li>
+                @forelse ($pay['deposits'] as $deposit)
+                    <li><span>Acompte reçu <span class="muted small">· {{ $deposit->number }}</span></span><strong>− {{ Money::format($deposit->amount_paid) }}</strong></li>
+                @empty
+                    <li><span>Acompte reçu</span><strong>{{ Money::format(0) }}</strong></li>
+                @endforelse
+                @if ($pay['other_paid'] > 0)
+                    <li><span>Autres règlements reçus</span><strong>− {{ Money::format($pay['other_paid']) }}</strong></li>
+                @endif
                 <li class="remaining"><span>Reste à payer</span><strong class="{{ $pay['remaining'] > 0 ? '' : 'text-success' }}">{{ $pay['remaining'] > 0 ? Money::format($pay['remaining']) : 'Soldé' }}</strong></li>
                 @if ($pay['remaining'] > 0 && $pay['invoiced'] < max($pay['total'], $pay['invoiced']))
                     <li><span class="muted small">dont pas encore facturé</span><span class="muted small">{{ Money::format(max($pay['total'], $pay['invoiced']) - $pay['invoiced']) }}</span></li>
