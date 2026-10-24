@@ -27,6 +27,26 @@
         <div class="card portal-status"><h2>Devis expiré</h2><p>La validité de ce devis est dépassée. Contactez-nous pour une mise à jour.</p></div>
     @endif
 
+    {{-- Devis accepté : ce qui a déjà été réglé et ce qu'il reste à payer. --}}
+    @if ($quote->status === 'accepted')
+        @php $pay = $quote->paymentSummary(); @endphp
+        <div class="card">
+            <h2>Règlement</h2>
+            <ul class="stat-list">
+                <li><span>Montant du devis</span><strong>{{ Money::format($pay['total']) }}</strong></li>
+                <li><span>Déjà réglé</span><strong>{{ Money::format($pay['paid']) }}</strong></li>
+                <li class="remaining"><span>Reste à payer</span><strong class="{{ $pay['remaining'] > 0 ? '' : 'text-success' }}">{{ $pay['remaining'] > 0 ? Money::format($pay['remaining']) : 'Tout est réglé, merci !' }}</strong></li>
+            </ul>
+            @foreach ($pay['open'] as $invoice)
+                <p class="small" style="margin:.5rem 0 0">{{ $invoice->kindLabel() }} {{ $invoice->number }} : reste {{ Money::format($invoice->balance()) }}
+                    — <a href="{{ route('portal.invoice', $invoice->public_token) }}">voir et régler la facture</a></p>
+            @endforeach
+            @if ($pay['remaining'] > 0 && $pay['open']->isEmpty())
+                <p class="small muted" style="margin:.5rem 0 0">Les prochaines factures vous seront envoyées au fil des travaux.</p>
+            @endif
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="alert alert-error" role="alert"><ul class="error-list">@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>
     @endif

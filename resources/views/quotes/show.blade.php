@@ -136,15 +136,25 @@
 
     @error('percent')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
 
-    @if ($quote->invoices->isNotEmpty() && auth()->user()->isAdmin())
+    @if (($quote->status === 'accepted' || $quote->invoices->isNotEmpty()) && auth()->user()->isAdmin())
         @php
-            $billed = $quote->invoices->whereIn('status', \App\Models\Invoice::ISSUED)->sum('total_ttc');
+            $pay = $quote->paymentSummary();
+            $billed = $pay['invoiced'];
         @endphp
         <div class="card">
             <div class="card-head">
-                <h2>Facturation</h2>
+                <h2>Facturation et règlements</h2>
                 <span class="muted small">Facturé {{ Money::format($billed) }} sur {{ Money::format($quote->total_ttc) }}</span>
             </div>
+            <ul class="stat-list">
+                <li><span>Montant du devis</span><strong>{{ Money::format($pay['total']) }}</strong></li>
+                <li><span>Déjà réglé par le client</span><strong>{{ Money::format($pay['paid']) }}</strong></li>
+                <li class="remaining"><span>Reste à payer</span><strong class="{{ $pay['remaining'] > 0 ? '' : 'text-success' }}">{{ $pay['remaining'] > 0 ? Money::format($pay['remaining']) : 'Soldé' }}</strong></li>
+                @if ($pay['remaining'] > 0 && $pay['invoiced'] < max($pay['total'], $pay['invoiced']))
+                    <li><span class="muted small">dont pas encore facturé</span><span class="muted small">{{ Money::format(max($pay['total'], $pay['invoiced']) - $pay['invoiced']) }}</span></li>
+                @endif
+            </ul>
+            @if ($quote->invoices->isNotEmpty())<h3 class="small muted" style="margin-top:1rem">Factures du devis</h3>@endif
             <ul class="stat-list">
                 @foreach ($quote->invoices as $invoice)
                     <li>

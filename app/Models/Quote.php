@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Quote extends Model
@@ -160,6 +161,30 @@ class Quote extends Model
      * Devis signé chez le client, sans urgence, dans le délai de 7 jours : le client
      * peut encore confirmer qu'il a demandé une intervention urgente.
      */
+    /**
+     * Devis accepté : ce que le client a déjà réglé et ce qu'il lui reste à payer, toutes
+     * factures du devis comprises (acompte, situations, solde). Les factures annulées ne
+     * comptent pas (leurs règlements passent sur la facture corrigée).
+     *
+     * @return array{total: int, invoiced: int, paid: int, remaining: int, open: Collection<int, Invoice>}
+     */
+    public function paymentSummary(): array
+    {
+        $invoices = ($this->relationLoaded('invoices') ? $this->invoices : $this->invoices()->get())
+            ->whereIn('status', Invoice::ISSUED)->values();
+        $invoiced = (int) $invoices->sum('total_ttc');
+        $paid = (int) $invoices->sum('amount_paid');
+
+        return [
+            'total' => (int) $this->total_ttc,
+            'invoiced' => $invoiced,
+            'paid' => $paid,
+            // Base : le devis, ou plus si des travaux en plus ont été facturés.
+            'remaining' => max(0, max((int) $this->total_ttc, $invoiced) - $paid),
+            'open' => $invoices->filter(fn (Invoice $invoice) => $invoice->acceptsPayments() && $invoice->balance() > 0)->values(),
+        ];
+    }
+
     public function canConfirmUrgent(): bool
     {
         return ($from = $this->paymentAllowedFrom()) !== null && $from->isFuture() && in_array($this->status, ['accepted'], true);
