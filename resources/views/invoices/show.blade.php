@@ -144,6 +144,7 @@
     @endunless
 
     @include('documents._photos', ['document' => $invoice, 'route' => 'invoices.photos'])
+    @include('documents._attachments', ['document' => $invoice])
 
     @if ($invoice->internal_notes)
         <div class="card">

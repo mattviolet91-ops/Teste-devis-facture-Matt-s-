@@ -374,6 +374,54 @@
     });
   });
 
+  // ---- Scanner un document : une photo par page, ajoutées une à une (l'appareil photo
+  // du téléphone n'en prend qu'une à la fois), puis envoyées ensemble pour faire un PDF. ----
+  document.querySelectorAll('[data-scan]').forEach(function (box) {
+    if (typeof DataTransfer === 'undefined') { return; }
+    var pagesInput = box.querySelector('[data-scan-pages]');
+    var camera = box.querySelector('[data-scan-camera]');
+    var thumbs = box.querySelector('[data-scan-thumbs]');
+    var pages = [];
+    try { new DataTransfer(); } catch (e) { return; }
+    pagesInput.hidden = true;
+    pagesInput.required = false;
+    box.querySelector('[data-scan-buttons]').hidden = false;
+    function sync() {
+      var transfer = new DataTransfer();
+      pages.forEach(function (file) { transfer.items.add(file); });
+      pagesInput.files = transfer.files;
+      thumbs.innerHTML = '';
+      pages.forEach(function (file, index) {
+        var figure = document.createElement('figure');
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(file); img.alt = 'Page ' + (index + 1);
+        var caption = document.createElement('figcaption'); caption.textContent = 'Page ' + (index + 1);
+        var remove = document.createElement('button');
+        remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Retirer la page ' + (index + 1));
+        remove.addEventListener('click', function () { pages.splice(index, 1); sync(); });
+        figure.appendChild(img); figure.appendChild(caption); figure.appendChild(remove);
+        thumbs.appendChild(figure);
+      });
+      box.querySelector('[data-scan-take]').lastChild.textContent = pages.length ? ' Page suivante' : ' Photographier une page';
+    }
+    function add(input) {
+      Array.prototype.forEach.call(input.files, function (file) { pages.push(file); });
+      input.value = '';
+      sync();
+    }
+    camera.addEventListener('change', function () { add(camera); });
+    var picker = document.createElement('input');
+    picker.type = 'file'; picker.accept = 'image/*'; picker.multiple = true; picker.hidden = true;
+    box.appendChild(picker);
+    picker.addEventListener('change', function () { add(picker); });
+    box.querySelector('[data-scan-take]').addEventListener('click', function () { camera.click(); });
+    box.querySelector('[data-scan-pick]').addEventListener('click', function () { picker.click(); });
+    // Rien de choisi : le formulaire le dit au lieu de partir vide.
+    pagesInput.closest('form').addEventListener('submit', function (event) {
+      if (!pages.length) { event.preventDefault(); event.stopImmediatePropagation(); alert('Photographiez au moins une page.'); }
+    }, true);
+  });
+
   // ---- GPS : Apple Plans, Waze ou Google Maps (choix retenu sur ce téléphone si demandé) ----
   var NAV_APPS = {
     apple: function (a) { return 'https://maps.apple.com/?daddr=' + encodeURIComponent(a) + '&dirflg=d'; },

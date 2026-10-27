@@ -205,6 +205,7 @@
     @endif
 
     @include('documents._photos', ['document' => $quote, 'route' => 'quotes.photos'])
+    @include('documents._attachments', ['document' => $quote])
 
     @if ($quote->internal_notes)
         <div class="card">

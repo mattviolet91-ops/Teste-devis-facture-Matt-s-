@@ -258,6 +258,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/factures/{invoice}/photos/ajout', [PhotoController::class, 'uploadToInvoice'])->whereNumber('invoice')->middleware('throttle:60,1')->name('invoices.photos.upload');
 
     Route::post('/clients/{client}/documents', [AttachmentController::class, 'store'])->whereNumber('client')->name('attachments.store');
+    Route::post('/devis/{quote}/documents', [AttachmentController::class, 'storeForQuote'])->whereNumber('quote')->middleware('throttle:30,1')->name('attachments.quote.store');
+    Route::post('/factures/{invoice}/documents', [AttachmentController::class, 'storeForInvoice'])->whereNumber('invoice')->middleware('throttle:30,1')->name('attachments.invoice.store');
     Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');
     Route::delete('/documents/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
 

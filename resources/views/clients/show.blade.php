@@ -205,14 +205,14 @@
             <p class="muted">Aucun document. Rangez ici les plans, courriers, attestations du client…</p>
         @else
             <ul class="stat-list">
-                @foreach ($client->attachments as $attachment)
+                @foreach ($client->attachments->reject(fn ($a) => $a->invoice_id && ! auth()->user()->isAdmin()) as $attachment)
                     <li>
                         @if ($attachment->mime === 'application/pdf')
                             <a href="{{ \App\Http\Controllers\PdfViewerController::link(route('attachments.show', $attachment), $attachment->name) }}">{{ $attachment->name }}</a>
                         @else
                             <a href="{{ route('attachments.show', $attachment) }}" target="_blank" rel="noopener">{{ $attachment->name }}</a>
                         @endif
-                        <span class="muted small">{{ $attachment->humanSize() }} · {{ $attachment->created_at->format('d/m/Y') }}
+                        <span class="muted small">@if ($attachment->quote)<a href="{{ route('quotes.show', $attachment->quote) }}">devis {{ $attachment->quote->number ?? '(brouillon)' }}</a> · @elseif ($attachment->invoice)<a href="{{ route('invoices.show', $attachment->invoice) }}">facture {{ $attachment->invoice->number ?? '(brouillon)' }}</a> · @endif{{ $attachment->humanSize() }} · {{ $attachment->created_at->format('d/m/Y') }}
                             <form method="POST" action="{{ route('attachments.destroy', $attachment) }}" data-confirm="Supprimer « {{ $attachment->name }} » ?" style="display:inline">
                                 @csrf
                                 @method('DELETE')

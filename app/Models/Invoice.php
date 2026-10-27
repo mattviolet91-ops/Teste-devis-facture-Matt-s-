@@ -95,6 +95,12 @@ class Invoice extends Model
         return $this->belongsTo(Quote::class)->withTrashed();
     }
 
+    /** Documents scannés ou ajoutés sur ce document. */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class)->latest('id');
+    }
+
     public function lines(): MorphMany
     {
         return $this->morphMany(DocumentLine::class, 'document')->orderBy('position');

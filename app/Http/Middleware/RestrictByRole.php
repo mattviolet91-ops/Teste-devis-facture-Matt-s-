@@ -26,7 +26,7 @@ class RestrictByRole
     ];
 
     /** Exceptions à l'intérieur des pages ouvertes. */
-    public const COMMERCIAL_DENIED = ['quotes.invoice', 'emails.index', 'emails.show', 'clients.import', 'clients.import.preview', 'clients.import.store'];
+    public const COMMERCIAL_DENIED = ['quotes.invoice', 'attachments.invoice.store', 'emails.index', 'emails.show', 'clients.import', 'clients.import.preview', 'clients.import.store'];
 
     public function handle(Request $request, Closure $next): Response
     {

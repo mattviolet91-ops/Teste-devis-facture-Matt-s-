@@ -180,6 +180,7 @@ final class Guide
                     'Vérifiez avec « PDF », puis « Envoyer par email » ou « Marquer comme envoyée » si vous la remettez en main propre.',
                     'Le client reçoit un lien pour voir et télécharger sa facture, et la payer par carte si le paiement en ligne est activé.',
                     '« Encaisser » enregistre un règlement (virement, chèque, espèces, carte, myPOS) ; la facture passe en « Payée » une fois soldée.',
+                    'Documents : sur chaque devis et facture, « Scanner un document » (une photo par page, réunies en un PDF) ou « Ajouter un fichier ». Ils sont aussi rangés sur la fiche du client.',
                     'Sur un devis accepté, « Facturation et règlements » montre ce que le client a déjà réglé et ce qu\'il lui reste à payer, toutes factures du devis comprises. Le client le voit aussi sur la page de son devis, avec le lien pour régler.',
                     'Particulier : vous pouvez facturer dès la signature. Devis signé chez le client (« Faire signer sur place ») : la loi interdit d\'être payé avant 7 jours, la facture est donc payable à partir du 8e jour (échéance et paiement par carte réglés tout seuls). Pas d\'attente pour un devis signé en ligne, ni pour une réparation urgente demandée par le client : case à cocher sur le devis avant la signature, ou après la signature « Intervention urgente ? » sur le devis — le client confirme en signant sur votre téléphone ou depuis un lien.',
                 ],

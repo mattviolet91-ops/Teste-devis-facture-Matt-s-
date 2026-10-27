@@ -763,6 +763,11 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .sheet-footer .sheet-footer-wide { grid-column: 1 / -1; }
 .text-danger { color: var(--danger); }
 .text-success { color: var(--success); }
+.scan-thumbs { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0; }
+.scan-thumbs figure { margin: 0; position: relative; width: 72px; }
+.scan-thumbs img { width: 72px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }
+.scan-thumbs figcaption { font-size: .75rem; text-align: center; color: var(--muted); }
+.scan-thumbs button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; line-height: 22px; padding: 0; }
 /* Pages d'erreur (404, 419…) */
 .error-page { min-height: 100vh; display: grid; place-items: center; padding: 1rem; background: var(--bg); }
 .error-card { max-width: 32rem; width: 100%; }

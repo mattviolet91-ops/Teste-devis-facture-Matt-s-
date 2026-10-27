@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Document rangé sur une fiche client. */
+/** Document rangé sur une fiche client, et éventuellement sur un de ses devis ou une de ses factures. */
 class Attachment extends Model
 {
     protected $fillable = ['name'];
@@ -18,6 +18,16 @@ class Attachment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class)->withTrashed();
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class)->withTrashed();
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class)->withTrashed();
     }
 
     public function humanSize(): string
