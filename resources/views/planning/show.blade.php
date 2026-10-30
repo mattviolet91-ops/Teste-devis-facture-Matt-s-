@@ -24,7 +24,9 @@
             @if ($client?->phone)<li><span>Téléphone</span><a href="tel:{{ $phone }}">{{ $client->phone }}</a></li>@endif
             <li><span>Rappel</span><strong>{{ \App\Models\Intervention::REMINDERS[$intervention->remind_days ?? 0] ?? '—' }}{{ $intervention->remind_client && $client?->email ? ' · email au client' : '' }}{{ $intervention->reminder_sent_at ? ' (envoyé le '.$intervention->reminder_sent_at->format('d/m').')' : '' }}</strong></li>
             @if ($intervention->creator && $intervention->created_by !== auth()->id())<li><span>Ajouté par</span><strong>{{ $intervention->creator->name }}</strong></li>@endif
+            @if ($intervention->project && auth()->user()->isAdmin())<li><span>Chantier</span><a href="{{ route('expenses.project', $intervention->project) }}">{{ $intervention->project->title }}</a></li>@elseif ($intervention->project)<li><span>Chantier</span><span>{{ $intervention->project->title }}</span></li>@endif
             @if ($intervention->quote)<li><span>Devis</span><a href="{{ route('quotes.show', $intervention->quote) }}">{{ $intervention->quote->number }}</a></li>@endif
+            @if ($intervention->invoice && auth()->user()->isAdmin())<li><span>Facture</span><a href="{{ route('invoices.show', $intervention->invoice) }}">{{ $intervention->invoice->number }}</a></li>@endif
         </ul>
         @if ($intervention->notes)<p class="pre-line">{{ $intervention->notes }}</p>@endif
         <div class="action-bar">
@@ -33,7 +35,7 @@
                 <form method="POST" action="{{ route('planning.update', $intervention) }}">
                     @csrf
                     @method('PUT')
-                    @foreach (['kind', 'client_id', 'worksite_id', 'quote_id', 'location', 'title', 'start_time', 'end_time', 'notes'] as $f)<input type="hidden" name="{{ $f }}" value="{{ $intervention->$f }}">@endforeach
+                    @foreach (['kind', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'start_time', 'end_time', 'notes'] as $f)<input type="hidden" name="{{ $f }}" value="{{ $intervention->$f }}">@endforeach
                     <input type="hidden" name="starts_on" value="{{ $intervention->starts_on->toDateString() }}">
                     <input type="hidden" name="ends_on" value="{{ $intervention->ends_on->toDateString() }}">
                     <input type="hidden" name="status" value="done">

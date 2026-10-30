@@ -7,7 +7,9 @@
 
   var client = form.querySelector('[data-planning-client]');
   var site = form.querySelector('[data-planning-worksite]');
+  var project = form.querySelector('[data-planning-project]');
   var quote = form.querySelector('[data-planning-quote]');
+  var invoice = form.querySelector('[data-planning-invoice]');
   var title = form.querySelector('#title');
   var data = JSON.parse((document.getElementById('planning-worksites') || {}).textContent || '{}');
 
@@ -29,34 +31,66 @@
     if (k === 'rdv') { title.setAttribute('list', 'appointment-titles'); } else { title.removeAttribute('list'); }
   }
 
-  function fill() {
-    var keep = site.getAttribute('data-selected');
-    site.length = 1;
-    (data[client.value] || []).forEach(function (w, i) {
-      var o = new Option(w.label, w.id);
-      if (String(w.id) === keep || (!keep && i === 0)) { o.selected = true; }
-      site.add(o);
-    });
-    Array.prototype.forEach.call(quote.options, function (o) {
-      o.hidden = Boolean(o.value && client.value && o.getAttribute('data-client') !== client.value);
+  // Les options sont reconstruites (et non masquées : l'iPhone affiche quand même les options masquées).
+  function rebuild(select, items, keep, firstIfNone) {
+    if (!select) { return; }
+    select.length = 1;
+    items.forEach(function (item, i) {
+      var o = new Option(item.label, item.id);
+      if (String(item.id) === String(keep || '') || (!keep && firstIfNone && i === 0)) { o.selected = true; }
+      select.add(o);
     });
   }
+  function links() { return data[client.value] || { worksites: [], projects: [], quotes: [], invoices: [] }; }
+  // Un chantier choisi : seulement ses devis et factures.
+  function inProject(items) {
+    return project && project.value ? items.filter(function (i) { return String(i.project) === String(project.value); }) : items;
+  }
+  function fillDocuments() {
+    var l = links();
+    rebuild(quote, inProject(l.quotes), quote.value || quote.getAttribute('data-selected'));
+    if (invoice) { rebuild(invoice, inProject(l.invoices), invoice.value || invoice.getAttribute('data-selected')); }
+    quote.setAttribute('data-selected', '');
+    if (invoice) { invoice.setAttribute('data-selected', ''); }
+  }
+  function fill() {
+    var l = links();
+    rebuild(site, l.worksites, site.getAttribute('data-selected'), true);
+    rebuild(project, l.projects, project ? project.getAttribute('data-selected') : null);
+    if (project) { project.setAttribute('data-selected', ''); }
+    fillDocuments();
+  }
+  function find(items, id) { return items.filter(function (i) { return String(i.id) === String(id); })[0]; }
 
   client.addEventListener('change', function () {
     site.setAttribute('data-selected', '');
-    if (quote.selectedOptions[0] && quote.selectedOptions[0].hidden) { quote.value = ''; }
+    quote.value = ''; if (invoice) { invoice.value = ''; } if (project) { project.value = ''; }
     fill();
   });
-  quote.addEventListener('change', function () {
-    var o = quote.selectedOptions[0];
-    if (!o || !o.value) { return; }
-    if (client.value !== o.getAttribute('data-client')) {
-      client.value = o.getAttribute('data-client');
-      site.setAttribute('data-selected', '');
-      fill();
+  if (project) {
+    project.addEventListener('change', function () {
+      var l = links();
+      // Devis ou facture d'un autre chantier : retirés.
+      if (quote.value && project.value && String((find(l.quotes, quote.value) || {}).project) !== project.value) { quote.value = ''; }
+      if (invoice && invoice.value && project.value && String((find(l.invoices, invoice.value) || {}).project) !== project.value) { invoice.value = ''; }
+      fillDocuments();
+    });
+  }
+  // Devis ou facture choisi : son chantier est choisi aussi.
+  function pickProject(item) {
+    if (project && item && item.project && project.value !== String(item.project)) {
+      project.value = String(item.project);
+      fillDocuments();
     }
-    if (!title.value && kind() === 'chantier' && o.getAttribute('data-title')) { title.value = o.getAttribute('data-title'); }
+  }
+  quote.addEventListener('change', function () {
+    var q = find(links().quotes, quote.value);
+    if (!q) { return; }
+    pickProject(q);
+    if (q.worksite) { site.value = String(q.worksite); }
+    if (!title.value && kind() === 'chantier' && q.title) { title.value = q.title; }
   });
+  if (invoice) { invoice.addEventListener('change', function () { pickProject(find(links().invoices, invoice.value)); }); }
   form.querySelectorAll('[data-planning-kind]').forEach(function (r) { r.addEventListener('change', applyKind); });
 
   // Recherche d'un client : chaque mot doit se retrouver dans le nom, le téléphone, l'email ou la ville.

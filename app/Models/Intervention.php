@@ -34,7 +34,7 @@ class Intervention extends Model
         'cancelled' => 'Annulée',
     ];
 
-    protected $fillable = ['kind', 'client_id', 'worksite_id', 'quote_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes', 'remind_days', 'remind_client'];
+    protected $fillable = ['kind', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes', 'remind_days', 'remind_client'];
 
     /** Rappel avant l'intervention ou le rendez-vous. */
     public const REMINDERS = [
@@ -61,6 +61,17 @@ class Intervention extends Model
     public function worksite(): BelongsTo
     {
         return $this->belongsTo(Worksite::class)->withTrashed();
+    }
+
+    /** Chantier : regroupe un ou plusieurs devis et factures. */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class)->withTrashed();
     }
 
     public function quote(): BelongsTo

@@ -42,21 +42,30 @@
                     @error('client_id')<span class="error">{{ $message }}</span>@enderror
                     <span class="hint">Nouveau prospect ? <a href="{{ route('clients.create') }}">Créez d'abord sa fiche</a>.</span>
                 </div>
+                {{-- Listes remplies selon le client choisi (planning.js) : seulement ses adresses, chantiers, devis et factures. --}}
                 <div class="field @error('worksite_id') has-error @enderror">
-                    <label for="worksite_id">Chantier</label>
+                    <label for="worksite_id">Adresse du chantier</label>
                     <select id="worksite_id" name="worksite_id" data-planning-worksite data-selected="{{ old('worksite_id', $intervention->worksite_id) }}"><option value="">Adresse du client</option></select>
                     @error('worksite_id')<span class="error">{{ $message }}</span>@enderror
                 </div>
+                <div class="field @error('project_id') has-error @enderror">
+                    <label for="project_id">Chantier</label>
+                    <select id="project_id" name="project_id" data-planning-project data-selected="{{ old('project_id', $intervention->project_id) }}"><option value="">—</option></select>
+                    <span class="hint">Regroupe les devis et factures d'un même chantier.</span>
+                    @error('project_id')<span class="error">{{ $message }}</span>@enderror
+                </div>
                 <div class="field @error('quote_id') has-error @enderror">
                     <label for="quote_id">Devis</label>
-                    <select id="quote_id" name="quote_id" data-planning-quote>
-                        <option value="">—</option>
-                        @foreach ($quotes as $quote)
-                            <option value="{{ $quote->id }}" data-client="{{ $quote->client_id }}" data-title="{{ $quote->title }}" @selected((string) old('quote_id', $intervention->quote_id) === (string) $quote->id)>{{ $quote->number }} · {{ $quote->client?->displayName() }}</option>
-                        @endforeach
-                    </select>
+                    <select id="quote_id" name="quote_id" data-planning-quote data-selected="{{ old('quote_id', $intervention->quote_id) }}"><option value="">—</option></select>
                     @error('quote_id')<span class="error">{{ $message }}</span>@enderror
                 </div>
+                @if ($canSeeInvoices)
+                    <div class="field @error('invoice_id') has-error @enderror">
+                        <label for="invoice_id">Facture</label>
+                        <select id="invoice_id" name="invoice_id" data-planning-invoice data-selected="{{ old('invoice_id', $intervention->invoice_id) }}"><option value="">—</option></select>
+                        @error('invoice_id')<span class="error">{{ $message }}</span>@enderror
+                    </div>
+                @endif
                 <x-field name="location" label="Lieu (si autre que le chantier)" :value="$intervention->location" class="span-2" placeholder="ex. Point P Massy, ou adresse d'un prospect" />
 
                 <div class="field span-2 @error('title') has-error @enderror">
@@ -94,6 +103,6 @@
         </div>
     </form>
 
-    <script type="application/json" id="planning-worksites">@json($worksites)</script>
+    <script type="application/json" id="planning-worksites">@json($links)</script>
     <script src="{{ asset('js/planning.js') }}?v={{ filemtime(public_path('js/planning.js')) }}" defer></script>
 @endsection

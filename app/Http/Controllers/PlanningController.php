@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Intervention;
+use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\Quote;
 use App\Services\ActivityLogger;
+use App\Services\JobCostService;
 use App\Services\PlanningMessages;
 use App\Services\Settings;
 use App\Services\WeatherService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -72,7 +76,7 @@ class PlanningController extends Controller
         ]);
 
         if ($quote = Quote::query()->find($request->integer('devis'))) {
-            $intervention->fill(['client_id' => $quote->client_id, 'worksite_id' => $quote->worksite_id, 'quote_id' => $quote->id]);
+            $intervention->fill(['client_id' => $quote->client_id, 'worksite_id' => $quote->worksite_id, 'quote_id' => $quote->id, 'project_id' => $quote->project_id]);
             if (! $appointment) {
                 $intervention->title = $quote->title ?: 'Travaux devis '.$quote->number;
             }
@@ -105,7 +109,7 @@ class PlanningController extends Controller
     public function show(Intervention $intervention): View
     {
         abort_if($intervention->client_id && ! $intervention->client, 404);
-        $intervention->load(['client', 'worksite', 'quote']);
+        $intervention->load(['client', 'worksite', 'quote', 'project', 'invoice']);
 
         return view('planning.show', [
             'intervention' => $intervention,
@@ -210,12 +214,29 @@ class PlanningController extends Controller
     private function formData(Intervention $intervention): array
     {
         $clients = Client::query()->alphabetical()->with('worksites')->get();
+        app(JobCostService::class)->ensureProjects();
+        $admin = (bool) auth()->user()?->isAdmin();
+
+        // Par client : adresses, chantiers, devis et factures (le formulaire ne montre que ceux du client choisi).
+        $projects = Project::query()->where(fn ($q) => $q->has('quotes')->orHas('invoices'))->latest('id')->get()->groupBy('client_id');
+        $quotes = Quote::query()->whereNotNull('number')->whereNotIn('status', ['replaced'])->latest('id')->get()->groupBy('client_id');
+        $invoices = $admin ? Invoice::query()->invoices()->whereNotNull('number')->where('status', '!=', 'cancelled')->latest('id')->get()->groupBy('client_id') : collect();
 
         return [
             'intervention' => $intervention,
             'clients' => $clients,
-            'worksites' => $clients->mapWithKeys(fn (Client $c) => [$c->id => $c->worksites->map(fn ($w) => ['id' => $w->id, 'label' => $w->fullAddress()])->values()]),
-            'quotes' => Quote::query()->whereIn('status', ['accepted', 'sent'])->whereNotNull('number')->with('client')->latest('id')->limit(100)->get(),
+            'canSeeInvoices' => $admin,
+            'links' => $clients->mapWithKeys(fn (Client $c) => [$c->id => [
+                'worksites' => $c->worksites->map(fn ($w) => ['id' => $w->id, 'label' => $w->fullAddress()])->values(),
+                'projects' => ($projects[$c->id] ?? collect())->map(fn (Project $p) => ['id' => $p->id, 'label' => $p->title])->values(),
+                'quotes' => ($quotes[$c->id] ?? collect())->map(fn (Quote $q) => [
+                    'id' => $q->id, 'project' => $q->project_id, 'worksite' => $q->worksite_id, 'title' => $q->title,
+                    'label' => $q->number.($q->title ? ' · '.Str::limit($q->title, 40) : '').' · '.mb_strtolower($q->statusLabel()),
+                ])->values(),
+                'invoices' => ($invoices[$c->id] ?? collect())->map(fn (Invoice $i) => [
+                    'id' => $i->id, 'project' => $i->project_id, 'label' => $i->number.' · '.$i->kindLabel().($i->title ? ' · '.Str::limit($i->title, 30) : ''),
+                ])->values(),
+            ]]),
         ];
     }
 
@@ -237,6 +258,8 @@ class PlanningController extends Controller
             'location' => ['nullable', 'string', 'max:200'],
             'worksite_id' => ['nullable', 'integer', Rule::exists('worksites', 'id')->where('client_id', $request->integer('client_id'))],
             'quote_id' => ['nullable', 'integer', Rule::exists('quotes', 'id')->where('client_id', $request->integer('client_id'))],
+            'project_id' => ['nullable', 'integer', Rule::exists('projects', 'id')->where('client_id', $request->integer('client_id'))],
+            'invoice_id' => ['nullable', 'integer', Rule::exists('invoices', 'id')->where('client_id', $request->integer('client_id'))],
             'title' => ['required', 'string', 'max:200'],
             'starts_on' => ['required', 'date'],
             'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
@@ -248,11 +271,21 @@ class PlanningController extends Controller
         ], [
             'ends_on.after_or_equal' => 'La date de fin doit être après la date de début.',
             'quote_id.exists' => 'Ce devis n\'appartient pas à ce client.',
+            'project_id.exists' => 'Ce chantier n\'appartient pas à ce client.',
+            'invoice_id.exists' => 'Cette facture n\'appartient pas à ce client.',
             'worksite_id.exists' => 'Ce chantier n\'appartient pas à ce client.',
             'start_time.required' => 'Indiquez l\'heure du rendez-vous.',
         ], ['client_id' => 'client', 'title' => 'objet', 'starts_on' => 'date', 'start_time' => 'heure', 'end_time' => 'heure de fin']);
 
         $data['kind'] ??= 'chantier';
+        // Facture : réservée au gérant. Devis ou facture choisi sans chantier : celui du document.
+        if (! $request->user()?->isAdmin()) {
+            unset($data['invoice_id']);
+        }
+        if (empty($data['project_id'])) {
+            $data['project_id'] = (! empty($data['quote_id']) ? Quote::query()->whereKey($data['quote_id'])->value('project_id') : null)
+                ?? (! empty($data['invoice_id']) ? Invoice::query()->whereKey($data['invoice_id'])->value('project_id') : null);
+        }
         if ($data['kind'] === 'rdv') {
             // Un rendez-vous tient sur une journée ; heure de fin par défaut : 1 heure après.
             $data['ends_on'] = $data['starts_on'];
