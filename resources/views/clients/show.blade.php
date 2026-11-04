@@ -197,39 +197,7 @@
         </details>
     </div>
 
-    <div class="card">
-        <div class="card-head"><h2>Documents</h2></div>
-        @error('files')<div class="alert alert-error">{{ $message }}</div>@enderror
-        @error('files.*')<div class="alert alert-error">{{ $message }}</div>@enderror
-        @if ($client->attachments->isEmpty())
-            <p class="muted">Aucun document. Rangez ici les plans, courriers, attestations du client…</p>
-        @else
-            <ul class="stat-list">
-                @foreach ($client->attachments->reject(fn ($a) => $a->invoice_id && ! auth()->user()->isAdmin()) as $attachment)
-                    <li>
-                        @if ($attachment->mime === 'application/pdf')
-                            <a href="{{ \App\Http\Controllers\PdfViewerController::link(route('attachments.show', $attachment), $attachment->name) }}">{{ $attachment->name }}</a>
-                        @else
-                            <a href="{{ route('attachments.show', $attachment) }}" target="_blank" rel="noopener">{{ $attachment->name }}</a>
-                        @endif
-                        <span class="muted small">@if ($attachment->quote)<a href="{{ route('quotes.show', $attachment->quote) }}">devis {{ $attachment->quote->number ?? '(brouillon)' }}</a> · @elseif ($attachment->invoice)<a href="{{ route('invoices.show', $attachment->invoice) }}">facture {{ $attachment->invoice->number ?? '(brouillon)' }}</a> · @endif{{ $attachment->humanSize() }} · {{ $attachment->created_at->format('d/m/Y') }}
-                            <form method="POST" action="{{ route('attachments.destroy', $attachment) }}" data-confirm="Supprimer « {{ $attachment->name }} » ?" style="display:inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="link-danger" type="submit">Supprimer</button>
-                            </form>
-                        </span>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-        <form method="POST" action="{{ route('attachments.store', $client) }}" enctype="multipart/form-data" class="inline-upload">
-            @csrf
-            <label class="btn btn-secondary btn-sm" for="client-files"><x-icon name="plus" /> Ajouter un document</label>
-            <input id="client-files" class="visually-hidden" type="file" name="files[]" multiple data-autosubmit
-                accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt">
-        </form>
-    </div>
+    @include('documents._attachments', ['document' => $client])
 
     <div class="card">
         <div class="card-head"><h2>Historique</h2></div>

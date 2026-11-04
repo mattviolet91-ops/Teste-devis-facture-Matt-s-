@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentSignatureController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\GuideController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\PortalDocumentController;
 use App\Http\Controllers\PortalPagesController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuickQuoteController;
@@ -58,7 +60,12 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::post('/d/{token}/modification', [ClientPortalController::class, 'requestChange'])->middleware('throttle:10,1')->name('portal.quote.change');
     Route::get('/d/{token}/urgence', [ClientPortalController::class, 'urgent'])->name('portal.quote.urgent');
     Route::post('/d/{token}/urgence', [ClientPortalController::class, 'confirmUrgent'])->middleware('throttle:10,1')->name('portal.quote.urgent.confirm');
+    Route::get('/d/{token}/photos/{photo}/{variant}', [PortalDocumentController::class, 'quotePhoto'])->whereNumber('photo')->whereIn('variant', ['mini', 'photo'])->name('portal.quote.photo');
     Route::get('/f/{token}', [ClientPortalController::class, 'invoice'])->name('portal.invoice');
+    Route::get('/f/{token}/photos/{photo}/{variant}', [PortalDocumentController::class, 'invoicePhoto'])->whereNumber('photo')->whereIn('variant', ['mini', 'photo'])->name('portal.invoice.photo');
+    Route::get('/doc/{token}', [PortalDocumentController::class, 'show'])->name('portal.document');
+    Route::get('/doc/{token}/fichier', [PortalDocumentController::class, 'file'])->name('portal.document.file');
+    Route::post('/doc/{token}/signer', [PortalDocumentController::class, 'sign'])->middleware('throttle:10,1')->name('portal.document.sign');
     Route::get('/r/{token}', [ClientPortalController::class, 'report'])->name('portal.report');
     Route::get('/f/{token}/pdf', [ClientPortalController::class, 'invoicePdf'])->name('portal.invoice.pdf');
     Route::get('/f/{token}/payer', [ClientPortalController::class, 'pay'])->middleware('throttle:10,1')->name('portal.invoice.pay');
@@ -262,6 +269,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/factures/{invoice}/documents', [AttachmentController::class, 'storeForInvoice'])->whereNumber('invoice')->middleware('throttle:30,1')->name('attachments.invoice.store');
     Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');
     Route::delete('/documents/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
+    Route::prefix('documents/{attachment}')->whereNumber('attachment')->name('attachments.sign.')->group(function () {
+        Route::post('/signature', [DocumentSignatureController::class, 'request'])->name('request');
+        Route::delete('/signature', [DocumentSignatureController::class, 'cancel'])->name('cancel');
+        Route::get('/signature/trace', [DocumentSignatureController::class, 'signature'])->name('image');
+        Route::get('/signer-sur-place', [DocumentSignatureController::class, 'onSite'])->name('on-site');
+        Route::post('/signer-sur-place', [DocumentSignatureController::class, 'signOnSite'])->middleware('throttle:10,1')->name('on-site.store');
+    });
 
     Route::post('/notifications/abonnement', [PushController::class, 'subscribe'])->middleware('throttle:20,1')->name('push.subscribe');
     Route::post('/notifications/desabonnement', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');

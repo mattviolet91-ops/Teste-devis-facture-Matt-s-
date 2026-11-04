@@ -894,3 +894,17 @@ details > summary.btn::-webkit-details-marker { display: none; }
 .card-brand { display: inline-block; padding: .15rem .55rem; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; font-size: .8rem; letter-spacing: .02em; background: var(--surface); }
 .legal-text h2 { font-size: 1.05rem; margin: 1.25rem 0 .35rem; }
 .legal-text p { margin: 0 0 .5rem; line-height: 1.55; }
+
+/* Documents à signer */
+.attachment-list { list-style: none; padding: 0; margin: 0; }
+.attachment-list > li { padding: .625rem 0; border-bottom: 1px solid var(--border); }
+.attachment-list > li:last-child { border-bottom: 0; }
+.attachment-list > li > div:first-child { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: center; overflow-wrap: anywhere; }
+.attachment-sign { margin-top: .5rem; }
+.attachment-sign textarea { width: 100%; }
+.portal-photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+@media (min-width: 640px) { .portal-photos { grid-template-columns: repeat(3, 1fr); } }
+.portal-photos figure { margin: 0; }
+.portal-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; background: #DDE3E6; }
+.portal-photos figcaption { font-size: .8125rem; color: var(--text-muted); margin-top: .25rem; }
+.doc-preview-image { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--border); border-radius: 6px; }

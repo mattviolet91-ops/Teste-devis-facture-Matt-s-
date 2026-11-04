@@ -75,6 +75,8 @@
         </div>
     </article>
 
+    @include('portal._photos-documents', ['document' => $quote])
+
     @if ($quote->canBeSignedOnline() && ! $quote->isSigned())
         <form method="POST" action="{{ route('portal.quote.sign', $quote->public_token) }}" class="card" id="accepter" data-signature-form>
             @csrf

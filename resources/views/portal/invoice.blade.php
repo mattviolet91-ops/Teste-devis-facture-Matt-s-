@@ -51,4 +51,6 @@
             @include('documents._mentions', ['document' => $invoice])
         </div>
     </article>
+
+    @include('portal._photos-documents', ['document' => $invoice])
 @endsection

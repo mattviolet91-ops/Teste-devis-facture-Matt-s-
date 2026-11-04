@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Services\ActivityLogger;
+use App\Services\DocumentSignatureService;
 use App\Services\ScanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,33 +18,10 @@ use Symfony\Component\HttpFoundation\Response;
 /** Documents rangés sur une fiche client (PDF, images, tableurs…). */
 class AttachmentController extends Controller
 {
-    public function store(Request $request, Client $client): RedirectResponse
+    /** Documents rangés seulement sur la fiche client : scan (photos → un PDF) ou fichiers. */
+    public function store(Request $request, Client $client, ScanService $scans): RedirectResponse
     {
-        $request->validate([
-            'files' => ['required', 'array', 'max:10'],
-            'files.*' => ['file', 'max:15360', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,odt,ods,txt'],
-        ], [
-            'files.*.mimes' => 'Format non accepté (PDF, images, Word, Excel ou texte).',
-            'files.*.max' => 'Fichier trop lourd (15 Mo maximum).',
-        ]);
-
-        foreach ($request->file('files') as $file) {
-            $name = Str::limit($file->getClientOriginalName(), 150, '');
-            $path = $file->store('documents/clients/'.$client->id, 'local');
-
-            $attachment = new Attachment(['name' => $name]);
-            $attachment->client()->associate($client);
-            $attachment->forceFill([
-                'path' => $path,
-                'mime' => $file->getMimeType() ?: 'application/octet-stream',
-                'size' => $file->getSize(),
-                'created_by' => auth()->id(),
-            ])->save();
-        }
-
-        ActivityLogger::log('attachment.added', count($request->file('files')).' document(s) ajouté(s)', $client);
-
-        return back()->with('status', 'Document(s) ajouté(s).');
+        return $this->storeOn($request, $scans, $client);
     }
 
     /** Documents d'un devis : scan (photos → un PDF) ou fichiers. */
@@ -61,9 +39,17 @@ class AttachmentController extends Controller
     private function storeOn(Request $request, ScanService $scans, ?Client $client, ?Quote $quote = null, ?Invoice $invoice = null): RedirectResponse
     {
         abort_unless($client, 404);
-        $document = $quote ?? $invoice;
-        $label = $quote ? 'devis '.($quote->number ?? '(brouillon)') : mb_strtolower($invoice->kindLabel()).' '.($invoice->number ?? '(brouillon)');
-        $back = ($quote ? route('quotes.show', $quote) : route('invoices.show', $invoice)).'#documents';
+        $document = $quote ?? $invoice ?? $client;
+        $label = match (true) {
+            $quote !== null => 'devis '.($quote->number ?? '(brouillon)'),
+            $invoice !== null => mb_strtolower($invoice->kindLabel()).' '.($invoice->number ?? '(brouillon)'),
+            default => 'dossier du client',
+        };
+        $back = match (true) {
+            $quote !== null => route('quotes.show', $quote),
+            $invoice !== null => route('invoices.show', $invoice),
+            default => route('clients.show', $client),
+        }.'#documents';
 
         if ($request->input('mode') === 'scan') {
             $data = $request->validate([
@@ -119,24 +105,31 @@ class AttachmentController extends Controller
         ])->save();
     }
 
+    /** Le document : sa version signée dès qu'elle existe (« ?original=1 » : le fichier d'origine). */
     public function show(Request $request, Attachment $attachment): Response
     {
-        abort_unless(Storage::disk('local')->exists($attachment->path), 404);
         // Documents d'une facture : réservés au gérant, comme les factures.
         abort_if($attachment->invoice_id && ! $request->user()?->isAdmin(), 403);
+        $original = $request->boolean('original') || ! $attachment->signed_path;
+        [$path, $name, $mime] = $original
+            ? [$attachment->path, $attachment->name, $attachment->mime]
+            : [$attachment->currentPath(), $attachment->currentName(), $attachment->currentMime()];
+        abort_unless(Storage::disk('local')->exists($path), 404);
         $disposition = $request->boolean('telecharger') ? 'attachment' : 'inline';
 
-        return Storage::disk('local')->response($attachment->path, $attachment->name, [
-            'Content-Type' => $attachment->mime,
+        return Storage::disk('local')->response($path, $name, [
+            'Content-Type' => $mime,
             'X-Content-Type-Options' => 'nosniff',
             // Un document envoyé par un tiers ne doit jamais s'exécuter dans l'application.
             'Content-Security-Policy' => "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
         ], $disposition);
     }
 
-    public function destroy(Attachment $attachment): RedirectResponse
+    public function destroy(Request $request, Attachment $attachment, DocumentSignatureService $signatures): RedirectResponse
     {
+        abort_if($attachment->invoice_id && ! $request->user()?->isAdmin(), 403);
         Storage::disk('local')->delete($attachment->path);
+        $signatures->deleteFiles($attachment);
         $attachment->delete();
         ActivityLogger::log('attachment.deleted', "Document supprimé : {$attachment->name}", $attachment->client);
 

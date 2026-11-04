@@ -31,7 +31,7 @@ class ScanService
         $files = [];
         try {
             foreach ($images as $index => $image) {
-                $files[] = $jpeg = $this->normalize($image);
+                $files[] = $jpeg = $this->jpegFrom($image->getRealPath());
                 if ($index > 0) {
                     $pdf->AddPage();
                 }
@@ -47,15 +47,18 @@ class ScanService
         }
     }
 
-    /** Photo redressée (orientation du téléphone), réduite et ré-enregistrée en JPEG. */
-    private function normalize(UploadedFile $image): string
+    /**
+     * Photo redressée (orientation du téléphone), réduite et ré-enregistrée en JPEG.
+     * Renvoie un fichier temporaire, à supprimer par l'appelant.
+     */
+    public function jpegFrom(string $file): string
     {
-        $source = @imagecreatefromstring((string) file_get_contents($image->getRealPath()));
+        $source = @imagecreatefromstring((string) file_get_contents($file));
         if ($source === false) {
             throw new InvalidArgumentException('Photo illisible.');
         }
 
-        $orientation = function_exists('exif_read_data') ? (int) (@exif_read_data($image->getRealPath())['Orientation'] ?? 1) : 1;
+        $orientation = function_exists('exif_read_data') ? (int) (@exif_read_data($file)['Orientation'] ?? 1) : 1;
         $source = match ($orientation) {
             3 => imagerotate($source, 180, 0),
             6 => imagerotate($source, -90, 0),

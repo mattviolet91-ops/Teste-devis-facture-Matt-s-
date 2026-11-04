@@ -156,7 +156,7 @@ class ClientLinkService
     }
 
     /** Vérifie et décode l'image de signature envoyée par le navigateur. */
-    private function decodeSignature(string $dataUrl): string
+    public function decodeSignature(string $dataUrl): string
     {
         if (! preg_match('#^data:image/png;base64,([A-Za-z0-9+/=]+)$#', $dataUrl, $m)) {
             throw new InvalidArgumentException('Signature invalide.');
