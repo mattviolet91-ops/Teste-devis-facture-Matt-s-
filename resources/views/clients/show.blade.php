@@ -30,6 +30,9 @@
         @endif
         <a class="quick-action" href="{{ route('quotes.create', ['client' => $client->id]) }}"><x-icon name="file" /> Nouveau devis</a>
         <a class="quick-action" href="{{ route('planning.create', ['type' => 'rdv', 'client' => $client->id]) }}"><x-icon name="calendar" /> Rendez-vous</a>
+        @if (auth()->user()->isAdmin())
+            <a class="quick-action" href="{{ route('payments.requests.create', ['client' => $client->id]) }}"><x-icon name="wallet" /> Encaisser</a>
+        @endif
     </div>
 
     <div class="grid grid-2">

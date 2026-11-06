@@ -18,12 +18,14 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MyposNotificationController;
 use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentRequestController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PortalDocumentController;
 use App\Http\Controllers\PortalPagesController;
+use App\Http\Controllers\PortalPaymentRequestController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QuickQuoteController;
 use App\Http\Controllers\QuoteController;
@@ -63,6 +65,10 @@ Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->gr
     Route::get('/d/{token}/photos/{photo}/{variant}', [PortalDocumentController::class, 'quotePhoto'])->whereNumber('photo')->whereIn('variant', ['mini', 'photo'])->name('portal.quote.photo');
     Route::get('/f/{token}', [ClientPortalController::class, 'invoice'])->name('portal.invoice');
     Route::get('/f/{token}/photos/{photo}/{variant}', [PortalDocumentController::class, 'invoicePhoto'])->whereNumber('photo')->whereIn('variant', ['mini', 'photo'])->name('portal.invoice.photo');
+    Route::get('/p/{token}', [PortalPaymentRequestController::class, 'show'])->name('portal.payment-request');
+    Route::get('/p/{token}/payer', [PortalPaymentRequestController::class, 'pay'])->middleware('throttle:10,1')->name('portal.payment-request.pay');
+    Route::match(['get', 'post'], '/p/{token}/paiement-ok', [PortalPaymentRequestController::class, 'paid'])->name('portal.payment-request.paid');
+    Route::match(['get', 'post'], '/p/{token}/paiement-annule', [PortalPaymentRequestController::class, 'cancelled'])->name('portal.payment-request.cancelled');
     Route::get('/doc/{token}', [PortalDocumentController::class, 'show'])->name('portal.document');
     Route::get('/doc/{token}/fichier', [PortalDocumentController::class, 'file'])->name('portal.document.file');
     Route::post('/doc/{token}/signer', [PortalDocumentController::class, 'sign'])->middleware('throttle:10,1')->name('portal.document.sign');
@@ -247,6 +253,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/clients/{client}/entretiens', [MaintenanceController::class, 'store'])->whereNumber('client')->name('maintenance.store');
 
     Route::get('/paiements', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/paiements/encaisser', [PaymentRequestController::class, 'create'])->name('payments.requests.create');
+    Route::post('/paiements/encaisser', [PaymentRequestController::class, 'store'])->middleware('throttle:30,1')->name('payments.requests.store');
+    Route::get('/paiements/demandes/{paymentRequest}', [PaymentRequestController::class, 'show'])->whereNumber('paymentRequest')->name('payments.requests.show');
+    Route::delete('/paiements/demandes/{paymentRequest}', [PaymentRequestController::class, 'cancel'])->whereNumber('paymentRequest')->name('payments.requests.cancel');
     Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');
     Route::delete('/paiements/{payment}', [PaymentController::class, 'destroy'])->whereNumber('payment')->name('payments.destroy');
 

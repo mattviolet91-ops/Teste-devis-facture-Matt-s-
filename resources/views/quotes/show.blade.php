@@ -105,6 +105,9 @@
         @if ($quote->isInvoiceable() && auth()->user()->isAdmin())
             <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
         @endif
+        @if ($quote->status === 'accepted' && auth()->user()->isAdmin())
+            <a class="btn btn-secondary" href="{{ route('payments.requests.create', ['client' => $quote->client_id, 'devis' => $quote->id]) }}"><x-icon name="wallet" /> Encaisser un montant</a>
+        @endif
         <button class="btn btn-secondary" type="button" data-open-sheet="duplicate-dialog"><x-icon name="copy" /> Dupliquer</button>
         @php $invoiced = $quote->invoices->whereIn('status', ['draft', ...\App\Models\Invoice::ISSUED])->isNotEmpty(); @endphp
         @if ($invoiced)

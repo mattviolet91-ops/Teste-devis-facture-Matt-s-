@@ -8,7 +8,19 @@
             <h1>Paiements</h1>
             <p>Encaissé du {{ $from->format('d/m/Y') }} au {{ $to->format('d/m/Y') }} : <strong>{{ Money::format($total) }}</strong></p>
         </div>
+        <a class="btn" href="{{ route('payments.requests.create') }}"><x-icon name="plus" /> Encaisser un montant</a>
     </div>
+
+    @if ($pendingRequests->isNotEmpty())
+        <div class="card">
+            <h2>Liens de paiement en attente</h2>
+            <ul class="stat-list">
+                @foreach ($pendingRequests as $pending)
+                    <li><span><a href="{{ route('payments.requests.show', $pending) }}">{{ $pending->label }}</a> <span class="muted small">· {{ $pending->client?->displayName() }} · {{ $pending->created_at->format('d/m/Y') }}</span></span><strong>{{ Money::format($pending->amount) }}</strong></li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <form method="GET" action="{{ route('payments.index') }}" class="card filters">
         <div class="form-grid cols-2">

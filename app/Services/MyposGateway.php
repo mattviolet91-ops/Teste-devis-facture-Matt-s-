@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
+use App\Models\PaymentRequest;
 use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -99,21 +100,47 @@ class MyposGateway
         return Crypt::encryptString(preg_replace('/\s+/', '', $package));
     }
 
-    /** Prépare une tentative de paiement du reste à payer de la facture. */
-    public function start(Invoice $invoice): OnlinePayment
+    /** Montant minimum d'un paiement partiel par carte (centimes). */
+    public const MIN_PARTIAL = 100;
+
+    /** Prépare une tentative de paiement du reste à payer de la facture (ou d'une partie). */
+    public function start(Invoice $invoice, ?int $amount = null): OnlinePayment
     {
         if (! $this->isEnabled() || ! $invoice->acceptsPayments() || $invoice->balance() <= 0) {
             throw new InvalidArgumentException('Paiement par carte indisponible pour cette facture.');
+        }
+        $amount ??= $invoice->balance();
+        if ($amount > $invoice->balance() || ($amount < $invoice->balance() && $amount < self::MIN_PARTIAL)) {
+            throw new InvalidArgumentException('Montant invalide.');
         }
 
         return OnlinePayment::query()->create([
             'invoice_id' => $invoice->id,
             // Un identifiant différent à chaque tentative (exigé par myPOS).
             'order_id' => $invoice->number.'-'.Str::upper(Str::random(6)),
-            'amount' => $invoice->balance(),
+            'amount' => $amount,
             'status' => 'pending',
             'test' => $this->isTest(),
         ]);
+    }
+
+    /** Tentative de paiement d'un montant libre (demande de paiement). */
+    public function startRequest(PaymentRequest $request): OnlinePayment
+    {
+        if (! $this->isEnabled() || ! $request->isPending()) {
+            throw new InvalidArgumentException('Paiement par carte indisponible.');
+        }
+
+        $attempt = new OnlinePayment([
+            'order_id' => 'P'.$request->id.'-'.Str::upper(Str::random(8)),
+            'amount' => $request->amount,
+            'status' => 'pending',
+            'test' => $this->isTest(),
+        ]);
+        $attempt->payment_request_id = $request->id;
+        $attempt->save();
+
+        return $attempt;
     }
 
     /**
@@ -125,7 +152,10 @@ class MyposGateway
     {
         $cred = $this->credentials();
         $invoice = $attempt->invoice;
+        $request = $attempt->paymentRequest;
         $amount = number_format($attempt->amount / 100, 2, '.', '');
+        $note = mb_substr($invoice ? $invoice->kindLabel().' '.$invoice->number : $request->label, 0, 100);
+        $email = (string) ($invoice ?? $request)->client?->email;
 
         $fields = [
             'IPCmethod' => 'IPCPurchase',
@@ -141,10 +171,10 @@ class MyposGateway
             'URL_OK' => $okUrl,
             'URL_Cancel' => $cancelUrl,
             'URL_Notify' => $notifyUrl,
-            'Note' => mb_substr($invoice->kindLabel().' '.$invoice->number, 0, 100),
-            'customeremail' => (string) $invoice->client?->email,
+            'Note' => $note,
+            'customeremail' => $email,
             'CartItems' => '1',
-            'Article_1' => mb_substr($invoice->kindLabel().' '.$invoice->number, 0, 100),
+            'Article_1' => $note,
             'Quantity_1' => '1',
             'Price_1' => $amount,
             'Amount_1' => $amount,
@@ -211,6 +241,29 @@ class MyposGateway
 
             $amount = (int) round(((float) ($post['Amount'] ?? 0)) * 100);
             $attempt->forceFill(['status' => 'paid', 'transaction_ref' => mb_substr((string) ($post['IPC_Trnref'] ?? ''), 0, 80) ?: null])->save();
+
+            // Montant libre : la facture est créée maintenant.
+            if ($attempt->payment_request_id) {
+                $request = $attempt->paymentRequest;
+                if ($attempt->test) {
+                    $message = 'Essai réussi : myPOS a bien confirmé un paiement de test de '.Money::plain($amount)." pour « {$request->label} ». Aucune facture n'a été créée.";
+                } else {
+                    try {
+                        $message = app(PaymentRequestService::class)->settle($attempt, $amount);
+                    } catch (Throwable $e) {
+                        Log::error('Montant libre payé mais non enregistré', ['order' => $attempt->order_id, 'error' => $e->getMessage()]);
+                        $attempt->forceFill(['error' => mb_substr($e->getMessage(), 0, 255)])->save();
+                        $message = 'Paiement par carte de '.Money::plain($amount)." reçu pour « {$request->label} », mais la facture n'a pas pu être créée. Vérifiez dans myPOS et créez-la à la main.";
+                    }
+                }
+                app(ClientLinkService::class)->notifyText(
+                    ($attempt->test ? '[TEST] ' : '').'Paiement reçu : '.Money::plain($amount),
+                    $message,
+                    ClientLinkService::adminUrl('payments.requests.show', $request),
+                );
+
+                return $attempt;
+            }
 
             $invoice = $attempt->invoice;
 

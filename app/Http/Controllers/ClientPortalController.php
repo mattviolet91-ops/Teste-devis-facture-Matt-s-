@@ -11,6 +11,7 @@ use App\Services\ClientLinkService;
 use App\Services\DocumentCalculator;
 use App\Services\MyposGateway;
 use App\Services\PdfService;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -153,7 +154,18 @@ class ClientPortalController extends Controller
             return redirect()->route('portal.invoice', $token)->with('status', 'Le paiement de cette facture sera possible à partir du '.$from->format('d/m/Y').' (délai légal de 7 jours après la signature du devis).');
         }
 
-        $attempt = $mypos->start($invoice);
+        // Paiement d'une partie : montant choisi par le client (au moins 1 €, au plus le reste à payer).
+        $amount = $invoice->balance();
+        if ($request->filled('montant')) {
+            $chosen = Money::parse((string) $request->query('montant'));
+            if (! $chosen || $chosen > $invoice->balance() || ($chosen < $invoice->balance() && $chosen < MyposGateway::MIN_PARTIAL)) {
+                return redirect()->route('portal.invoice', array_filter(['token' => $token, 'essai' => $request->boolean('essai') ? 1 : null]))
+                    ->withErrors(['montant' => 'Indiquez un montant entre '.Money::format(MyposGateway::MIN_PARTIAL).' et '.Money::format($invoice->balance()).'.'])->withInput();
+            }
+            $amount = $chosen;
+        }
+
+        $attempt = $mypos->start($invoice, $amount);
         $form = $mypos->purchaseForm(
             $attempt,
             route('portal.invoice.paid', $token),
@@ -161,7 +173,7 @@ class ClientPortalController extends Controller
             route('portal.mypos.notify'),
         );
 
-        return view('portal.pay', ['invoice' => $invoice, 'form' => $form, 'test' => $attempt->test]);
+        return view('portal.pay', ['invoice' => $invoice, 'amount' => $attempt->amount, 'form' => $form, 'test' => $attempt->test]);
     }
 
     /** Retour du client après paiement (la confirmation fiable arrive par la notification myPOS). */

@@ -20,6 +20,11 @@ class OnlinePayment extends Model
         return $this->belongsTo(Invoice::class)->withTrashed();
     }
 
+    public function paymentRequest(): BelongsTo
+    {
+        return $this->belongsTo(PaymentRequest::class);
+    }
+
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
