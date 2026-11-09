@@ -475,6 +475,10 @@
     return id.slice(0, 32);
   }
   function isPost(form) { return form instanceof HTMLFormElement && (form.getAttribute('method') || '').toLowerCase() === 'post'; }
+  // Formulaire envoyé à un autre site (paiement myPOS) : rien n'y est ajouté, sinon sa signature ne correspond plus.
+  function isExternal(form) {
+    try { return new URL(form.getAttribute('action') || '', window.location.href).origin !== window.location.origin; } catch (e) { return false; }
+  }
   // Envoi interrompu (réponse perdue) puis retour au formulaire : on garde le même identifiant,
   // pour que le renvoi ne crée pas de doublon. Toute autre arrivée sur une page repart de zéro.
   var navigation = (window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
@@ -490,7 +494,7 @@
     try { sessionStorage.setItem('mc-pending', JSON.stringify(pending)); } catch (e) { /* ignoré */ }
   }
   function stamp(form) {
-    if (!isPost(form) || form.querySelector('input[name="_once"]')) { return; }
+    if (!isPost(form) || isExternal(form) || form.querySelector('input[name="_once"]')) { return; }
     var input = document.createElement('input');
     input.type = 'hidden'; input.name = '_once'; input.value = pending[form.action] || newId();
     form.appendChild(input);

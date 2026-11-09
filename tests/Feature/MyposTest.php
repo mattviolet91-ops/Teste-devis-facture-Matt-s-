@@ -219,4 +219,26 @@ class MyposTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
         $this->post(route('settings.payments.check'))->assertForbidden();
     }
+
+    /**
+     * Le formulaire envoyé à myPOS ne contient que les champs signés : le script de l'application
+     * n'y ajoute rien (« _once » ajouté après la signature = « Error Code 2 » chez myPOS).
+     */
+    public function test_form_sent_to_mypos_contains_only_signed_fields(): void
+    {
+        $html = $this->get(route('portal.invoice.pay', $this->invoice->public_token))->assertOk()->getContent();
+        $form = $this->get(route('portal.invoice.pay', $this->invoice->public_token))->viewData('form');
+
+        preg_match('#<form method="POST" action="'.preg_quote(MyposGateway::URL, '#').'"[^>]*>(.*?)</form>#s', $html, $match);
+        preg_match_all('#<input type="hidden" name="([^"]+)"#', $match[1] ?? '', $names);
+        $this->assertSame(array_keys($form['fields']), $names[1]);
+        $this->assertSame('Signature', end($names[1]));
+        $this->assertStringNotContainsString('@csrf', $match[1]);
+        $this->assertStringNotContainsString('_token', $match[1]);
+
+        // Le script qui ajoute « _once » aux formulaires ignore ceux qui partent vers un autre site.
+        $script = (string) file_get_contents(public_path('js/app.js'));
+        $this->assertStringContainsString("if (!isPost(form) || isExternal(form) || form.querySelector('input[name=\"_once\"]')) { return; }", $script);
+        $this->assertStringContainsString('.origin !== window.location.origin', $script);
+    }
 }
