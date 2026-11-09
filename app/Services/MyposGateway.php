@@ -9,6 +9,7 @@ use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -185,6 +186,63 @@ class MyposGateway
         $fields['Signature'] = $this->sign($fields, $cred['private_key']);
 
         return ['action' => $attempt->test ? self::TEST_URL : self::URL, 'fields' => $fields];
+    }
+
+    /**
+     * Vérifie le pack enregistré auprès de myPOS, sans paiement : demande signée de statut
+     * d'une commande fictive (IPCGetTxnStatus) sur le serveur réel.
+     * Codes myPOS : 2 = signature refusée, 4 = boutique (SID) inconnue, 1 = paramètre manquant.
+     *
+     * @return array{ok: bool, status: ?int, message: string}
+     */
+    public function checkConnection(): array
+    {
+        $cred = $this->storedCredentials();
+        if (! $cred) {
+            return ['ok' => false, 'status' => null, 'message' => 'Aucun pack de configuration enregistré : collez-le ci-dessus puis enregistrez.'];
+        }
+
+        $fields = [
+            'IPCmethod' => 'IPCGetTxnStatus',
+            'IPCVersion' => '1.4',
+            'IPCLanguage' => 'FR',
+            'SID' => $cred['sid'],
+            'WalletNumber' => $cred['wallet'],
+            'KeyIndex' => (string) $cred['key_index'],
+            'Source' => 'MattsCouverture',
+            'OrderID' => 'TEST-CONNEXION-'.Str::upper(Str::random(8)),
+            'OutputFormat' => 'json',
+        ];
+        $fields['Signature'] = $this->sign($fields, $cred['private_key']);
+
+        try {
+            $response = Http::asForm()->timeout(20)->post(self::URL, $fields);
+        } catch (Throwable $e) {
+            Log::warning('Test de connexion myPOS impossible', ['error' => $e->getMessage()]);
+
+            return ['ok' => false, 'status' => null, 'message' => 'myPOS ne répond pas pour le moment (réseau). Réessayez dans quelques minutes.'];
+        }
+
+        $body = (string) $response->body();
+        $json = json_decode($body, true);
+        $status = null;
+        if (is_array($json)) {
+            $flat = array_change_key_case(isset($json['IPC']) && is_array($json['IPC']) ? $json['IPC'] : $json);
+            $status = isset($flat['status']) && is_numeric($flat['status']) ? (int) $flat['status'] : null;
+        } elseif (preg_match('#<Status>\s*(\d+)\s*</Status>#i', $body, $m)) {
+            $status = (int) $m[1];
+        }
+        Log::info('Test de connexion myPOS', ['http' => $response->status(), 'status' => $status, 'sid' => $cred['sid'], 'key_index' => $cred['key_index']]);
+
+        $boutique = "boutique {$cred['sid']}, clé n° {$cred['key_index']}";
+
+        return match (true) {
+            $status === null => ['ok' => false, 'status' => null, 'message' => "Réponse inattendue de myPOS (code HTTP {$response->status()}). Réessayez plus tard."],
+            $status === 2 => ['ok' => false, 'status' => 2, 'message' => "Signature refusée par myPOS ($boutique) : le pack enregistré ne correspond pas aux clés de la boutique. Générez un nouveau « Configuration pack » dans myPOS (Boutiques en ligne → votre boutique → Intégration), collez-le ici, enregistrez et refaites le test."],
+            $status === 4 => ['ok' => false, 'status' => 4, 'message' => "Boutique inconnue chez myPOS ($boutique) : le pack ne correspond pas à une boutique en ligne active."],
+            $status === 1 => ['ok' => false, 'status' => 1, 'message' => 'myPOS signale un paramètre manquant (code 1). Transmettez-moi ce message.'],
+            default => ['ok' => true, 'status' => $status, 'message' => "Connexion réussie : myPOS accepte la signature de votre pack ($boutique). Code de réponse myPOS : $status (normal pour une commande de test qui n'existe pas)."],
+        };
     }
 
     /** Signature myPOS : RSA-SHA256 du base64 des valeurs jointes par « - ». */

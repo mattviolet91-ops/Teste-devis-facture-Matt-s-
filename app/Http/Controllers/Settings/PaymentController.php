@@ -32,6 +32,15 @@ class PaymentController extends Controller
         ]);
     }
 
+    /** « Tester la connexion avec myPOS » : vérifie le pack, sans paiement. */
+    public function check(MyposGateway $mypos): RedirectResponse
+    {
+        $result = $mypos->checkConnection();
+        ActivityLogger::log('settings.mypos.check', 'Test de connexion myPOS : '.($result['ok'] ? 'réussi' : 'échec').($result['status'] !== null ? ' (code '.$result['status'].')' : ''));
+
+        return redirect()->route('settings.payments')->with('mypos_check', $result);
+    }
+
     public function update(Request $request, Settings $settings): RedirectResponse
     {
         $data = $request->validate([

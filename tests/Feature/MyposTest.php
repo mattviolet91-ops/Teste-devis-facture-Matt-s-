@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
+use App\Models\User;
 use App\Services\MyposGateway;
 use App\Services\PushService;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Mockery;
 use Tests\TestCase;
@@ -173,5 +175,48 @@ class MyposTest extends TestCase
         $this->assertSame('paid', $attempt->fresh()->status);
         $this->assertSame(0, $this->invoice->payments()->count());
         $this->assertSame('sent', $this->invoice->fresh()->status);
+    }
+
+    public function test_connection_check_tells_whether_mypos_accepts_the_pack(): void
+    {
+        $this->get(route('settings.payments'))->assertSee('Tester la connexion avec myPOS');
+
+        Http::fake([MyposGateway::URL => Http::sequence()
+            ->push(['IPCmethod' => 'IPCGetTxnStatus', 'Status' => 2, 'StatusMsg' => 'Signature failed'])
+            ->push(['IPCmethod' => 'IPCGetTxnStatus', 'Status' => 3, 'StatusMsg' => 'Order not found'])
+            ->push('<html>Cloudflare</html>', 403)]);
+
+        $this->post(route('settings.payments.check'))->assertRedirect(route('settings.payments'));
+        $this->get(route('settings.payments'))->assertSee('Signature refusée par myPOS (boutique 000000000000123, clé n° 1)');
+
+        $this->post(route('settings.payments.check'));
+        $this->get(route('settings.payments'))->assertSee('Connexion réussie');
+
+        $this->post(route('settings.payments.check'));
+        $this->get(route('settings.payments'))->assertSee('Réponse inattendue de myPOS (code HTTP 403)');
+
+        // Demande signée avec le pack enregistré, sans paiement.
+        Http::assertSent(function ($request) {
+            $data = $request->data();
+            $signature = base64_decode($data['Signature']);
+            unset($data['Signature']);
+            $public = openssl_pkey_get_details(openssl_pkey_get_private(app(MyposGateway::class)->storedCredentials()['private_key']))['key'];
+
+            return $request->url() === MyposGateway::URL && $data['IPCmethod'] === 'IPCGetTxnStatus' && ! isset($data['Amount'])
+                && openssl_verify(base64_encode(implode('-', $data)), $signature, $public, OPENSSL_ALGO_SHA256) === 1;
+        });
+    }
+
+    public function test_connection_check_without_pack_or_by_a_salesman(): void
+    {
+        $this->put(route('settings.payments'), ['enabled' => '1', 'test' => '1', 'forget' => '1'])->assertSessionHasNoErrors();
+        $this->get(route('settings.payments'))->assertSee('Enregistrez d\'abord votre pack', false);
+        Http::fake();
+        $this->post(route('settings.payments.check'));
+        $this->get(route('settings.payments'))->assertSee('Aucun pack de configuration enregistré');
+        Http::assertNothingSent();
+
+        $this->actingAs(User::factory()->create(['role' => 'commercial']));
+        $this->post(route('settings.payments.check'))->assertForbidden();
     }
 }

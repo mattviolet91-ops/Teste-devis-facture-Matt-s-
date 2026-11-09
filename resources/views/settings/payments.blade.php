@@ -33,6 +33,19 @@
     <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
 </form>
 
+<div class="card" id="test-connexion">
+    <h2>Tester la connexion avec myPOS</h2>
+    <p class="small muted">Vérifie que myPOS accepte le pack enregistré, sans aucun paiement. À faire après avoir collé un nouveau pack.</p>
+    @if ($check = session('mypos_check'))
+        <div class="alert {{ $check['ok'] ? 'alert-success' : 'alert-error' }}" role="status">{{ $check['message'] }}</div>
+    @endif
+    <form method="POST" action="{{ route('settings.payments.check') }}">
+        @csrf
+        <button class="btn btn-secondary" type="submit" @disabled(! $hasPackage)><x-icon name="check" /> Tester la connexion avec myPOS</button>
+        @unless ($hasPackage)<span class="small muted">Enregistrez d'abord votre pack de configuration.</span>@endunless
+    </form>
+</div>
+
 @if ($enabled && $test)
     <div class="card">
         <h2>Faire un essai</h2>

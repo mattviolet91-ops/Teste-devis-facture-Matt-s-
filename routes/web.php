@@ -347,6 +347,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::get('/paiement', [Settings\PaymentController::class, 'edit'])->name('payments');
         Route::put('/paiement', [Settings\PaymentController::class, 'update']);
+        Route::post('/paiement/test-connexion', [Settings\PaymentController::class, 'check'])->middleware('throttle:10,1')->name('payments.check');
 
         Route::get('/numerotation', [Settings\NumberingController::class, 'edit'])->name('numbering');
         Route::put('/numerotation', [Settings\NumberingController::class, 'update']);
