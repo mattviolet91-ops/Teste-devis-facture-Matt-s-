@@ -20,7 +20,7 @@
         @php $done = count(array_filter($checklist, fn ($i) => $i['done'])); @endphp
         <details class="card guide-section getting-started" id="bien-demarrer" @if ($done < count($checklist)) open @endif>
             <summary><x-icon name="check" /> <span>Bien démarrer</span> <span class="badge">{{ $done }} / {{ count($checklist) }}</span></summary>
-            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ count($checklist) }}" aria-valuenow="{{ $done }}"><span style="width: {{ round($done * 100 / count($checklist)) }}%"></span></div>
+            <div class="progress" role="progressbar" aria-label="Réglages de démarrage terminés" aria-valuemin="0" aria-valuemax="{{ count($checklist) }}" aria-valuenow="{{ $done }}"><span style="width: {{ round($done * 100 / count($checklist)) }}%"></span></div>
             <p class="muted small">{{ $done === count($checklist) ? 'Tout est prêt.' : 'Vérifié automatiquement : chaque point se coche tout seul une fois réglé.' }}</p>
             <ul class="checklist">
                 @foreach ($checklist as $item)

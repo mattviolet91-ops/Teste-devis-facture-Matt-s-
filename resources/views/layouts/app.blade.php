@@ -43,7 +43,7 @@
 <div class="app" data-offline-root data-token-url="{{ route('offline.token') }}" data-pages-url="{{ route('offline.pages') }}">
     <header class="topbar">
         <a class="brand" href="{{ route('dashboard') }}">
-            <x-brand-logo />
+            <x-brand-logo decorative />
             <span class="brand-name">{{ $settings->get('company.trade_name') }}</span>
         </a>
         <form class="search" method="GET" action="{{ route('search') }}" role="search">
@@ -86,7 +86,7 @@
             </form>
         </nav>
 
-        <main class="main">
+        <main class="main" id="contenu" tabindex="-1">
             <div class="container">
                 <div class="offline-bar" data-offline-bar hidden role="status">
                     <span data-offline-text></span>

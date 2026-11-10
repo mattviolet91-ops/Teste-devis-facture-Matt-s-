@@ -9,7 +9,7 @@
             <a class="portal-call" href="tel:{{ preg_replace('/\s+/', '', $company['phone']) }}"><x-icon name="phone" /> {{ $company['phone'] }}</a>
         </div>
     </header>
-    <main class="portal-wrap portal-main">
+    <main class="portal-wrap portal-main" id="contenu" tabindex="-1">
         @if (request()->query('envoi') === 'incomplet')
             <div class="alert alert-warning" role="alert">L'envoi n'est pas arrivé en entier (réseau instable). Vérifiez puis recommencez si besoin.</div>
         @endif

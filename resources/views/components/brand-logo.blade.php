@@ -1,4 +1,4 @@
-@props(['variant' => 'icon'])
+@props(['variant' => 'icon', 'decorative' => false])
 @php
     // variant « icon » : marque carrée (barre du haut) ; « full » : logo complet (connexion, documents).
     $name = $settings->get('company.trade_name');
@@ -11,7 +11,7 @@
     $initials = collect(preg_split('/\s+/', (string) $name))->filter()->take(2)->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->implode('');
 @endphp
 @if ($src)
-    <img {{ $attributes->merge(['class' => 'brand-img brand-img-'.$variant]) }} src="{{ $src }}" alt="{{ $name }}">
+    <img {{ $attributes->merge(['class' => 'brand-img brand-img-'.$variant]) }} src="{{ $src }}" alt="{{ $decorative ? '' : $name }}">
 @else
     <span class="brand-mark" aria-hidden="true">{{ $initials }}</span>
 @endif

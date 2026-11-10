@@ -14,6 +14,7 @@
     <x-brand-style />
 </head>
 <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
     @yield('body')
     <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}" defer></script>
 </body>

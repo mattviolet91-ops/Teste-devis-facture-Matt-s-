@@ -7,7 +7,7 @@
             <span class="muted small">Réglé {{ Money::format($invoice->amount_paid) }} sur {{ Money::format($invoice->total_ttc) }}</span>
         </div>
         @php $percent = $invoice->total_ttc > 0 ? min(100, (int) round($invoice->amount_paid * 100 / $invoice->total_ttc)) : 0; @endphp
-        <div class="progress" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ $percent }}%"></span></div>
+        <div class="progress" role="progressbar" aria-label="Part de la facture déjà réglée" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ $percent }}%"></span></div>
 
         @if ($invoice->payments->isNotEmpty())
             <ul class="stat-list">

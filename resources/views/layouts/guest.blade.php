@@ -1,7 +1,7 @@
 @extends('layouts.base')
 
 @section('body')
-    <main class="auth">
+    <main class="auth" id="contenu" tabindex="-1">
         <div class="auth-card">
             <div class="auth-brand">
                 <x-brand-logo variant="full" />
