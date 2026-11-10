@@ -73,6 +73,26 @@
     });
   });
 
+  // Devis et factures sur téléphone : les deux actions principales restent visibles,
+  // les autres sont rangées dans un volet « Plus » (mêmes boutons, simplement déplacés).
+  if (window.matchMedia && window.matchMedia('(max-width: 639px)').matches) {
+    document.querySelectorAll('[data-collapse-actions]').forEach(function (bar) {
+      var items = Array.prototype.slice.call(bar.children);
+      if (items.length <= 3) { return; }
+      var more = document.createElement('details');
+      more.className = 'more-actions';
+      var summary = document.createElement('summary');
+      summary.className = 'btn btn-secondary';
+      summary.textContent = 'Plus d\'actions (' + (items.length - 2) + ')';
+      var panel = document.createElement('div');
+      panel.className = 'more-panel';
+      items.slice(2).forEach(function (item) { panel.appendChild(item); });
+      more.appendChild(summary);
+      more.appendChild(panel);
+      bar.appendChild(more);
+    });
+  }
+
   // Demande de confirmation avant une action sensible.
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (event) {

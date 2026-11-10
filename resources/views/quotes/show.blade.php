@@ -65,7 +65,7 @@
 
     {{-- Actions --}}
     @error('quote')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
-    <div class="action-bar">
+    <div class="action-bar" data-collapse-actions>
         @if ($quote->status !== 'replaced')
             <a class="btn" href="{{ route('emails.create', ['devis' => $quote->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
         @endif

@@ -58,7 +58,7 @@
         <div class="alert alert-warning">{{ $problem }}</div>
     @endforeach
 
-    <div class="action-bar">
+    <div class="action-bar" data-collapse-actions>
         @if ($invoice->status !== 'cancelled' && ($problems ?? []) === [])
             <a class="btn" href="{{ route('emails.create', ['facture' => $invoice->id]) }}"><x-icon name="mail" /> Envoyer par email</a>
         @endif

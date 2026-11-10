@@ -938,3 +938,12 @@ input[type="radio"], input[type="checkbox"] { min-width: 20px; min-height: 20px;
 /* Thème sombre : la « feuille » du document est adoucie (le PDF reste blanc). */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .doc { background: #F2EFE8; border-color: #3A4853; } }
 :root[data-theme="dark"] .doc { background: #F2EFE8; border-color: #3A4853; }
+
+/* Volet « Plus d'actions » des devis et factures (téléphone). */
+.more-actions[open] { flex: 1 1 100%; }
+.more-actions > summary { list-style: none; }
+.more-actions > summary::-webkit-details-marker { display: none; }
+.more-actions > summary::after { content: '▾'; margin-left: .375rem; }
+.more-actions[open] > summary::after { content: '▴'; }
+.more-panel { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.more-panel form { display: contents; }
