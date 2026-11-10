@@ -51,6 +51,9 @@ class LoginController extends Controller
         $user = $request->user();
         if ($user->disabled_at !== null) {
             Auth::logout();
+            // Rien de ce compte ne reste dans la session (ni identifiant, ni empreinte du mot de passe).
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
             RateLimiter::hit($throttleKey, 15 * 60);
 
             throw ValidationException::withMessages(['email' => 'Ce compte a été désactivé.']);
