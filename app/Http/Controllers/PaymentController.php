@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentRequest;
+use App\Services\MyposGateway;
 use App\Services\PaymentService;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
@@ -42,6 +43,8 @@ class PaymentController extends Controller
             'from' => $from,
             'to' => $to,
             'mode' => $data['mode'] ?? null,
+            'freeLink' => ($mypos = app(MyposGateway::class))->isEnabled() && $mypos->freeLinkEnabled()
+                ? $mypos->freeLinkUrl().($mypos->isTest() ? '?essai=1' : '') : null,
             'pendingRequests' => PaymentRequest::query()->where('status', 'pending')->whereHas('client')->with('client')->latest('id')->limit(20)->get(),
             'openInvoices' => Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->with('client')->orderBy('due_date')->get(),
         ]);

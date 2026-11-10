@@ -11,6 +11,26 @@
         <a class="btn" href="{{ route('payments.requests.create') }}"><x-icon name="plus" /> Encaisser un montant</a>
     </div>
 
+    @if ($freeLink)
+        @php $freeMessage = "Bonjour,\n\nVous pouvez régler par carte bancaire, en toute sécurité, avec ce lien :\n{$freeLink}\n\nMerci,\n".$settings->get('company.trade_name'); @endphp
+        <details class="card" data-share>
+            <summary><strong>Lien de paiement à montant libre</strong> <span class="muted small">— le client indique lui-même le montant</span></summary>
+            <p class="small muted" style="margin-top:.75rem">Un seul lien, toujours le même, à donner à n'importe quel client : il indique son nom, le motif et le montant, puis paie par carte.
+                Vous êtes prévenu, sa fiche est créée si besoin et la facture réglée lui est envoyée. Pour un acompte sur un devis, préférez « Encaisser un montant » (montant fixé par vous, délai légal vérifié).
+                Montants acceptés et désactivation : <a href="{{ route('settings.payments') }}#lien-libre">Réglages → Paiement en ligne</a>.</p>
+            <div class="copy-field">
+                <input type="text" value="{{ $freeLink }}" readonly aria-label="Lien de paiement à montant libre" data-copy-source>
+                <button class="btn btn-secondary btn-sm" type="button" data-copy>Copier</button>
+            </div>
+            <textarea rows="5" aria-label="Message au client" data-share-message style="margin-top:.5rem;width:100%">{{ $freeMessage }}</textarea>
+            <div class="chips chips-wrap" style="margin-top:.5rem">
+                <a class="chip" href="#" data-share-to="whatsapp" data-phone=""><x-icon name="message" /> WhatsApp</a>
+                <a class="chip" href="#" data-share-to="sms" data-phone=""><x-icon name="message" /> SMS</a>
+                <button class="chip" type="button" data-share-to="copy"><x-icon name="copy" /> Copier le message</button>
+            </div>
+        </details>
+    @endif
+
     @if ($pendingRequests->isNotEmpty())
         <div class="card">
             <h2>Liens de paiement en attente</h2>

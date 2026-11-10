@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\User;
 use App\Services\DocumentSignatureService;
 use App\Services\InvoiceService;
+use App\Services\MyposGateway;
 use App\Services\PaymentRequestService;
 use App\Services\Settings;
 use Illuminate\Contracts\Console\Kernel;
@@ -48,4 +49,5 @@ echo json_encode([
     'payment' => '/p/'.$request->token.'/payer?essai=1',
     'invoice' => '/f/'.$invoice->public_token.'/payer?essai=1',
     'document' => '/doc/'.$attachment->fresh()->public_token,
+    'open' => '/payer/'.basename(app(MyposGateway::class)->freeLinkUrl()).'?essai=1',
 ]);

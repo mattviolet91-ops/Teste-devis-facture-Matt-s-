@@ -43,6 +43,17 @@ class PaymentRequest extends Model
         return $this->hasMany(OnlinePayment::class);
     }
 
+    /** Paiement venu du lien permanent « montant libre » (payeur saisi par le client). */
+    public function isOpenAmount(): bool
+    {
+        return $this->payer_email !== null;
+    }
+
+    public function payerName(): string
+    {
+        return trim($this->payer_first_name.' '.$this->payer_last_name);
+    }
+
     public function isPending(): bool
     {
         return $this->status === 'pending';

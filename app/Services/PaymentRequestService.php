@@ -108,7 +108,7 @@ class PaymentRequestService
     public function settle(OnlinePayment $attempt, int $amount): string
     {
         $request = PaymentRequest::query()->whereKey($attempt->payment_request_id)->lockForUpdate()->firstOrFail();
-        $name = $request->client?->displayName();
+        $name = $request->client?->displayName() ?? $request->payerName();
 
         if ($request->status === 'paid') {
             $attempt->forceFill(['error' => 'Demande déjà réglée'])->save();
@@ -123,6 +123,11 @@ class PaymentRequestService
 
         // Tout ou rien : sans paiement enregistré, pas de facture numérotée.
         $invoice = DB::transaction(function () use ($request, $attempt, $amount) {
+            // Lien permanent : la fiche client est retrouvée par l'email, sinon créée maintenant.
+            if (! $request->client) {
+                $request->client()->associate($this->clientOfPayer($request));
+                $request->save();
+            }
             $invoice = $this->invoices->send($this->invoices->createForAmount($request->client, $request->quote, $request->invoice_kind, $request->label, $request->amount, $request->vat_rate));
             $payment = $this->payments->record($invoice, [
                 'paid_at' => today()->toDateString(),
@@ -139,6 +144,63 @@ class PaymentRequestService
         });
 
         return "$name a payé ".Money::plain($amount)." par carte en ligne pour « {$request->label} ». La {$invoice->kindLabel()} {$invoice->number} est créée et réglée.";
+    }
+
+    /**
+     * Paiement depuis le lien permanent : rien n'est rattaché à un client tant que myPOS n'a pas confirmé.
+     *
+     * @param  array{first_name: string, last_name: string, email: string, phone?: ?string, label: string, amount: int}  $payer
+     *
+     * @throws InvalidArgumentException message à montrer tel quel
+     */
+    public function createOpenRequest(array $payer, int $vatRate): PaymentRequest
+    {
+        // Client déjà connu (même email) : le délai légal de 7 jours d'un devis signé à domicile s'applique.
+        $known = $this->findClientByEmail($payer['email']);
+        if ($known && $this->legalProblem($known, null)) {
+            throw new InvalidArgumentException('Le paiement sera possible à l\'issue du délai légal de 7 jours après la signature de votre devis. Nous vous enverrons la facture à ce moment-là.');
+        }
+
+        $request = new PaymentRequest(['label' => $payer['label']]);
+        $request->forceFill([
+            'payer_first_name' => $payer['first_name'],
+            'payer_last_name' => $payer['last_name'],
+            'payer_email' => mb_strtolower(trim($payer['email'])),
+            'payer_phone' => $payer['phone'] ?? null,
+            'invoice_kind' => 'standard',
+            'amount' => $payer['amount'],
+            'vat_rate' => $vatRate,
+            'token' => Str::random(48),
+            'status' => 'pending',
+        ])->save();
+
+        return $request;
+    }
+
+    private function findClientByEmail(string $email): ?Client
+    {
+        return Client::query()->where('email', mb_strtolower(trim($email)))->orderBy('id')->first();
+    }
+
+    private function clientOfPayer(PaymentRequest $request): Client
+    {
+        if ($client = $this->findClientByEmail((string) $request->payer_email)) {
+            return $client;
+        }
+
+        $client = Client::query()->create([
+            'type' => 'particulier',
+            'status' => 'client',
+            'first_name' => $request->payer_first_name,
+            'last_name' => $request->payer_last_name,
+            'email' => $request->payer_email,
+            'phone' => $request->payer_phone,
+            'source' => 'site',
+            'source_detail' => 'Lien de paiement à montant libre',
+        ]);
+        ActivityLogger::log('client.created', "Client créé par un paiement en ligne : {$client->displayName()}", $client);
+
+        return $client;
     }
 
     /** @throws InvalidArgumentException message à montrer tel quel */

@@ -24,6 +24,7 @@ use App\Http\Controllers\PdfViewerController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PortalDocumentController;
+use App\Http\Controllers\PortalOpenPaymentController;
 use App\Http\Controllers\PortalPagesController;
 use App\Http\Controllers\PortalPaymentRequestController;
 use App\Http\Controllers\PushController;
@@ -52,6 +53,15 @@ Route::get('/marque/{kind}', [BrandingAssetController::class, 'show'])
 
 // Page de secours du mode hors connexion (mise en cache par le service worker).
 Route::get('/hors-ligne', [OfflineController::class, 'page'])->name('offline');
+
+// Lien permanent « montant libre » (code secret donné par l'entreprise). Les deux limites partagent le
+// même compteur : l'envoi du formulaire est en pratique limité à 10 par minute et par visiteur.
+Route::middleware('throttle:60,1')->where(['code' => '[A-Za-z0-9]{16,40}'])->group(function () {
+    Route::get('/payer/{code}', [PortalOpenPaymentController::class, 'show'])->name('portal.pay-open');
+    Route::post('/payer/{code}', [PortalOpenPaymentController::class, 'start'])->middleware('throttle:20,1')->name('portal.pay-open.start');
+    Route::match(['get', 'post'], '/payer/{code}/merci', [PortalOpenPaymentController::class, 'thanks'])->name('portal.pay-open.thanks');
+    Route::match(['get', 'post'], '/payer/{code}/annule', [PortalOpenPaymentController::class, 'cancelled'])->name('portal.pay-open.cancelled');
+});
 
 // Espace client (lien secret, sans compte).
 Route::middleware('throttle:60,1')->where(['token' => '[A-Za-z0-9]{32,64}'])->group(function () {

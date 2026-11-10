@@ -14,11 +14,13 @@
         <div class="alert alert-warning small">{{ $error }}</div>
     @endforeach
 
-    <form method="POST" action="{{ route('archives.store') }}" enctype="multipart/form-data" class="card">
+    {{-- Reprise faite : l'import est replié (ouvert tant qu'il n'y a aucune archive, ou en cas d'erreur). --}}
+    <details class="card" @if ($totals->isEmpty() || $errors->hasAny(['files', 'files.*']) || session('archive_errors')) open @endif>
+    <summary><strong>Importer d'autres PDF Wix</strong></summary>
+    <form method="POST" action="{{ route('archives.store') }}" enctype="multipart/form-data" style="margin-top:.75rem">
         @csrf
         @error('files')<div class="alert alert-error">{{ $message }}</div>@enderror
         @error('files.*')<div class="alert alert-error">{{ $message }}</div>@enderror
-        <h2>Importer des PDF Wix</h2>
         <p class="muted small">Sélectionnez les PDF de vos devis et factures Wix (ou le fichier .zip qui les contient). Chaque document est lu (numéro, date, montant, statut, client)
             et rangé sur la fiche du client, créé s'il n'existe pas encore. Un document déjà importé est ignoré.</p>
         <div class="field">
@@ -27,6 +29,7 @@
         </div>
         <div class="form-actions"><button class="btn" type="submit">Importer</button></div>
     </form>
+    </details>
 
     <form method="GET" action="{{ route('archives.index') }}" class="card filters">
         <label class="search-field" for="q">

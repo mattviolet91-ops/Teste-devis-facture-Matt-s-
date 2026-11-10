@@ -10,6 +10,7 @@ use App\Services\MyposGateway;
 use App\Services\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -24,6 +25,9 @@ class PaymentController extends Controller
             'enabled' => (bool) $settings->get('mypos.enabled'),
             'test' => $mypos->isTest(),
             'emailReceipt' => (bool) $settings->get('mypos.email_receipt', true),
+            'freeLinkEnabled' => $mypos->freeLinkEnabled(),
+            'freeLinkUrl' => $mypos->freeLinkEnabled() ? $mypos->freeLinkUrl() : null,
+            'freeBounds' => $mypos->freeLinkBounds(),
             'hasPackage' => $stored,
             'sid' => $mypos->storedCredentials()['sid'] ?? null,
             // Lien d'essai : une facture en attente de paiement, ouverte comme un client.
@@ -46,12 +50,17 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'package' => ['nullable', 'string', 'max:20000'],
-        ]);
+            'free_min' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'free_max' => ['nullable', 'integer', 'min:1', 'max:50000', 'gte:free_min'],
+        ], ['free_max.gte' => 'Le montant maximum doit être supérieur au minimum.'], ['free_min' => 'montant minimum', 'free_max' => 'montant maximum']);
 
         $values = [
             'mypos.enabled' => $request->boolean('enabled'),
             'mypos.test' => $request->boolean('test'),
             'mypos.email_receipt' => $request->boolean('email_receipt'),
+            'mypos.free_link' => $request->boolean('free_link'),
+            'mypos.free_min' => (int) ($data['free_min'] ?? 1) * 100,
+            'mypos.free_max' => (int) ($data['free_max'] ?? 3000) * 100,
         ];
 
         if (filled($data['package'] ?? null)) {
@@ -59,6 +68,10 @@ class PaymentController extends Controller
                 throw ValidationException::withMessages(['package' => 'Pack de configuration illisible : copiez-le en entier depuis votre compte myPOS (Boutique en ligne → Intégration).']);
             }
             $values['mypos.package'] = MyposGateway::encryptPackage($data['package']);
+        }
+        // Nouveau lien permanent : l'ancien ne fonctionne plus.
+        if ($request->boolean('free_renew')) {
+            $values['mypos.free_code'] = Str::random(24);
         }
         if ($request->boolean('forget')) {
             $values['mypos.package'] = '';

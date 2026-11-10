@@ -30,6 +30,20 @@
         @error('package')<span class="error">{{ $message }}</span>@enderror
         <span class="hint">Dans votre compte myPOS (sur ordinateur) : Boutiques en ligne → votre boutique → Intégration → « Configuration pack ». Il est enregistré chiffré et n'est jamais réaffiché.</span>
     </div>
+    <fieldset id="lien-libre" style="border:0;padding:0;margin:1.25rem 0 0">
+        <legend><strong>Lien de paiement à montant libre</strong></legend>
+        <p class="muted small" style="margin:.25rem 0 .5rem">Un lien permanent où le client indique lui-même son nom, le motif et le montant. Il est affiché dans Paiements.</p>
+        <label class="check"><input type="checkbox" name="free_link" value="1" @checked(old('free_link', $freeLinkEnabled))> <span>Activer ce lien</span></label>
+        <div class="form-grid cols-2" style="margin-top:.5rem">
+            <x-field name="free_min" label="Montant minimum (€)" type="number" min="1" max="10000" :value="intdiv($freeBounds[0], 100)" />
+            <x-field name="free_max" label="Montant maximum (€)" type="number" min="1" max="50000" :value="intdiv($freeBounds[1], 100)" />
+        </div>
+        @if ($freeLinkUrl)
+            <p class="small" style="margin:.5rem 0 0;overflow-wrap:anywhere">Lien actuel : {{ $freeLinkUrl }}</p>
+            <label class="check small"><input type="checkbox" name="free_renew" value="1"> <span>Créer un nouveau lien (l'ancien ne fonctionnera plus)</span></label>
+        @endif
+    </fieldset>
+
     @if ($hasPackage)
         <label class="check small"><input type="checkbox" name="forget" value="1"> <span>Supprimer le pack enregistré</span></label>
     @endif

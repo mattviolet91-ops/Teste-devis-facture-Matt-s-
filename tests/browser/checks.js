@@ -29,6 +29,29 @@ const check = (ok, label) => { console.log((ok ? '  ok   ' : '  ÉCHEC ') + labe
     await page.context().close();
   }
 
+  // 1 bis. Lien permanent « montant libre » : le client saisit le montant, puis part vers myPOS.
+  {
+    const page = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();
+    let sent = null;
+    await page.route('https://www.mypos.com/**', async (route) => {
+      sent = Object.fromEntries(new URLSearchParams(route.request().postData() || ''));
+      await route.fulfill({ status: 200, body: 'ok' });
+    });
+    await page.goto(base + urls.open);
+    await page.fill('#first_name', 'Julie');
+    await page.fill('#last_name', 'Morel');
+    await page.fill('#email', 'julie@example.com');
+    await page.fill('#label', 'Acompte gouttières');
+    await page.fill('#amount', '250');
+    await page.check('input[name=agree]');
+    await page.click('button[type=submit]');
+    await page.waitForTimeout(3000);
+    console.log('Lien permanent à montant libre');
+    check(sent !== null && sent.Amount === '250.00', 'le montant saisi par le client part vers myPOS');
+    check(sent !== null && !('_once' in sent) && !('_token' in sent), 'aucun champ ajouté par l\'application');
+    await page.context().close();
+  }
+
   // 2. Un formulaire de l'application garde sa protection contre les doublons.
   {
     const page = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();

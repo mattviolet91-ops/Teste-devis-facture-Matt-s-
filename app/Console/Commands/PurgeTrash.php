@@ -55,6 +55,8 @@ class PurgeTrash extends Command
         $clients = Client::onlyTrashed()->where('deleted_at', '<', $limit)->get()
             ->filter(fn (Client $client) => $this->purge("client {$client->id}", fn () => $this->purgeClient($client)))->count();
 
+        // Paiements commencés depuis le lien « montant libre » puis abandonnés (aucun client rattaché).
+        PaymentRequest::query()->whereNull('client_id')->where('status', 'pending')->where('created_at', '<', now()->subDays(2))->delete();
         // Statistiques du site : conservées 13 mois au plus (recommandation de la CNIL).
         SiteEvent::query()->where('created_at', '<', now()->subMonths(13))->delete();
 

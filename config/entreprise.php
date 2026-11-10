@@ -164,6 +164,11 @@ TXT,
         'package' => '',
         // Après un paiement par carte : la facture est envoyée par email au client.
         'email_receipt' => true,
+        // Lien permanent « montant libre » (le client saisit le montant) : bornes en centimes.
+        'free_link' => true,
+        'free_code' => '',
+        'free_min' => 100,
+        'free_max' => 300000,
     ],
 
     // Demande d'avis Google après un chantier payé (Réglages → Emails).

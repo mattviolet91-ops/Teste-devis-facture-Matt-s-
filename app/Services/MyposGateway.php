@@ -125,6 +125,31 @@ class MyposGateway
         ]);
     }
 
+    /** Adresse du lien permanent « montant libre » (code secret créé à la première demande). */
+    public function freeLinkUrl(): string
+    {
+        $code = (string) $this->settings->get('mypos.free_code');
+        if (! preg_match('/^[A-Za-z0-9]{16,40}$/', $code)) {
+            $code = Str::random(24);
+            $this->settings->set(['mypos.free_code' => $code]);
+        }
+
+        return rtrim((string) config('entreprise.client_url'), '/').'/payer/'.$code;
+    }
+
+    public function freeLinkEnabled(): bool
+    {
+        return (bool) $this->settings->get('mypos.free_link', true);
+    }
+
+    /** @return array{0: int, 1: int} montants minimum et maximum du lien permanent (centimes) */
+    public function freeLinkBounds(): array
+    {
+        $min = max(100, (int) $this->settings->get('mypos.free_min', 100));
+
+        return [$min, max($min, (int) $this->settings->get('mypos.free_max', 300000))];
+    }
+
     /** Tentative de paiement d'un montant libre (demande de paiement). */
     public function startRequest(PaymentRequest $request): OnlinePayment
     {
@@ -157,7 +182,7 @@ class MyposGateway
         $amount = number_format($attempt->amount / 100, 2, '.', '');
         // Texte affiché sur la page myPOS : sans accent ni caractère spécial (aucun risque d'encodage sur la signature).
         $note = trim(mb_substr(preg_replace('/[^A-Za-z0-9 .,()\/-]+/', ' ', Str::ascii($invoice ? $invoice->kindLabel().' '.$invoice->number : $request->label)), 0, 100)) ?: 'Paiement';
-        $email = (string) ($invoice ?? $request)->client?->email;
+        $email = (string) (($invoice ?? $request)->client?->email ?? $request?->payer_email);
 
         $fields = [
             'IPCmethod' => 'IPCPurchase',
@@ -331,7 +356,8 @@ class MyposGateway
                 app(ClientLinkService::class)->notifyText(
                     ($attempt->test ? '[TEST] ' : '').'Paiement reçu : '.Money::plain($amount),
                     $message,
-                    ClientLinkService::adminUrl('payments.requests.show', $request),
+                    // Lien permanent payé en mode test : aucune fiche client, donc pas de page à ouvrir.
+                    $request->fresh()->client_id ? ClientLinkService::adminUrl('payments.requests.show', $request) : ClientLinkService::adminUrl('payments.index'),
                 );
 
                 return $attempt;
