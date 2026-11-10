@@ -155,7 +155,8 @@ class MyposGateway
         $invoice = $attempt->invoice;
         $request = $attempt->paymentRequest;
         $amount = number_format($attempt->amount / 100, 2, '.', '');
-        $note = mb_substr($invoice ? $invoice->kindLabel().' '.$invoice->number : $request->label, 0, 100);
+        // Texte affiché sur la page myPOS : sans accent ni caractère spécial (aucun risque d'encodage sur la signature).
+        $note = trim(mb_substr(preg_replace('/[^A-Za-z0-9 .,()\/-]+/', ' ', Str::ascii($invoice ? $invoice->kindLabel().' '.$invoice->number : $request->label)), 0, 100)) ?: 'Paiement';
         $email = (string) ($invoice ?? $request)->client?->email;
 
         $fields = [

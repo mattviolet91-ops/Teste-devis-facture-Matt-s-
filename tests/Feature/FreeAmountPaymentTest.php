@@ -93,7 +93,8 @@ class FreeAmountPaymentTest extends TestCase
         $this->assertNotNull($request->fresh()->viewed_at);
         $form = $this->get(route('portal.payment-request.pay', $request->token))->assertOk()->viewData('form');
         $this->assertSame(['18050' => '180.50'], [(string) $request->amount => $form['fields']['Amount']]);
-        $this->assertSame('Dépannage fuite', $form['fields']['Note']);
+        $this->assertSame('Depannage fuite', $form['fields']['Note'], 'Sans accent pour myPOS.');
+        $this->assertSame('Depannage fuite', $form['fields']['Article_1']);
 
         $attempt = OnlinePayment::query()->sole();
         $this->notify($attempt, '180.50')->assertOk();

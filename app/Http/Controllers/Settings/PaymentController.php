@@ -28,7 +28,7 @@ class PaymentController extends Controller
             // Lien d'essai : une facture en attente de paiement, ouverte comme un client.
             'trialUrl' => ($invoice = Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->whereNotNull('public_token')->latest('id')->first())
                 ? $invoice->publicUrl().'?essai=1' : null,
-            'attempts' => OnlinePayment::query()->with('invoice.client')->latest('id')->limit(15)->get(),
+            'attempts' => OnlinePayment::query()->with(['invoice.client', 'paymentRequest.client'])->latest('id')->limit(15)->get(),
         ]);
     }
 

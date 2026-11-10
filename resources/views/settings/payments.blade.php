@@ -68,7 +68,7 @@
         <ul class="stat-list">
             @foreach ($attempts as $attempt)
                 <li>
-                    <span>{{ $attempt->invoice?->number }} · {{ $attempt->invoice?->client?->displayName() }} <span class="muted small">{{ $attempt->created_at->format('d/m/Y H:i') }}{{ $attempt->test ? ' · test' : '' }}</span>
+                    <span>{{ $attempt->invoice?->number ?? $attempt->paymentRequest?->label ?? 'Paiement' }} · {{ ($attempt->invoice?->client ?? $attempt->paymentRequest?->client)?->displayName() }} <span class="muted small">{{ $attempt->created_at->format('d/m/Y H:i') }}{{ $attempt->test ? ' · test' : '' }}</span>
                         @if ($attempt->error)<br><span class="small" style="color:var(--danger, #c0392b)">{{ $attempt->error }}</span>@endif</span>
                     <span><strong>{{ Money::format($attempt->amount) }}</strong> <span class="badge">{{ ['pending' => 'commencé', 'paid' => 'payé', 'cancelled' => 'annulé', 'error' => 'erreur'][$attempt->status] ?? $attempt->status }}</span></span>
                 </li>

@@ -87,7 +87,7 @@
     <div class="card" data-share>
         @csrf
         <h2>Prévenir le client</h2>
-        <p class="muted small">Message de confirmation prêt, modifiable (modèle dans <a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>).</p>
+        <p class="muted small">Message de confirmation prêt, modifiable (modèle dans @if (auth()->user()->canOpen('settings.emails'))<a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>@else Réglages → Emails, réservé au gérant @endif).</p>
         <div class="field">
             <label for="intervention-message">Message</label>
             <textarea id="intervention-message" rows="7" data-share-message>{{ $message }}</textarea>

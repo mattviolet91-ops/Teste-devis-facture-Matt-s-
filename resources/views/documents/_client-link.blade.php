@@ -20,7 +20,7 @@
         @endif
     </div>
     <p class="small muted">{{ $isQuote ? 'Le client consulte le devis, le télécharge et peut l\'accepter en signant sur son téléphone.' : 'Le client consulte et télécharge sa facture.' }}
-        Message modifiable ci-dessous avant l'envoi (modèle dans <a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>).</p>
+        Message modifiable ci-dessous avant l'envoi (modèle dans @if (auth()->user()->canOpen('settings.emails'))<a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>@else Réglages → Emails, réservé au gérant @endif).</p>
 
     <div class="field">
         <label for="share-message-{{ $document->id }}">Message</label>

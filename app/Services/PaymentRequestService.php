@@ -52,7 +52,7 @@ class PaymentRequestService
      */
     public function recordReceived(Client $client, ?Quote $quote, array $data): Invoice
     {
-        $this->guard($client, $quote);
+        $this->guard($client, $quote, $data['amount']);
 
         $invoice = DB::transaction(function () use ($client, $quote, $data) {
             $invoice = $this->invoices->send($this->invoices->createForAmount($client, $quote, $data['kind'], $data['label'], $data['amount'], $data['vat_rate']));
@@ -74,7 +74,7 @@ class PaymentRequestService
     /** Lien de paiement par carte à envoyer au client (aucune facture tant qu'il n'a pas payé). */
     public function createRequest(Client $client, ?Quote $quote, string $kind, string $label, int $amount, int $vatRate): PaymentRequest
     {
-        $this->guard($client, $quote);
+        $this->guard($client, $quote, $amount);
 
         $request = new PaymentRequest(['label' => $label]);
         $request->forceFill([
@@ -142,7 +142,7 @@ class PaymentRequestService
     }
 
     /** @throws InvalidArgumentException message à montrer tel quel */
-    private function guard(Client $client, ?Quote $quote): void
+    private function guard(Client $client, ?Quote $quote, int $amount): void
     {
         if ($quote && $quote->client_id !== $client->id) {
             throw new InvalidArgumentException('Ce devis n\'appartient pas à ce client.');
@@ -152,6 +152,9 @@ class PaymentRequestService
         }
         if ($problem = $this->legalProblem($client, $quote)) {
             throw new InvalidArgumentException($problem);
+        }
+        if ($quote && $amount > ($remaining = $this->invoices->remainingToInvoice($quote)) + 5) {
+            throw new InvalidArgumentException("Ce montant dépasse ce qu'il reste à facturer sur le devis {$quote->number} (".Money::format($remaining).'). Réduisez-le, ou encaissez sans rattacher au devis pour des travaux en plus.');
         }
     }
 }

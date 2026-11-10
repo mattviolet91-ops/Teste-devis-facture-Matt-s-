@@ -26,7 +26,7 @@
     <div class="card" data-share data-track="{{ route('maintenance.track', $reminder) }}">
         @csrf
         <h2>Message</h2>
-        <p class="muted small">Texte prêt, modifiable avant l'envoi (modèle dans <a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>).</p>
+        <p class="muted small">Texte prêt, modifiable avant l'envoi (modèle dans @if (auth()->user()->canOpen('settings.emails'))<a href="{{ route('settings.emails') }}#sms">Réglages → Emails</a>@else Réglages → Emails, réservé au gérant @endif).</p>
         <div class="field">
             <label for="maintenance-message">Message</label>
             <textarea id="maintenance-message" rows="8" data-share-message>{{ $message }}</textarea>

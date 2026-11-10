@@ -217,6 +217,10 @@ class InvoiceService
             // Rappels d'entretien des prestations réalisées (ex. démoussage dans 3 ans).
             app(MaintenanceService::class)->fromInvoice($invoice);
 
+            if ($invoice->quote && ! $invoice->isCredit() && $invoice->kind !== 'final') {
+                $this->refreshFinalDrafts($invoice->quote, $invoice);
+            }
+
             return $invoice;
         });
     }
@@ -249,6 +253,9 @@ class InvoiceService
 
             $invoice->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
             app(MaintenanceService::class)->forgetInvoice($invoice);
+            if ($invoice->quote && $invoice->kind !== 'final') {
+                $this->refreshFinalDrafts($invoice->quote);
+            }
             ActivityLogger::log('invoice.cancelled', "Facture {$invoice->number} annulée par l'avoir {$credit->number}", $invoice, array_filter(['motif' => $reason]));
 
             return $credit;
@@ -298,8 +305,49 @@ class InvoiceService
         if ($invoice->total_ttc < 0) {
             $problems[] = 'Le total de la facture est négatif : vérifiez les déductions.';
         }
+        if (($over = $this->overInvoiced($invoice)) > 0) {
+            $problems[] = 'Avec cette facture, le total facturé dépasserait le montant du devis '.$invoice->quote->number.' de '.Money::format($over)
+                .($invoice->kind === 'final' ? ' : un acompte a été facturé après la préparation de ce solde. Supprimez ce brouillon et refaites « Facturer → Solde ».' : '. Réduisez le montant, ou créez une facture sans la rattacher au devis pour des travaux en plus.');
+        }
 
         return $problems;
+    }
+
+    /** Tolérance d'arrondi (centimes) entre le devis et la somme de ses factures. */
+    private const ROUNDING_TOLERANCE = 5;
+
+    /** De combien cette facture ferait dépasser le montant de son devis (0 si elle ne le dépasse pas). */
+    public function overInvoiced(Invoice $invoice): int
+    {
+        $quote = $invoice->isCredit() ? null : $invoice->quote;
+        if (! $quote) {
+            return 0;
+        }
+        $others = (int) $quote->invoices()->where('kind', '!=', 'credit')->whereIn('status', Invoice::ISSUED)->whereKeyNot($invoice->id)->sum('total_ttc');
+        $over = $others + $invoice->total_ttc - $quote->total_ttc;
+
+        return $over > self::ROUNDING_TOLERANCE ? $over : 0;
+    }
+
+    /** Ce qu'il reste à facturer sur un devis. */
+    public function remainingToInvoice(Quote $quote): int
+    {
+        return max(0, $quote->total_ttc - (int) $quote->invoices()->where('kind', '!=', 'credit')->whereIn('status', Invoice::ISSUED)->sum('total_ttc'));
+    }
+
+    /**
+     * Brouillons de facture de solde du devis : leurs déductions sont refaites quand une autre
+     * facture du devis est émise ou annulée (les autres lignes du brouillon ne sont pas touchées).
+     */
+    public function refreshFinalDrafts(Quote $quote, ?Invoice $except = null): void
+    {
+        $drafts = $quote->invoices()->where('kind', 'final')->where('status', 'draft')->when($except, fn ($q) => $q->whereKeyNot($except->id))->with('lines')->get();
+        foreach ($drafts as $draft) {
+            $kept = $draft->lines->reject(fn ($line) => ($line->type === 'section' && $line->title === 'Déjà facturé') || ($line->type === 'item' && str_starts_with((string) $line->title, 'Déduction ')))
+                ->map(fn ($line) => $line->only($line->getFillable()))->values()->all();
+            $this->replaceLines($draft, array_merge($kept, $this->deductionLines($quote)));
+            $this->recalculate($draft);
+        }
     }
 
     /** Montant déjà facturé sur un devis (factures envoyées non annulées, hors brouillons). */
@@ -348,7 +396,7 @@ class InvoiceService
      */
     private function deductionLines(Quote $quote): array
     {
-        $previous = $quote->invoices()->whereIn('kind', ['deposit', 'progress'])->whereIn('status', Invoice::ISSUED)->with('lines')->get();
+        $previous = $quote->invoices()->whereIn('kind', ['deposit', 'progress', 'standard'])->whereIn('status', Invoice::ISSUED)->with('lines')->orderBy('id')->get();
         if ($previous->isEmpty()) {
             return [];
         }

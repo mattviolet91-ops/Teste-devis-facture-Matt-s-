@@ -26,7 +26,7 @@
 
     @unless ($configured)
         <div class="alert alert-warning">
-            L'envoi direct n'est pas encore configuré. Renseignez votre Gmail dans <a href="{{ route('settings.emails') }}">Réglages → Emails</a>,
+            L'envoi direct n'est pas encore configuré. @if (auth()->user()->canOpen('settings.emails'))Renseignez votre Gmail dans <a href="{{ route('settings.emails') }}">Réglages → Emails</a>,@else Le gérant doit renseigner le Gmail de l'entreprise dans les réglages,@endif
             ou utilisez « Ouvrir dans ma messagerie » (le PDF est alors à joindre vous-même).
         </div>
     @endunless
@@ -52,7 +52,7 @@
                             <option value="{{ $template->id }}" @selected($selected?->id === $template->id)>{{ $template->name }}</option>
                         @endforeach
                     </select>
-                    <span class="hint"><a href="{{ route('settings.emails') }}#modeles">Modifier les modèles</a></span>
+                    @if (auth()->user()->canOpen('settings.emails'))<span class="hint"><a href="{{ route('settings.emails') }}#modeles">Modifier les modèles</a></span>@endif
                 </div>
                 <x-field name="to" label="Destinataire *" type="text" :value="$client->email" inputmode="email" autocomplete="off" placeholder="adresse@exemple.fr" hint="Plusieurs adresses : séparez-les par une virgule." />
                 <x-field name="cc" label="Copie (facultatif)" type="text" inputmode="email" autocomplete="off" />
