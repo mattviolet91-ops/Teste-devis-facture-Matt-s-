@@ -16,6 +16,9 @@
         <span><strong>Mode test</strong> — aucun argent réel, rien n'est enregistré sur les factures, et vos clients ne voient pas le bouton.
             Décochez quand myPOS a validé votre boutique : votre pack sera alors utilisé.</span></label>
 
+    <label class="check"><input type="checkbox" name="email_receipt" value="1" @checked(old('email_receipt', $emailReceipt))>
+        <span><strong>Envoyer la facture par email au client</strong> après son paiement par carte (s'il a une adresse email).</span></label>
+
     <div class="field" style="margin-top:1rem">
         <label for="package">Pack de configuration myPOS</label>
         @if ($hasPackage)

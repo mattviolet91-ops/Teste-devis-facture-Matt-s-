@@ -17,6 +17,8 @@ class Attachment extends Model
             'signature_requested_at' => 'datetime',
             'viewed_at' => 'datetime',
             'signed_at' => 'datetime',
+            'reminded_at' => 'datetime',
+            'reminder_count' => 'integer',
             'signed_on_site' => 'boolean',
         ];
     }

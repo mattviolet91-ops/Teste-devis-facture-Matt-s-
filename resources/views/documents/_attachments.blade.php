@@ -81,6 +81,15 @@
                                     <button class="btn btn-secondary btn-sm" type="button" data-copy>Copier</button>
                                 </div>
                             </details>
+                            <details style="margin-top:.5rem">
+                                <summary class="small">Envoyer par email</summary>
+                                <form method="POST" action="{{ route('attachments.sign.email', $attachment) }}" class="copy-field" style="margin-top:.5rem">
+                                    @csrf
+                                    <input type="email" name="to" value="{{ $client?->email }}" required maxlength="160" placeholder="adresse@exemple.fr" aria-label="Adresse email du client" autocomplete="off">
+                                    <button class="btn btn-secondary btn-sm" type="submit"><x-icon name="mail" /> Envoyer</button>
+                                </form>
+                                <span class="hint">Un message prêt, avec le bouton « Lire et signer le document ».</span>
+                            </details>
                             <form method="POST" action="{{ route('attachments.sign.cancel', $attachment) }}" data-confirm="Annuler la demande de signature ? Le lien envoyé ne fonctionnera plus." style="margin-top:.375rem">
                                 @csrf
                                 @method('DELETE')

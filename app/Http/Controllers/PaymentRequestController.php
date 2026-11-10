@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Models\Quote;
 use App\Models\VatRate;
+use App\Services\LinkMailer;
 use App\Services\MyposGateway;
 use App\Services\PaymentRequestService;
 use App\Services\Settings;
@@ -94,13 +95,31 @@ class PaymentRequestController extends Controller
         return redirect()->route('payments.requests.show', $paymentRequest)->with('status', 'Lien de paiement prêt : envoyez-le au client ou ouvrez-le pour qu\'il paie sur place.');
     }
 
-    public function show(PaymentRequest $paymentRequest, MyposGateway $mypos): View
+    public function show(PaymentRequest $paymentRequest, MyposGateway $mypos, LinkMailer $mailer): View
     {
         return view('payments.request', [
+            'canEmail' => $mailer->canSend(),
+            'emailMessage' => $mailer->paymentMessage($paymentRequest),
             'paymentRequest' => $paymentRequest->load(['client', 'quote', 'invoice']),
             'myposReady' => $mypos->isEnabled(),
             'myposTest' => $mypos->isTest(),
         ]);
+    }
+
+    /** Envoie le lien de paiement au client par email. */
+    public function email(Request $request, PaymentRequest $paymentRequest, LinkMailer $mailer): RedirectResponse
+    {
+        abort_unless($paymentRequest->isPending(), 409, 'Cette demande n\'est plus en attente.');
+        $data = $request->validate(['to' => ['required', 'email', 'max:160'], 'message' => ['nullable', 'string', 'max:5000']], [], ['to' => 'adresse email']);
+        if (! $mailer->canSend()) {
+            return back()->withErrors(['to' => 'L\'envoi des emails n\'est pas configuré (Réglages → Emails).'])->withInput();
+        }
+
+        $sent = $mailer->sendPaymentLink($paymentRequest, $data['to'], $data['message'] ?? null);
+
+        return $sent->isSent()
+            ? back()->with('status', 'Lien de paiement envoyé à '.$data['to'].'.')
+            : back()->withErrors(['to' => 'L\'email n\'a pas pu être envoyé. Vérifiez l\'adresse ou réessayez.'])->withInput();
     }
 
     public function cancel(PaymentRequest $paymentRequest): RedirectResponse

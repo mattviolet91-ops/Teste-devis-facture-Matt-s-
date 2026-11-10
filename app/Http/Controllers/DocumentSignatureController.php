@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Services\DocumentSignatureService;
+use App\Services\LinkMailer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +37,24 @@ class DocumentSignatureController extends Controller
         $this->signatures->cancel($attachment);
 
         return redirect()->to($this->back($attachment))->with('status', 'Demande de signature annulée : le lien ne fonctionne plus.');
+    }
+
+    /** Envoie le lien de signature au client par email. */
+    public function email(Request $request, Attachment $attachment, LinkMailer $mailer): RedirectResponse
+    {
+        $this->authorizeAccess($request, $attachment);
+        abort_unless($attachment->awaitsSignature() && $attachment->public_token, 409, 'Ce document n\'attend pas de signature.');
+        $key = 'signature_'.$attachment->id;
+        $data = $request->validate(['to' => ['required', 'email', 'max:160'], 'message' => ['nullable', 'string', 'max:5000']], [], ['to' => 'adresse email']);
+        if (! $mailer->canSend()) {
+            return redirect()->to($this->back($attachment))->withErrors([$key => 'L\'envoi des emails n\'est pas configuré (Réglages → Emails).']);
+        }
+
+        $sent = $mailer->sendSignatureLink($attachment, $data['to'], $data['message'] ?? null);
+
+        return $sent->isSent()
+            ? redirect()->to($this->back($attachment))->with('status', 'Document à signer envoyé à '.$data['to'].'.')
+            : redirect()->to($this->back($attachment))->withErrors([$key => 'L\'email n\'a pas pu être envoyé. Vérifiez l\'adresse ou réessayez.']);
     }
 
     /** Écran tendu au client pendant le rendez-vous. */

@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesPeriod;
 use App\Models\ActivityLog;
+use App\Models\Attachment;
 use App\Models\Expense;
 use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\PaymentRequest;
 use App\Models\Quote;
 use App\Models\QuoteRequest;
 use App\Services\InsuranceService;
@@ -70,6 +72,13 @@ class DashboardController extends Controller
             'overdue' => Invoice::query()->overdue()->with('client', 'quote.client')->orderBy('due_date')->limit(8)->get()
                 ->reject(fn (Invoice $invoice) => $invoice->paymentWaitUntil())->take(5)->values(),
             'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
+            // Documents en attente de signature (ceux d'une facture : gérant seulement) et liens de paiement en attente.
+            'toSign' => Attachment::query()->whereNotNull('signature_requested_at')->whereNotNull('public_token')->whereNull('signed_at')
+                ->when(! $request->user()->isAdmin(), fn ($q) => $q->whereNull('invoice_id'))
+                ->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with('client')->oldest('signature_requested_at')->limit(5)->get(),
+            'toCollect' => $request->user()->isAdmin()
+                ? PaymentRequest::query()->where('status', 'pending')->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with('client')->oldest('id')->limit(5)->get()
+                : collect(),
             'newRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->count(),
             'latestRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->with(['client', 'worksite'])->latest('id')->limit(5)->get(),
             'nextInterventions' => Intervention::query()->active()->where('status', 'planned')

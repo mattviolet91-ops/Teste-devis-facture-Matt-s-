@@ -20,7 +20,7 @@ class PaymentRequest extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'integer', 'vat_rate' => 'integer', 'paid_at' => 'datetime', 'viewed_at' => 'datetime'];
+        return ['amount' => 'integer', 'vat_rate' => 'integer', 'paid_at' => 'datetime', 'viewed_at' => 'datetime', 'reminded_at' => 'datetime', 'reminder_count' => 'integer'];
     }
 
     public function client(): BelongsTo

@@ -246,6 +246,16 @@ class MyposGateway
         };
     }
 
+    /** Facture envoyée par email au client après son paiement (un échec d'envoi ne remet pas le paiement en cause). */
+    private function sendReceipt(Invoice $invoice, int $amount): void
+    {
+        try {
+            app(LinkMailer::class)->sendReceipt($invoice, $amount);
+        } catch (Throwable $e) {
+            Log::warning('Facture non envoyée après paiement', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+        }
+    }
+
     /** Signature myPOS : RSA-SHA256 du base64 des valeurs jointes par « - ». */
     public function sign(array $fields, string $privateKey): string
     {
@@ -309,6 +319,9 @@ class MyposGateway
                 } else {
                     try {
                         $message = app(PaymentRequestService::class)->settle($attempt, $amount);
+                        if ($paid = $attempt->fresh()->invoice) {
+                            $this->sendReceipt($paid, $amount);
+                        }
                     } catch (Throwable $e) {
                         Log::error('Montant libre payé mais non enregistré', ['order' => $attempt->order_id, 'error' => $e->getMessage()]);
                         $attempt->forceFill(['error' => mb_substr($e->getMessage(), 0, 255)])->save();
@@ -345,6 +358,7 @@ class MyposGateway
                 ]);
                 $attempt->forceFill(['payment_id' => $payment->id])->save();
                 $message = "{$invoice->client?->displayName()} a payé ".Money::plain($amount)." par carte en ligne pour la facture {$invoice->number}. Le paiement est enregistré.";
+                $receiptFor = $invoice;
             } catch (InvalidArgumentException $e) {
                 // Facture déjà réglée ou montant supérieur au reste : à vérifier à la main.
                 $attempt->forceFill(['error' => mb_substr($e->getMessage(), 0, 255)])->save();
@@ -352,6 +366,9 @@ class MyposGateway
             }
 
             app(ClientLinkService::class)->notify("Paiement reçu : {$invoice->number}", $message, $invoice);
+            if (isset($receiptFor)) {
+                $this->sendReceipt($receiptFor, $amount);
+            }
 
             return $attempt;
         });

@@ -178,7 +178,7 @@
             <div class="card">
                 <div class="card-head"><h2>À faire</h2></div>
                 @php if (! auth()->user()->isAdmin()) { $overdue = collect(); } @endphp
-                @if ($overdue->isEmpty() && $toFollowUp->isEmpty())
+                @if ($overdue->isEmpty() && $toFollowUp->isEmpty() && $toSign->isEmpty() && $toCollect->isEmpty())
                     <p class="muted" style="margin:0">Rien d'urgent. 👍</p>
                 @endif
                 @if ($overdue->isNotEmpty())
@@ -188,6 +188,29 @@
                             <li>
                                 <a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->number }} · {{ $invoice->client?->displayName() }}</a>
                                 <span><strong>{{ Money::format($invoice->balance()) }}</strong> <a class="small" href="{{ route('reminders.show', $invoice) }}">Relancer</a></span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($toSign->isNotEmpty())
+                    <h3 class="small muted">Documents à faire signer</h3>
+                    <ul class="stat-list">
+                        @foreach ($toSign as $attachment)
+                            @php [$routeName, $routeId] = $attachment->adminRoute(); @endphp
+                            <li>
+                                <a href="{{ route($routeName, $routeId) }}#documents">{{ $attachment->name }} · {{ $attachment->client?->displayName() }}</a>
+                                <span class="small">{{ $attachment->viewed_at ? 'ouvert' : 'pas ouvert' }} · depuis le {{ $attachment->signature_requested_at->format('d/m') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($toCollect->isNotEmpty())
+                    <h3 class="small muted">Liens de paiement en attente</h3>
+                    <ul class="stat-list">
+                        @foreach ($toCollect as $pending)
+                            <li>
+                                <a href="{{ route('payments.requests.show', $pending) }}">{{ $pending->label }} · {{ $pending->client?->displayName() }}</a>
+                                <span><strong>{{ Money::format($pending->amount) }}</strong> <span class="small">{{ $pending->viewed_at ? 'ouvert' : 'pas ouvert' }}</span></span>
                             </li>
                         @endforeach
                     </ul>

@@ -94,6 +94,20 @@
         <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
     </form>
 
+    <form method="POST" action="{{ route('settings.emails.pending-reminders') }}" class="card" id="relance-liens">
+        @csrf
+        @method('PUT')
+        <h2>Relance des documents à signer et des liens de paiement</h2>
+        <p class="muted small">Un email de rappel est envoyé au client qui n'a pas encore signé un document ou réglé un lien de paiement (montant libre) :
+            une première fois après le délai choisi, une seconde fois après le même délai, puis plus rien. Jamais sans adresse email, ni pour un document signé, un lien payé ou annulé.
+            Vous recevez une notification à chaque relance.</p>
+        <label class="check"><input type="checkbox" name="pending_auto" value="1" @checked(old('pending_auto', $reminders['pending_auto'] ?? false))> <span><strong>Relancer automatiquement</strong></span></label>
+        <div class="form-grid cols-2" style="margin-top:.75rem">
+            <x-select name="pending_days" label="Délai avant chaque relance" :options="[2 => '2 jours', 3 => '3 jours', 5 => '5 jours', 7 => '7 jours', 10 => '10 jours']" :value="$reminders['pending_days'] ?? 3" :placeholder="false" />
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Enregistrer</button></div>
+    </form>
+
     <form method="POST" action="{{ route('settings.emails.reminders') }}" class="card">
         @csrf
         @method('PUT')

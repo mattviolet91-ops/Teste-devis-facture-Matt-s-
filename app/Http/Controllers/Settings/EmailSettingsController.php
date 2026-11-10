@@ -117,6 +117,19 @@ class EmailSettingsController extends Controller
         return redirect()->to(route('settings.emails').'#avis')->with('status', 'Demande d\'avis Google enregistrée.');
     }
 
+    /** Relance automatique des documents à signer et des liens de paiement en attente. */
+    public function updatePendingReminders(Request $request, Settings $settings): RedirectResponse
+    {
+        $data = $request->validate(['pending_days' => ['required', 'integer', 'min:1', 'max:30']]);
+        $settings->set([
+            'reminders.pending_auto' => $request->boolean('pending_auto'),
+            'reminders.pending_days' => (int) $data['pending_days'],
+        ]);
+        ActivityLogger::log('settings.pending_reminders', 'Relance automatique des documents et liens de paiement '.($request->boolean('pending_auto') ? 'activée' : 'désactivée'));
+
+        return redirect()->to(route('settings.emails').'#relance-liens')->with('status', 'Relance des documents et liens de paiement enregistrée.');
+    }
+
     /** Relance automatique des devis sans réponse. */
     public function updateQuoteFollowUps(Request $request, Settings $settings): RedirectResponse
     {

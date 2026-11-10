@@ -23,6 +23,7 @@ class PaymentController extends Controller
         return view('settings.payments', [
             'enabled' => (bool) $settings->get('mypos.enabled'),
             'test' => $mypos->isTest(),
+            'emailReceipt' => (bool) $settings->get('mypos.email_receipt', true),
             'hasPackage' => $stored,
             'sid' => $mypos->storedCredentials()['sid'] ?? null,
             // Lien d'essai : une facture en attente de paiement, ouverte comme un client.
@@ -50,6 +51,7 @@ class PaymentController extends Controller
         $values = [
             'mypos.enabled' => $request->boolean('enabled'),
             'mypos.test' => $request->boolean('test'),
+            'mypos.email_receipt' => $request->boolean('email_receipt'),
         ];
 
         if (filled($data['package'] ?? null)) {

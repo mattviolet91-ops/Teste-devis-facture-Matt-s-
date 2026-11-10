@@ -151,6 +151,9 @@ TXT,
         'quotes_auto' => false,
         'quotes_first_days' => 7,
         'quotes_second_days' => 15,
+        // Relance automatique des documents à signer et des liens de paiement en attente (2 au plus).
+        'pending_auto' => false,
+        'pending_days' => 3,
     ],
 
     // Paiement par carte avec myPOS Checkout (Réglages → Paiement en ligne).
@@ -159,6 +162,8 @@ TXT,
         'enabled' => false,
         'test' => true,
         'package' => '',
+        // Après un paiement par carte : la facture est envoyée par email au client.
+        'email_receipt' => true,
     ],
 
     // Demande d'avis Google après un chantier payé (Réglages → Emails).

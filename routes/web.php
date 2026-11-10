@@ -257,6 +257,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/paiements/encaisser', [PaymentRequestController::class, 'store'])->middleware('throttle:30,1')->name('payments.requests.store');
     Route::get('/paiements/demandes/{paymentRequest}', [PaymentRequestController::class, 'show'])->whereNumber('paymentRequest')->name('payments.requests.show');
     Route::delete('/paiements/demandes/{paymentRequest}', [PaymentRequestController::class, 'cancel'])->whereNumber('paymentRequest')->name('payments.requests.cancel');
+    Route::post('/paiements/demandes/{paymentRequest}/email', [PaymentRequestController::class, 'email'])->whereNumber('paymentRequest')->middleware('throttle:10,1')->name('payments.requests.email');
     Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');
     Route::delete('/paiements/{payment}', [PaymentController::class, 'destroy'])->whereNumber('payment')->name('payments.destroy');
 
@@ -282,6 +283,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::prefix('documents/{attachment}')->whereNumber('attachment')->name('attachments.sign.')->group(function () {
         Route::post('/signature', [DocumentSignatureController::class, 'request'])->name('request');
         Route::delete('/signature', [DocumentSignatureController::class, 'cancel'])->name('cancel');
+        Route::post('/signature/email', [DocumentSignatureController::class, 'email'])->middleware('throttle:10,1')->name('email');
         Route::get('/signature/trace', [DocumentSignatureController::class, 'signature'])->name('image');
         Route::get('/signer-sur-place', [DocumentSignatureController::class, 'onSite'])->name('on-site');
         Route::post('/signer-sur-place', [DocumentSignatureController::class, 'signOnSite'])->middleware('throttle:10,1')->name('on-site.store');
@@ -331,6 +333,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::put('/emails/messages', [Settings\EmailSettingsController::class, 'updateShareTexts'])->name('emails.share');
         Route::put('/emails/avis', [Settings\EmailSettingsController::class, 'updateReviews'])->name('emails.reviews');
         Route::put('/emails/relance-devis', [Settings\EmailSettingsController::class, 'updateQuoteFollowUps'])->name('emails.quote-follow-ups');
+        Route::put('/emails/relance-liens', [Settings\EmailSettingsController::class, 'updatePendingReminders'])->name('emails.pending-reminders');
         Route::put('/emails/relances', [Settings\EmailSettingsController::class, 'updateReminders'])->name('emails.reminders');
         Route::post('/emails/test', [Settings\EmailSettingsController::class, 'test'])->middleware('throttle:5,1')->name('emails.test');
         Route::post('/emails/modeles', [Settings\EmailSettingsController::class, 'storeTemplate'])->name('emails.templates.store');

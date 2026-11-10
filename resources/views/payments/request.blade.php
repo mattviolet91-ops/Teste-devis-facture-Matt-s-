@@ -57,6 +57,15 @@
             </div>
         </div>
 
+        <form method="POST" action="{{ route('payments.requests.email', $request) }}" class="card form-grid" id="email">
+            @csrf
+            <h2>Envoyer le lien par email</h2>
+            @unless ($canEmail)<div class="alert alert-warning">L'envoi des emails n'est pas configuré : <a href="{{ route('settings.emails') }}">Réglages → Emails</a>.</div>@endunless
+            <x-field name="to" label="Adresse email du client" type="email" required :value="$client?->email" autocomplete="off" />
+            <x-field name="message" label="Message" type="textarea" rows="7" :value="$emailMessage" hint="Le bouton « Payer par carte » est ajouté sous le message." />
+            <div><button class="btn btn-secondary" type="submit" @disabled(! $canEmail)><x-icon name="mail" /> Envoyer par email</button></div>
+        </form>
+
         <form method="POST" action="{{ route('payments.requests.cancel', $request) }}" data-confirm="Annuler cette demande ? Le lien ne permettra plus de payer.">
             @csrf
             @method('DELETE')

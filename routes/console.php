@@ -18,3 +18,4 @@ Schedule::command('app:review-requests')->dailyAt('10:00');
 Schedule::command('app:planning-notifications --rappels')->dailyAt('09:00');
 Schedule::command('app:import-site-requests')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('app:quote-follow-ups')->dailyAt('10:30');
+Schedule::command('app:pending-reminders')->dailyAt('10:45');
