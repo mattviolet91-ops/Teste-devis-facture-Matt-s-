@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Services\MyposGateway;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -24,7 +25,11 @@ class LegalPaymentDelayTest extends TestCase
         parent::setUp();
         Carbon::setTestNow('2026-10-12 10:00');
         $this->actingAs($this->admin());
-        app(Settings::class)->set(['bank.card_link' => 'https://pay.example.com/matts']);
+        // Paiement par carte myPOS activé (vrais paiements, avec un pack d'essai).
+        $key = openssl_pkey_new(['private_key_bits' => 1024]);
+        openssl_pkey_export($key, $pem);
+        $package = base64_encode(json_encode(['sid' => '000000000000123', 'cn' => '61938166610', 'pk' => $pem, 'pc' => openssl_pkey_get_details($key)['key'], 'idx' => 1]));
+        app(Settings::class)->set(['mypos.enabled' => true, 'mypos.test' => false, 'mypos.package' => MyposGateway::encryptPackage($package)]);
     }
 
     protected function tearDown(): void

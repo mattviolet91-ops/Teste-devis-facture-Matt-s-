@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Concerns\Searchable;
 use App\Services\MyposGateway;
-use App\Services\Settings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -224,7 +223,6 @@ class Invoice extends Model
         return max(0, $this->total_ttc - $this->amount_paid);
     }
 
-    /** Lien de paiement par carte proposé au client (celui de la facture, sinon le lien général). */
     /**
      * Devis signé chez un particulier il y a moins de 7 jours : la facture peut être
      * envoyée, mais aucun paiement ne peut être reçu avant cette date (voir Quote).
@@ -246,6 +244,7 @@ class Invoice extends Model
         return $this->due_date->gt($this->issue_date->copy()->addDays((int) $this->due_days)) ? $this->due_date : null;
     }
 
+    /** Adresse du paiement par carte (myPOS) proposée au client sur sa facture en ligne, si le paiement est possible. */
     public function cardPaymentUrl(): ?string
     {
         if ($this->isCredit() || ! $this->acceptsPayments() || $this->balance() <= 0 || $this->paymentWaitUntil()) {
@@ -258,7 +257,7 @@ class Invoice extends Model
             return route('portal.invoice.pay', array_filter(['token' => $this->public_token, 'essai' => $mypos->isTest() ? 1 : null]));
         }
 
-        return $this->payment_link ?: (app(Settings::class)->get('bank.card_link') ?: null);
+        return null;
     }
 
     public function reviewRequest(): HasOne

@@ -57,18 +57,8 @@
             </details>
             @if (app(\App\Services\MyposGateway::class)->isEnabled())
                 <p class="small muted" style="margin-top:.75rem">💳 Paiement par carte myPOS activé : le client {{ $waitUntil ? 'pourra payer' : 'peut payer' }} {{ Money::format($invoice->balance()) }} depuis sa facture en ligne{{ $waitUntil ? ' à partir du '.$waitUntil->format('d/m/Y') : '' }}, le paiement s'enregistre tout seul.</p>
-            @else
-            <details style="margin-top:.75rem" @if ($errors->has('payment_link')) open @endif>
-                <summary class="small">Paiement par carte en ligne{{ $invoice->cardPaymentUrl() ? ' : proposé au client' : '' }}</summary>
-                <form method="POST" action="{{ route('invoices.payment-link', $invoice) }}" style="margin-top:.5rem">
-                    @csrf
-                    @method('PUT')
-                    <x-field name="payment_link" label="Lien de paiement pour cette facture (montant fixe)" :value="$invoice->payment_link" placeholder="https://…"
-                        :hint="$settings->get('bank.card_link') ? 'Vide = lien général de Réglages → Entreprise.' : 'Aucun lien général : ajoutez-en un dans Réglages → Entreprise, ou collez ici un lien créé dans l\'application myPOS.'" />
-                    <p class="small muted">Quand le client a payé, enregistrez le paiement ci-dessus avec le moyen « myPOS ».</p>
-                    <div class="form-actions"><button class="btn btn-secondary btn-sm" type="submit">Enregistrer le lien</button></div>
-                </form>
-            </details>
+            @elseif (auth()->user()->canOpen('settings.payments'))
+                <p class="small muted" style="margin-top:.75rem">Pour que le client puisse payer par carte depuis sa facture en ligne, activez myPOS dans <a href="{{ route('settings.payments') }}">Réglages → Paiement en ligne</a>.</p>
             @endif
         @endif
     </div>

@@ -27,10 +27,9 @@
     @if ($cardUrl = $invoice->cardPaymentUrl())
         <div class="card portal-pay">
             <h2>Payer par carte bancaire</h2>
-            <p>Reste à régler : <strong>{{ Money::format($invoice->balance()) }}</strong>. Paiement sécurisé chez notre prestataire de paiement.
-                @unless ($invoice->payment_link || $cardUrl === route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) Indiquez le montant et la référence <strong>{{ $invoice->number }}</strong>.@endunless</p>
-            <a class="btn" href="{{ $cardUrl }}" @if ($cardUrl !== route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null]))) target="_blank" rel="noopener noreferrer" @endif><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
-            @if ($cardUrl === route('portal.invoice.pay', array_filter(['token' => $invoice->public_token, 'essai' => request('essai') ? 1 : null])) && $invoice->balance() > \App\Services\MyposGateway::MIN_PARTIAL)
+            <p>Reste à régler : <strong>{{ Money::format($invoice->balance()) }}</strong>. Paiement sécurisé chez notre prestataire de paiement.</p>
+            <a class="btn" href="{{ $cardUrl }}"><x-icon name="wallet" /> Payer {{ Money::format($invoice->balance()) }} par carte</a>
+            @if ($invoice->balance() > \App\Services\MyposGateway::MIN_PARTIAL)
                 <details style="margin-top:.75rem" @if ($errors->has('montant')) open @endif>
                     <summary>Payer une partie seulement</summary>
                     <form method="GET" action="{{ route('portal.invoice.pay', $invoice->public_token) }}" class="form-grid" style="margin-top:.5rem">

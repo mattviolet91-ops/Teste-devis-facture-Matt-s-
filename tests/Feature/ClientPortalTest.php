@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Snapshot;
+use App\Services\MyposGateway;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -225,7 +226,7 @@ class ClientPortalTest extends TestCase
         $this->assertNotNull($invoice->fresh()->viewed_at);
     }
 
-    public function test_client_can_pay_by_card_with_the_payment_link(): void
+    public function test_card_button_only_appears_when_mypos_is_enabled(): void
     {
         $this->actingAs($this->admin());
         $this->post(route('invoices.store'), [
@@ -236,16 +237,17 @@ class ClientPortalTest extends TestCase
         $this->post(route('invoices.send', $invoice));
         $token = basename($invoice->fresh()->publicUrl());
 
-        // Sans lien : pas de bouton.
-        $this->get(route('portal.invoice', $token))->assertDontSee('Payer par carte bancaire');
-
+        // Les anciens liens de paiement manuels ne sont plus utilisés : sans myPOS, pas de bouton.
         app(Settings::class)->set(['bank.card_link' => 'https://mypos.com/@mattscouverture']);
-        $this->get(route('portal.invoice', $token))->assertSee('Payer par carte bancaire')
-            ->assertSee('https://mypos.com/@mattscouverture', false)->assertSee('référence <strong>FAC-2026-0001</strong>', false);
+        $invoice->forceFill(['payment_link' => 'https://mypos.com/pay/abc123'])->save();
+        $this->get(route('portal.invoice', $token))->assertDontSee('Payer par carte bancaire')->assertDontSee('mypos.com/', false);
+        $this->get(route('invoices.show', $invoice))->assertSee('activez myPOS');
 
-        $this->put(route('invoices.payment-link', $invoice), ['payment_link' => 'http://pas-securise.fr'])->assertSessionHasErrors('payment_link');
-        $this->put(route('invoices.payment-link', $invoice), ['payment_link' => 'https://mypos.com/pay/abc123'])->assertSessionHasNoErrors();
-        $this->get(route('portal.invoice', $token))->assertSee('https://mypos.com/pay/abc123', false)->assertDontSee('mattscouverture');
+        $key = openssl_pkey_new(['private_key_bits' => 1024]);
+        openssl_pkey_export($key, $pem);
+        $package = base64_encode(json_encode(['sid' => '000000000000123', 'cn' => '61938166610', 'pk' => $pem, 'pc' => openssl_pkey_get_details($key)['key'], 'idx' => 1]));
+        app(Settings::class)->set(['mypos.enabled' => true, 'mypos.test' => false, 'mypos.package' => MyposGateway::encryptPackage($package)]);
+        $this->get(route('portal.invoice', $token))->assertSee('Payer par carte bancaire')->assertSee(route('portal.invoice.pay', $token), false);
 
         // Facture réglée : plus de bouton.
         $this->post(route('payments.store', $invoice), ['amount' => '250', 'paid_at' => today()->toDateString(), 'method' => 'mypos']);
