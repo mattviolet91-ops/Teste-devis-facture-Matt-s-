@@ -133,6 +133,7 @@
             @if ($user->isAdmin())<a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>@endif
             @if ($user->isAdmin())<a class="sheet-item" href="{{ route('expenses.create') }}"><x-icon name="cart" /> Frais</a>@endif
             <a class="sheet-item" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
+            <a class="sheet-item" href="{{ route('attachments.sign.create') }}"><x-icon name="pen" /> Document à signer</a>
         </div>
     </dialog>
 

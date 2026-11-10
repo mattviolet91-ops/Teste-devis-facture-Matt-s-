@@ -438,7 +438,8 @@
     box.querySelector('[data-scan-pick]').addEventListener('click', function () { picker.click(); });
     // Rien de choisi : le formulaire le dit au lieu de partir vide.
     pagesInput.closest('form').addEventListener('submit', function (event) {
-      if (!pages.length) { event.preventDefault(); event.stopImmediatePropagation(); alert('Photographiez au moins une page.'); }
+      // (sauf quand le scan n'est qu'une des deux façons de fournir le document)
+      if (!pages.length && !box.hasAttribute('data-scan-optional')) { event.preventDefault(); event.stopImmediatePropagation(); alert('Photographiez au moins une page.'); }
     }, true);
   });
 

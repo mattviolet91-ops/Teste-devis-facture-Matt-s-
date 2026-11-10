@@ -3,11 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\Client;
+use App\Models\Invoice;
+use App\Models\Quote;
+use App\Services\ActivityLogger;
 use App\Services\DocumentSignatureService;
 use App\Services\LinkMailer;
+use App\Services\ScanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -17,6 +24,107 @@ use Symfony\Component\HttpFoundation\Response;
 class DocumentSignatureController extends Controller
 {
     public function __construct(private readonly DocumentSignatureService $signatures) {}
+
+    /** « Faire signer un document » : client, fichier (ou scan) et envoi, en un seul écran. */
+    public function create(Request $request, LinkMailer $mailer): View
+    {
+        $admin = $request->user()->isAdmin();
+        $clients = Client::query()->orderBy('last_name')->orderBy('company_name')->get();
+        $targets = [];
+        foreach (Quote::query()->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'title']) as $quote) {
+            $targets[$quote->client_id][] = ['id' => 'q:'.$quote->id, 'label' => 'Devis '.$quote->number.($quote->title ? ' — '.$quote->title : '')];
+        }
+        if ($admin) {
+            foreach (Invoice::query()->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'kind', 'title']) as $invoice) {
+                $targets[$invoice->client_id][] = ['id' => 'i:'.$invoice->id, 'label' => $invoice->kindLabel().' '.$invoice->number.($invoice->title ? ' — '.$invoice->title : '')];
+            }
+        }
+
+        return view('attachments.send', [
+            'clients' => $clients,
+            'data' => $clients->mapWithKeys(fn (Client $c) => [$c->id => ['email' => (string) $c->email, 'targets' => $targets[$c->id] ?? []]]),
+            'clientId' => (int) $request->query('client', 0) ?: null,
+            'canEmail' => $mailer->canSend(),
+        ]);
+    }
+
+    public function store(Request $request, ScanService $scans, LinkMailer $mailer): RedirectResponse
+    {
+        $data = $request->validate([
+            'client_id' => ['required', 'integer', Rule::exists('clients', 'id')->whereNull('deleted_at')],
+            'target' => ['nullable', 'string', 'regex:/^[qi]:\d+$/'],
+            'name' => ['nullable', 'string', 'max:120'],
+            'file' => ['nullable', 'required_without:pages', 'file', 'max:15360', 'mimes:pdf,jpg,jpeg,png,webp'],
+            'pages' => ['nullable', 'array', 'max:20'],
+            'pages.*' => ['file', 'max:15360', 'mimes:jpg,jpeg,png,webp'],
+            'action' => ['required', Rule::in(['send', 'on_site'])],
+            'to' => ['nullable', 'email', 'max:160'],
+        ], [
+            'client_id.required' => 'Choisissez le client.',
+            'file.required_without' => 'Ajoutez le document (PDF ou photo), ou scannez-le.',
+            'file.mimes' => 'Seul un PDF ou une photo peut être signé. Un fichier Word ou Excel doit d\'abord être enregistré en PDF.',
+            'file.max' => 'Fichier trop lourd (15 Mo maximum).',
+            'pages.*.mimes' => 'Le scan accepte des photos (JPEG, PNG).',
+        ], ['to' => 'adresse email']);
+
+        $client = Client::query()->findOrFail($data['client_id']);
+        [$quote, $invoice] = [null, null];
+        if (! empty($data['target'])) {
+            [$kind, $id] = explode(':', $data['target']);
+            if ($kind === 'q') {
+                $quote = Quote::query()->where('client_id', $client->id)->findOrFail((int) $id);
+            } else {
+                abort_unless($request->user()->isAdmin(), 403);
+                $invoice = Invoice::query()->where('client_id', $client->id)->findOrFail((int) $id);
+            }
+        }
+
+        // Le fichier : scan (photos → un PDF) ou PDF / photo fourni.
+        $folder = 'documents/clients/'.$client->id;
+        if ($request->hasFile('pages')) {
+            $title = trim((string) ($data['name'] ?? '')) ?: 'Document du '.now()->format('d/m/Y');
+            try {
+                $pdf = $scans->toPdf($request->file('pages'), $title);
+            } catch (InvalidArgumentException) {
+                throw ValidationException::withMessages(['pages' => 'Une des photos n\'a pas pu être lue. Reprenez-la.']);
+            }
+            $path = $folder.'/'.Str::random(40).'.pdf';
+            Storage::disk('local')->put($path, $pdf);
+            [$name, $mime, $size] = [Str::finish($title, '.pdf'), 'application/pdf', strlen($pdf)];
+        } else {
+            $file = $request->file('file');
+            $path = $file->store($folder, 'local');
+            $extension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $name = trim((string) ($data['name'] ?? '')) ? Str::finish(trim($data['name']), '.'.$extension) : $file->getClientOriginalName();
+            [$mime, $size] = [$file->getMimeType() ?: 'application/octet-stream', (int) $file->getSize()];
+        }
+
+        $attachment = new Attachment(['name' => Str::limit($name, 150, '')]);
+        $attachment->client()->associate($client);
+        $attachment->forceFill(['quote_id' => $quote?->id, 'invoice_id' => $invoice?->id, 'path' => $path, 'mime' => $mime, 'size' => $size, 'created_by' => $request->user()->id])->save();
+
+        try {
+            $this->signatures->request($attachment);
+        } catch (InvalidArgumentException $e) {
+            Storage::disk('local')->delete($path);
+            $attachment->delete();
+            throw ValidationException::withMessages(['file' => $e->getMessage()]);
+        }
+        ActivityLogger::log('attachment.added', "Document à faire signer ajouté : {$attachment->name}", $quote ?? $invoice ?? $client);
+
+        if ($data['action'] === 'on_site') {
+            return redirect()->route('attachments.sign.on-site', $attachment);
+        }
+
+        $status = 'Document prêt à signer : envoyez le lien au client (WhatsApp, SMS ou email) depuis la liste ci-dessous.';
+        if (! empty($data['to'])) {
+            $status = $mailer->canSend() && $mailer->sendSignatureLink($attachment, $data['to'])->isSent()
+                ? "Document envoyé à {$data['to']} pour signature. Vous serez prévenu quand il sera signé."
+                : 'Document prêt à signer, mais l\'email n\'a pas pu partir : envoyez le lien depuis la liste ci-dessous.';
+        }
+
+        return redirect()->to($this->back($attachment))->with('status', $status);
+    }
 
     /** Prépare le lien de signature à envoyer au client. */
     public function request(Request $request, Attachment $attachment): RedirectResponse

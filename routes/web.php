@@ -289,6 +289,8 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/factures/{invoice}/documents', [AttachmentController::class, 'storeForInvoice'])->whereNumber('invoice')->middleware('throttle:30,1')->name('attachments.invoice.store');
     Route::get('/documents/{attachment}', [AttachmentController::class, 'show'])->whereNumber('attachment')->name('attachments.show');
     Route::delete('/documents/{attachment}', [AttachmentController::class, 'destroy'])->whereNumber('attachment')->name('attachments.destroy');
+    Route::get('/documents/faire-signer', [DocumentSignatureController::class, 'create'])->name('attachments.sign.create');
+    Route::post('/documents/faire-signer', [DocumentSignatureController::class, 'store'])->middleware('throttle:20,1')->name('attachments.sign.store');
     Route::prefix('documents/{attachment}')->whereNumber('attachment')->name('attachments.sign.')->group(function () {
         Route::post('/signature', [DocumentSignatureController::class, 'request'])->name('request');
         Route::delete('/signature', [DocumentSignatureController::class, 'cancel'])->name('cancel');

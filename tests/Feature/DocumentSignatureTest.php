@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ClientMessage;
 use App\Models\Attachment;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Models\Worksite;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Mpdf\Mpdf;
 use Tests\TestCase;
@@ -210,5 +212,44 @@ class DocumentSignatureTest extends TestCase
         $this->get(route('attachments.sign.on-site', $doc))->assertForbidden();
         $this->delete(route('attachments.destroy', $doc))->assertForbidden();
         $this->get(route('clients.show', $this->client))->assertOk()->assertDontSee('Facture-annexe.pdf');
+    }
+
+    public function test_document_is_added_and_sent_for_signature_in_one_screen(): void
+    {
+        Mail::fake();
+        $this->put(route('settings.emails'), ['username' => 'mv.entreprise91@gmail.com', 'password' => 'abcd efgh ijkl mnop'])->assertSessionHasNoErrors();
+        $this->client->update(['email' => 'martin@example.com']);
+        $quote = $this->sentQuote();
+
+        $this->get(route('attachments.sign.create', ['client' => $this->client->id]))->assertOk()->assertSee('Faire signer un document')->assertSee('q:'.$quote->id, false);
+
+        // Ni fichier ni scan, puis un fichier Word : refusés avec une explication.
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'action' => 'send'])->assertSessionHasErrors('file');
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'action' => 'send', 'file' => UploadedFile::fake()->create('contrat.docx', 20)])
+            ->assertSessionHasErrors(['file' => 'Seul un PDF ou une photo peut être signé. Un fichier Word ou Excel doit d\'abord être enregistré en PDF.']);
+        $this->assertSame(0, Attachment::query()->count());
+
+        // PDF rattaché au devis, envoyé par email : le lien est créé et l'email part.
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'target' => 'q:'.$quote->id, 'name' => 'Autorisation de travaux',
+            'file' => $this->pdfFile('scan.pdf'), 'action' => 'send', 'to' => 'martin@example.com'])
+            ->assertRedirect(route('quotes.show', $quote).'#documents')->assertSessionHas('status', fn ($s) => str_contains($s, 'envoyé à martin@example.com'));
+        $doc = Attachment::query()->sole();
+        $this->assertSame(['Autorisation de travaux.pdf', $quote->id, true], [$doc->name, $doc->quote_id, $doc->awaitsSignature()]);
+        Mail::assertSent(ClientMessage::class, fn ($m) => $m->hasTo('martin@example.com') && $m->buttonUrl === $doc->publicUrl());
+
+        // Scan signé sur place : on arrive directement sur l'écran de signature.
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'action' => 'on_site', 'pages' => [UploadedFile::fake()->image('p1.jpg', 800, 1100)]])
+            ->assertRedirect(route('attachments.sign.on-site', Attachment::query()->latest('id')->first()));
+        $this->assertSame('application/pdf', Attachment::query()->latest('id')->first()->mime);
+
+        // PDF protégé : rien n'est gardé.
+        $protected = new UploadedFile(base_path('tests/fixtures/pdf-protege.pdf'), 'pdf-protege.pdf', 'application/pdf', null, true);
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'action' => 'send', 'file' => $protected])->assertSessionHasErrors('file');
+        $this->assertSame(2, Attachment::query()->count());
+
+        // Commercial : pas de rattachement à une facture.
+        $this->actingAs(User::factory()->create(['role' => 'commercial']));
+        $this->get(route('attachments.sign.create'))->assertOk();
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'target' => 'i:1', 'action' => 'send', 'file' => $this->pdfFile('x.pdf')])->assertForbidden();
     }
 }

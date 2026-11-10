@@ -132,6 +132,8 @@
         </form>
     </details>
 
+    <p style="margin:.5rem 0 0"><a class="btn btn-secondary btn-sm" href="{{ route('attachments.sign.create', ['client' => $client?->id]) }}"><x-icon name="pen" /> Faire signer un document</a></p>
+
     <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="inline-upload" style="margin-top:.5rem">
         @csrf
         <label class="btn btn-secondary btn-sm" for="doc-files-{{ $uid }}"><x-icon name="plus" /> {{ $isClient ? 'Ajouter un document' : 'Ajouter un fichier' }}</label>
