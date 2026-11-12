@@ -4,7 +4,7 @@
     @if ($paid)
         <div class="card portal-status portal-ok">
             <h1><x-icon name="check" /> Merci !</h1>
-            <p>Votre paiement a bien été transmis. Dès sa confirmation par la banque, vous recevez votre facture par email.</p>
+            <p>Votre paiement a bien été transmis. Dès sa confirmation par la banque, vous recevez un reçu par email. Votre facture vous sera adressée séparément.</p>
         </div>
     @else
         <div class="card portal-status">

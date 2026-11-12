@@ -45,6 +45,10 @@ class PaymentController extends Controller
             'mode' => $data['mode'] ?? null,
             'freeLink' => ($mypos = app(MyposGateway::class))->isEnabled() && $mypos->freeLinkEnabled()
                 ? $mypos->freeLinkUrl().($mypos->isTest() ? '?essai=1' : '') : null,
+            // Montants libres encaissés sans facture, avec les factures du client qui peuvent les recevoir.
+            'unallocated' => ($unallocated = Payment::query()->unallocated()->whereHas('client')->with('client')->latest('paid_at')->latest('id')->get()),
+            'attachableInvoices' => Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->whereNotNull('number')
+                ->whereIn('client_id', $unallocated->pluck('client_id')->unique())->latest('id')->get()->groupBy('client_id'),
             'pendingRequests' => PaymentRequest::query()->where('status', 'pending')->whereHas('client')->with('client')->latest('id')->limit(20)->get(),
             'openInvoices' => Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->with('client')->orderBy('due_date')->get(),
         ]);
@@ -83,11 +87,30 @@ class PaymentController extends Controller
         return redirect()->route('invoices.show', $invoice)->with('status', $message)->with('thank', $invoice->status === 'paid');
     }
 
+    /** Rattache un encaissement sans facture à une facture envoyée du même client. */
+    public function attach(Request $request, Payment $payment): RedirectResponse
+    {
+        $data = $request->validate(['invoice_id' => ['required', 'integer', Rule::exists('invoices', 'id')->whereNull('deleted_at')]],
+            ['invoice_id.required' => 'Choisissez la facture.'], ['invoice_id' => 'facture']);
+        $invoice = Invoice::query()->findOrFail($data['invoice_id']);
+
+        try {
+            $this->payments->attach($payment, $invoice);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['attach_'.$payment->id => $e->getMessage()]);
+        }
+
+        return redirect()->to(route('invoices.show', $invoice).'#paiements')
+            ->with('status', Money::format($payment->amount)." rattaché à la facture {$invoice->number}.")->with('thank', $invoice->fresh()->status === 'paid');
+    }
+
     public function destroy(Payment $payment): RedirectResponse
     {
         $invoice = $payment->invoice;
         $this->payments->delete($payment);
 
-        return redirect()->route('invoices.show', $invoice)->with('status', 'Paiement supprimé.');
+        return $invoice
+            ? redirect()->route('invoices.show', $invoice)->with('status', 'Paiement supprimé.')
+            : redirect()->to(route('payments.index').'#a-rattacher')->with('status', 'Encaissement supprimé.');
     }
 }

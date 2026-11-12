@@ -64,7 +64,7 @@ class LinkEmailsTest extends TestCase
 
     private function paymentRequest(): PaymentRequest
     {
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'kind' => 'standard', 'label' => 'Dépannage fuite', 'amount' => '180', 'mode' => 'card'])->assertSessionHasNoErrors();
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Dépannage fuite', 'amount' => '180', 'mode' => 'card'])->assertSessionHasNoErrors();
 
         return PaymentRequest::query()->latest('id')->firstOrFail();
     }
@@ -97,26 +97,36 @@ class LinkEmailsTest extends TestCase
         $this->post(route('payments.requests.email', $request), ['to' => 'petit@example.com'])->assertStatus(409);
     }
 
-    public function test_invoice_is_emailed_to_the_client_after_a_card_payment(): void
+    public function test_client_gets_a_receipt_or_the_invoice_by_email_after_a_card_payment(): void
     {
+        // Montant libre sans facture : un simple reçu, sans pièce jointe.
         $request = $this->paymentRequest();
         auth()->logout();
         $this->get(route('portal.payment-request.pay', $request->token))->assertOk();
         $this->notify(OnlinePayment::query()->sole(), '180.00');
+        $this->assertSame(0, Invoice::query()->count());
+        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('petit@example.com') && str_starts_with($m->mailSubject, 'Reçu de paiement') && $m->pdfName === null);
 
+        // Lien pour une facture existante : la facture est envoyée, PDF joint.
+        Mail::fake();
+        $this->actingAs($this->admin());
+        $this->post(route('invoices.store'), ['client_id' => $this->client->id, 'due_days' => 30, 'lines' => [['type' => 'item', 'title' => 'Réparation', 'quantity' => '1', 'unit_price' => '350']]]);
         $invoice = Invoice::query()->sole();
-        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('petit@example.com') && str_contains($m->mailSubject, $invoice->number) && $m->pdfName !== null);
+        $this->post(route('invoices.send', $invoice));
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '350', 'mode' => 'card'])->assertSessionHasNoErrors();
+        auth()->logout();
+        $this->get(route('portal.payment-request.pay', PaymentRequest::query()->latest('id')->first()->token));
+        $this->notify(OnlinePayment::query()->latest('id')->first(), '350.00');
+        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('petit@example.com') && str_contains($m->mailSubject, $invoice->fresh()->number) && $m->pdfName !== null);
 
-        // Réglage décoché : pas d'email.
+        // Réglage décoché : pas d'email au client.
         Mail::fake();
         app(Settings::class)->set(['mypos.email_receipt' => false]);
         $this->actingAs($this->admin());
-        $second = $this->paymentRequest();
+        $third = $this->paymentRequest();
         auth()->logout();
-        $this->get(route('portal.payment-request.pay', $second->token));
+        $this->get(route('portal.payment-request.pay', $third->token));
         $this->notify(OnlinePayment::query()->latest('id')->first(), '180.00');
-        $this->assertSame(2, Invoice::query()->count());
-        // Seule la notification destinée à l'entreprise part ; rien pour le client.
         Mail::assertNotSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('petit@example.com'));
     }
 
@@ -125,7 +135,7 @@ class LinkEmailsTest extends TestCase
         $request = $this->paymentRequest();
         $doc = $this->documentToSign();
         $noEmail = Client::factory()->create(['email' => null]);
-        $this->post(route('payments.requests.store'), ['client_id' => $noEmail->id, 'kind' => 'standard', 'label' => 'Sans email', 'amount' => '50', 'mode' => 'card']);
+        $this->post(route('payments.requests.store'), ['client_id' => $noEmail->id, 'label' => 'Sans email', 'amount' => '50', 'mode' => 'card']);
 
         Carbon::setTestNow('2026-11-14 10:45');
         $this->artisan('app:pending-reminders')->expectsOutputToContain('désactivée')->assertSuccessful();

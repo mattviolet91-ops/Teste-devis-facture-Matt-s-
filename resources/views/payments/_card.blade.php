@@ -9,6 +9,25 @@
         @php $percent = $invoice->total_ttc > 0 ? min(100, (int) round($invoice->amount_paid * 100 / $invoice->total_ttc)) : 0; @endphp
         <div class="progress" role="progressbar" aria-label="Part de la facture déjà réglée" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ $percent }}%"></span></div>
 
+        {{-- Montants libres déjà encaissés auprès de ce client, sans facture : à rattacher ici. --}}
+        @if ($invoice->acceptsPayments())
+            @foreach (\App\Models\Payment::query()->unallocated()->where('client_id', $invoice->client_id)->oldest('paid_at')->get() as $waiting)
+                <div class="alert alert-info" style="margin-top:.75rem">
+                    @error('attach_'.$waiting->id)<div class="alert alert-error">{{ $message }}</div>@enderror
+                    <strong>{{ Money::format($waiting->amount) }}</strong> déjà encaissé le {{ $waiting->paid_at->format('d/m/Y') }} ({{ $waiting->methodLabel() }}{{ $waiting->label ? ' — '.$waiting->label : '' }}), sans facture.
+                    @if ($waiting->amount <= $invoice->balance())
+                        <form method="POST" action="{{ route('payments.attach', $waiting) }}" style="margin-top:.5rem">
+                            @csrf
+                            <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+                            <button class="btn btn-sm" type="submit">Rattacher à cette facture</button>
+                        </form>
+                    @else
+                        <br><span class="small">Il dépasse le reste à payer de cette facture ({{ Money::format($invoice->balance()) }}).</span>
+                    @endif
+                </div>
+            @endforeach
+        @endif
+
         @if ($invoice->payments->isNotEmpty())
             <ul class="stat-list">
                 @foreach ($invoice->payments as $payment)

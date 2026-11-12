@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ClientRequest;
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Models\Worksite;
 use App\Services\ActivityLogger;
@@ -121,6 +122,9 @@ class ClientController extends Controller
             return back()->withErrors(['client' => 'Ce client a des devis : il ne peut pas être mis à la corbeille. Supprimez d\'abord ses brouillons ; un devis envoyé est conservé.']);
         }
 
+        if (Payment::query()->where('client_id', $client->id)->exists()) {
+            return back()->withErrors(['client' => 'Ce client a des encaissements enregistrés : il ne peut pas être mis à la corbeille.']);
+        }
         if (PaymentRequest::query()->where('client_id', $client->id)->where('status', 'pending')->exists()) {
             return back()->withErrors(['client' => 'Ce client a un lien de paiement en attente : annulez-le d\'abord (Paiements → Liens de paiement en attente).']);
         }

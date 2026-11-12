@@ -1,27 +1,30 @@
-// « Encaisser un montant » : devis du seul client choisi, type de facture proposé, champs selon le mode.
+// « Encaisser un montant » : factures du seul client choisi, montant proposé, champs selon le mode.
 (function () {
   var form = document.querySelector('[data-collect]');
   if (!form) { return; }
-  var data = JSON.parse((document.getElementById('collect-quotes') || {}).textContent || '{}');
+  var data = JSON.parse((document.getElementById('collect-invoices') || {}).textContent || '{}');
   var client = form.querySelector('[data-collect-client]');
-  var quote = form.querySelector('[data-collect-quote]');
-  var kindTouched = false;
-
-  function setKind(value) {
-    if (kindTouched) { return; }
-    form.querySelectorAll('[data-collect-kind]').forEach(function (r) { r.checked = r.value === value; });
-  }
+  var invoice = form.querySelector('[data-collect-invoice]');
+  var amount = form.querySelector('#amount');
+  var amountTouched = !!(amount && amount.value);
 
   // Options reconstruites (l'iPhone affiche les options masquées).
   function rebuild() {
-    var keep = quote.value || quote.getAttribute('data-selected');
-    quote.length = 1;
+    var keep = invoice.value || invoice.getAttribute('data-selected');
+    invoice.length = 1;
     (data[client.value] || []).forEach(function (item) {
       var o = new Option(item.label, item.id);
       if (String(item.id) === String(keep || '')) { o.selected = true; }
-      quote.add(o);
+      invoice.add(o);
     });
-    quote.removeAttribute('data-selected');
+    invoice.removeAttribute('data-selected');
+  }
+
+  // Facture choisie : son reste à payer est proposé comme montant (modifiable).
+  function proposeAmount() {
+    if (!amount || amountTouched) { return; }
+    var chosen = (data[client.value] || []).filter(function (item) { return String(item.id) === invoice.value; })[0];
+    amount.value = chosen ? (chosen.balance / 100).toFixed(2).replace('.', ',').replace(',00', '') : '';
   }
 
   function applyMode() {
@@ -33,10 +36,11 @@
     });
   }
 
-  client.addEventListener('change', function () { quote.value = ''; rebuild(); setKind('standard'); });
-  quote.addEventListener('change', function () { setKind(quote.value ? 'deposit' : 'standard'); });
-  form.querySelectorAll('[data-collect-kind]').forEach(function (r) { r.addEventListener('change', function () { kindTouched = true; }); });
+  if (amount) { amount.addEventListener('input', function () { amountTouched = amount.value !== ''; }); }
+  client.addEventListener('change', function () { invoice.value = ''; rebuild(); proposeAmount(); });
+  invoice.addEventListener('change', proposeAmount);
   form.querySelectorAll('[data-collect-mode]').forEach(function (r) { r.addEventListener('change', applyMode); });
   rebuild();
+  proposeAmount();
   applyMode();
 })();

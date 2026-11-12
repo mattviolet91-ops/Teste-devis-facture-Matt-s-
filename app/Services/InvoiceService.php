@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Quote;
@@ -115,78 +114,6 @@ class InvoiceService
 
             return $this->recalculate($invoice);
         });
-    }
-
-    /**
-     * Facture d'un montant libre (TTC), acompte ou facture simple, rattachée ou non à un devis.
-     * Le total TTC est exactement le montant : si la TVA ne tombe pas juste au centime,
-     * une ligne « Arrondi » (sans TVA) de 1 centime complète.
-     */
-    public function createForAmount(Client $client, ?Quote $quote, string $kind, string $label, int $amountTtc, int $vatRate): Invoice
-    {
-        if (! in_array($kind, ['deposit', 'standard'], true) || $amountTtc <= 0) {
-            throw new InvalidArgumentException('Montant ou type de facture invalide.');
-        }
-
-        return DB::transaction(function () use ($client, $quote, $kind, $label, $amountTtc, $vatRate) {
-            $invoice = $this->blank($client->id, $quote?->worksite_id);
-            if ($quote) {
-                $invoice->fill($quote->only(['vat_regime', 'show_bank']));
-                $invoice->quote_id = $quote->id;
-                $invoice->project_id = $quote->project_id;
-            }
-            $invoice->title = $label;
-            $invoice->kind = $kind;
-            $invoice->due_days = 0;
-            $invoice->created_by = auth()->id();
-            $invoice->save();
-
-            $line = [
-                'type' => 'item',
-                'title' => $label,
-                'description' => $quote ? ($kind === 'deposit' ? 'Acompte' : 'Règlement').' sur le devis n° '.$quote->number.($quote->title ? ' — '.$quote->title : '') : null,
-                'quantity' => 1000,
-                'unit' => 'forfait',
-                'vat_rate' => $vatRate,
-            ];
-            $this->replaceLines($invoice, $this->amountLines($line, $amountTtc, $vatRate, $invoice->isFranchise()));
-            ActivityLogger::log('invoice.created', Invoice::KINDS[$kind].' de '.Money::format($amountTtc).' préparée (montant libre)', $invoice);
-
-            return $this->recalculate($invoice);
-        });
-    }
-
-    /**
-     * Ligne(s) dont le total TTC vaut exactement le montant.
-     *
-     * @param  array<string, mixed>  $line
-     * @return list<array<string, mixed>>
-     */
-    public function amountLines(array $line, int $amountTtc, int $vatRate, bool $franchise): array
-    {
-        $total = fn (int $ht) => $this->calculator->calculate([$line + ['unit_price' => $ht]], null, 0, $franchise)['total_ttc'];
-        if ($franchise || $vatRate <= 0) {
-            return [$line + ['unit_price' => $amountTtc]];
-        }
-
-        $guess = intdiv($amountTtc * 10000 + intdiv(10000 + $vatRate, 2), 10000 + $vatRate);
-        $below = null;
-        for ($ht = $guess - 3; $ht <= $guess + 3; $ht++) {
-            $ttc = $total($ht);
-            if ($ttc === $amountTtc) {
-                return [$line + ['unit_price' => $ht]];
-            }
-            if ($ttc < $amountTtc) {
-                $below = $ht;
-            }
-        }
-
-        $below ??= $guess - 3;
-
-        return [
-            $line + ['unit_price' => $below],
-            ['type' => 'item', 'title' => 'Arrondi', 'quantity' => 1000, 'unit' => 'forfait', 'unit_price' => $amountTtc - $total($below), 'vat_rate' => 0],
-        ];
     }
 
     /** Envoi : attribue le numéro de facture et fixe les dates. */

@@ -16,7 +16,7 @@
         <details class="card" data-share>
             <summary><strong>Lien de paiement à montant libre</strong> <span class="muted small">— le client indique lui-même le montant</span></summary>
             <p class="small muted" style="margin-top:.75rem">Un seul lien, toujours le même, à donner à n'importe quel client : il indique son nom, le motif et le montant, puis paie par carte.
-                Vous êtes prévenu, sa fiche est créée si besoin et la facture réglée lui est envoyée. Pour un acompte sur un devis, préférez « Encaisser un montant » (montant fixé par vous, délai légal vérifié).
+                Vous êtes prévenu, sa fiche est créée si besoin, il reçoit un reçu, et l'encaissement arrive dans « À rattacher » ci-dessous. Pour un montant fixé par vous, préférez « Encaisser un montant ».
                 Montants acceptés et désactivation : <a href="{{ route('settings.payments') }}#lien-libre">Réglages → Paiement en ligne</a>.</p>
             <div class="copy-field">
                 <input type="text" value="{{ $freeLink }}" readonly aria-label="Lien de paiement à montant libre" data-copy-source>
@@ -29,6 +29,44 @@
                 <button class="chip" type="button" data-share-to="copy"><x-icon name="copy" /> Copier le message</button>
             </div>
         </details>
+    @endif
+
+    @if ($unallocated->isNotEmpty())
+        <div class="card" id="a-rattacher">
+            <div class="card-head"><h2>À rattacher à une facture</h2><span class="muted small">{{ $unallocated->count() }} encaissement(s) · {{ Money::format((int) $unallocated->sum('amount')) }}</span></div>
+            <p class="small muted" style="margin-top:0">Montants encaissés sans facture. Choisissez une facture envoyée et pas encore soldée du client : le paiement s'y enregistre.</p>
+            <ul class="attachment-list">
+                @foreach ($unallocated as $payment)
+                    @php $candidates = $attachableInvoices[$payment->client_id] ?? collect(); @endphp
+                    <li>
+                        <div><strong>{{ Money::format($payment->amount) }}</strong> · <a href="{{ route('clients.show', $payment->client_id) }}">{{ $payment->client?->displayName() }}</a></div>
+                        <span class="muted small">{{ $payment->label ?: 'Sans libellé' }} · {{ $payment->paid_at->format('d/m/Y') }} · {{ $payment->methodLabel() }}{{ $payment->reference ? ' · réf. '.$payment->reference : '' }}
+                            <form method="POST" action="{{ route('payments.destroy', $payment) }}" data-confirm="Supprimer cet encaissement de {{ Money::plain($payment->amount) }} ? À ne faire que s'il a été saisi par erreur." style="display:inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="link-danger" type="submit">Supprimer</button>
+                            </form>
+                        </span>
+                        @error('attach_'.$payment->id)<div class="alert alert-error" style="margin:.5rem 0 0">{{ $message }}</div>@enderror
+                        @if ($candidates->isEmpty())
+                            <p class="small" style="margin:.375rem 0 0">Aucune facture envoyée à régler pour ce client.
+                                <a href="{{ route('invoices.create', ['client' => $payment->client_id]) }}">Créer une facture</a>, envoyez-la, puis revenez la choisir ici.</p>
+                        @else
+                            <form method="POST" action="{{ route('payments.attach', $payment) }}" class="copy-field" style="margin-top:.5rem">
+                                @csrf
+                                <select name="invoice_id" required aria-label="Facture à laquelle rattacher {{ Money::plain($payment->amount) }}">
+                                    @if ($candidates->count() > 1)<option value="">Choisir la facture…</option>@endif
+                                    @foreach ($candidates as $candidate)
+                                        <option value="{{ $candidate->id }}" @disabled($candidate->balance() < $payment->amount)>{{ $candidate->kindLabel() }} {{ $candidate->number }} — reste {{ Money::format($candidate->balance()) }}{{ $candidate->balance() < $payment->amount ? ' (trop petit)' : '' }}</option>
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-sm" type="submit">Rattacher</button>
+                            </form>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     @if ($pendingRequests->isNotEmpty())
@@ -96,10 +134,10 @@
         <ul class="list">
             @foreach ($payments as $payment)
                 <li>
-                    <a class="list-item" href="{{ route('invoices.show', $payment->invoice) }}#paiements">
+                    <a class="list-item" href="{{ $payment->invoice ? route('invoices.show', $payment->invoice).'#paiements' : route('payments.index').'#a-rattacher' }}">
                         <span class="list-main">
                             <strong>{{ $payment->client?->displayName() }}</strong>
-                            <span class="muted small">{{ $payment->paid_at->format('d/m/Y') }} · {{ $payment->methodLabel() }} · facture {{ $payment->invoice?->number }}</span>
+                            <span class="muted small">{{ $payment->paid_at->format('d/m/Y') }} · {{ $payment->methodLabel() }} · {{ $payment->invoice ? 'facture '.$payment->invoice->number : 'à rattacher à une facture' }}</span>
                         </span>
                         <span class="list-meta"><strong class="amount">{{ Money::format($payment->amount) }}</strong></span>
                     </a>

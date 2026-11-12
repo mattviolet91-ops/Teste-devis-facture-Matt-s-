@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentRequest;
-use App\Models\Quote;
-use App\Models\VatRate;
 use App\Services\LinkMailer;
 use App\Services\MyposGateway;
 use App\Services\PaymentRequestService;
-use App\Services\Settings;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,37 +22,34 @@ class PaymentRequestController extends Controller
 {
     public function __construct(private readonly PaymentRequestService $requests) {}
 
-    public function create(Request $request, Settings $settings, MyposGateway $mypos): View
+    public function create(Request $request, MyposGateway $mypos): View
     {
         $clients = Client::query()->orderBy('last_name')->orderBy('company_name')->get();
-        $quotes = Quote::query()->where('status', 'accepted')->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'title', 'total_ttc']);
+        // Factures envoyées et pas encore soldées : celles sur lesquelles un paiement peut être enregistré.
+        $invoices = Invoice::query()->invoices()->whereIn('status', Invoice::OPEN)->whereNotNull('number')->latest('id')->get();
 
         return view('payments.collect', [
             'clients' => $clients,
-            'quotesByClient' => $quotes->groupBy('client_id')->map(fn ($list) => $list->map(fn (Quote $q) => [
-                'id' => $q->id,
-                'label' => $q->number.($q->title ? ' — '.$q->title : '').' ('.Money::format($q->total_ttc).')',
+            'invoicesByClient' => $invoices->groupBy('client_id')->map(fn ($list) => $list->map(fn (Invoice $i) => [
+                'id' => $i->id,
+                'label' => $i->kindLabel().' '.$i->number.' — reste '.Money::format($i->balance()),
+                'balance' => $i->balance(),
+                'title' => $i->kindLabel().' '.$i->number,
             ])->values()),
             'clientId' => (int) $request->query('client', 0) ?: null,
-            'quoteId' => (int) $request->query('devis', 0) ?: null,
-            'franchise' => $settings->get('vat.regime') === 'franchise',
-            'vatRates' => VatRate::query()->where('is_active', true)->ordered()->get(),
-            'defaultRate' => (int) (VatRate::query()->where('is_default', true)->value('rate') ?? 0),
+            'invoiceId' => (int) $request->query('facture', 0) ?: null,
             'myposReady' => $mypos->isEnabled(),
             'myposTest' => $mypos->isTest(),
         ]);
     }
 
-    public function store(Request $request, Settings $settings): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $franchise = $settings->get('vat.regime') === 'franchise';
         $data = $request->validate([
             'client_id' => ['required', 'integer', Rule::exists('clients', 'id')->whereNull('deleted_at')],
-            'quote_id' => ['nullable', 'integer', Rule::exists('quotes', 'id')],
-            'kind' => ['required', Rule::in(['deposit', 'standard'])],
-            'label' => ['required', 'string', 'max:150'],
+            'invoice_id' => ['nullable', 'integer', Rule::exists('invoices', 'id')->whereNull('deleted_at')],
+            'label' => ['nullable', 'required_without:invoice_id', 'string', 'max:150'],
             'amount' => ['required', 'string', 'max:20'],
-            'vat_rate' => [$franchise ? 'nullable' : 'required', 'integer', Rule::exists('vat_rates', 'rate')],
             'mode' => ['required', Rule::in(['card', 'received'])],
             'paid_at' => ['exclude_unless:mode,received', 'required', 'date', 'before_or_equal:today'],
             'method' => ['exclude_unless:mode,received', 'required', Rule::in(array_keys(Payment::METHODS))],
@@ -62,9 +57,8 @@ class PaymentRequestController extends Controller
             'reference' => ['exclude_unless:mode,received', 'nullable', 'string', 'max:80'],
         ], [
             'client_id.required' => 'Choisissez le client.',
-            'label.required' => 'Indiquez ce que le client règle (ex. « Acompte toiture »).',
+            'label.required_without' => 'Indiquez ce que le client règle (ex. « Acompte toiture »), ou choisissez la facture concernée.',
             'paid_at.before_or_equal' => 'La date du paiement ne peut pas être dans le futur.',
-            'vat_rate.required' => 'Choisissez le taux de TVA.',
         ]);
 
         $amount = Money::parse($data['amount']);
@@ -72,24 +66,24 @@ class PaymentRequestController extends Controller
             throw ValidationException::withMessages(['amount' => 'Indiquez un montant valide (ex. 500 ou 1 250,50).']);
         }
         $client = Client::query()->findOrFail($data['client_id']);
-        $quote = isset($data['quote_id']) ? Quote::query()->find($data['quote_id']) : null;
-        $vatRate = (int) ($data['vat_rate'] ?? VatRate::query()->where('is_default', true)->value('rate') ?? 0);
-        $label = trim($data['label']);
+        $invoice = isset($data['invoice_id']) ? Invoice::query()->findOrFail($data['invoice_id']) : null;
+        $label = trim((string) ($data['label'] ?? '')) ?: ($invoice ? $invoice->kindLabel().' '.$invoice->number : '');
 
         try {
             if ($data['mode'] === 'received') {
-                $invoice = $this->requests->recordReceived($client, $quote, [
-                    'kind' => $data['kind'], 'label' => $label, 'amount' => $amount, 'vat_rate' => $vatRate,
-                    'paid_at' => $data['paid_at'], 'method' => $data['method'],
+                $payment = $this->requests->recordReceived($client, $invoice, [
+                    'label' => $label, 'amount' => $amount, 'paid_at' => $data['paid_at'], 'method' => $data['method'],
                     'method_detail' => $data['method_detail'] ?? null, 'reference' => $data['reference'] ?? null,
                 ]);
 
-                return redirect()->route('invoices.show', $invoice)->with('status', Money::format($amount)." encaissé : {$invoice->kindLabel()} {$invoice->number} créée et réglée.");
+                return $payment->invoice
+                    ? redirect()->to(route('invoices.show', $payment->invoice).'#paiements')->with('status', Money::format($amount)." encaissé sur la facture {$payment->invoice->number}.")
+                    : redirect()->to(route('payments.index').'#a-rattacher')->with('status', Money::format($amount).' encaissé. Aucune facture n\'est créée : rattachez cet encaissement à une facture quand elle est prête.');
             }
 
-            $paymentRequest = $this->requests->createRequest($client, $quote, $data['kind'], $label, $amount, $vatRate);
+            $paymentRequest = $this->requests->createRequest($client, $invoice, $label, $amount);
         } catch (InvalidArgumentException $e) {
-            throw ValidationException::withMessages(['quote_id' => $e->getMessage()]);
+            throw ValidationException::withMessages(['invoice_id' => $e->getMessage()]);
         }
 
         return redirect()->route('payments.requests.show', $paymentRequest)->with('status', 'Lien de paiement prêt : envoyez-le au client ou ouvrez-le pour qu\'il paie sur place.');
@@ -100,7 +94,8 @@ class PaymentRequestController extends Controller
         return view('payments.request', [
             'canEmail' => $mailer->canSend(),
             'emailMessage' => $mailer->paymentMessage($paymentRequest),
-            'paymentRequest' => $paymentRequest->load(['client', 'quote', 'invoice']),
+            'paymentRequest' => $paymentRequest->load(['client', 'invoice']),
+            'payment' => $paymentRequest->attempts()->whereNotNull('payment_id')->with('payment.invoice')->latest('id')->first()?->payment,
             'myposReady' => $mypos->isEnabled(),
             'myposTest' => $mypos->isTest(),
         ]);

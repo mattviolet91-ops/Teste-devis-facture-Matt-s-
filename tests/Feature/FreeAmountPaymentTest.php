@@ -5,13 +5,11 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Models\Quote;
 use App\Models\User;
-use App\Services\DocumentCalculator;
-use App\Services\InvoiceService;
 use App\Services\PushService;
-use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -74,48 +72,66 @@ class FreeAmountPaymentTest extends TestCase
         return $quote->fresh();
     }
 
-    public function test_free_amount_paid_by_card_creates_a_paid_invoice(): void
+    private function sentInvoice(string $price = '350'): Invoice
+    {
+        $this->post(route('invoices.store'), ['client_id' => $this->client->id, 'due_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Réparation', 'quantity' => '1', 'unit_price' => $price]]])->assertSessionHasNoErrors();
+        $invoice = Invoice::query()->latest('id')->firstOrFail();
+        $this->post(route('invoices.send', $invoice))->assertSessionHasNoErrors();
+
+        return $invoice->fresh();
+    }
+
+    public function test_free_amount_paid_by_card_creates_no_invoice_and_is_attached_later(): void
     {
         $this->get(route('payments.index'))->assertSee(route('payments.requests.create'));
-        $this->get(route('payments.requests.create', ['client' => $this->client->id]))->assertOk()->assertSee('Encaisser un montant');
+        $this->get(route('payments.requests.create', ['client' => $this->client->id]))->assertOk()->assertSee('Facture concernée')->assertDontSee('Facture créée');
 
-        $this->post(route('payments.requests.store'), [
-            'client_id' => $this->client->id, 'kind' => 'standard', 'label' => 'Dépannage fuite', 'amount' => '180,50', 'mode' => 'card',
-        ])->assertSessionHasNoErrors();
+        // Sans facture, le libellé est obligatoire.
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'amount' => '180,50', 'mode' => 'card'])->assertSessionHasErrors('label');
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Dépannage fuite', 'amount' => '180,50', 'mode' => 'card'])->assertSessionHasNoErrors();
         $request = PaymentRequest::query()->sole();
         $this->assertSame([18050, 'pending', null], [$request->amount, $request->status, $request->invoice_id]);
-        $this->assertSame(0, Invoice::query()->count(), 'Aucune facture tant que le client n\'a pas payé.');
-        $this->get(route('payments.requests.show', $request))->assertSee($request->publicUrl())->assertSee('Payer sur ce téléphone');
-        $this->get(route('payments.index'))->assertSee('Liens de paiement en attente')->assertSee('Dépannage fuite');
+        $this->get(route('payments.requests.show', $request))->assertSee($request->publicUrl())->assertSee('à rattacher');
         auth()->logout();
 
         $this->get(route('portal.payment-request', $request->token))->assertOk()->assertSee('Dépannage fuite')->assertSee('Payer 180,50');
-        $this->assertNotNull($request->fresh()->viewed_at);
         $form = $this->get(route('portal.payment-request.pay', $request->token))->assertOk()->viewData('form');
-        $this->assertSame(['18050' => '180.50'], [(string) $request->amount => $form['fields']['Amount']]);
-        $this->assertSame('Depannage fuite', $form['fields']['Note'], 'Sans accent pour myPOS.');
-        $this->assertSame('Depannage fuite', $form['fields']['Article_1']);
+        $this->assertSame(['180.50', 'Depannage fuite'], [$form['fields']['Amount'], $form['fields']['Note']]);
 
         $attempt = OnlinePayment::query()->sole();
         $this->notify($attempt, '180.50')->assertOk();
         $this->notify($attempt, '180.50')->assertOk();
 
-        $invoice = Invoice::query()->sole();
-        $this->assertSame(['standard', 'paid', 18050, $this->client->id], [$invoice->kind, $invoice->status, $invoice->total_ttc, $invoice->client_id]);
-        $this->assertNotNull($invoice->number);
-        $this->assertSame(1, $invoice->payments()->count());
-        $this->assertSame(['paid', $invoice->id], [$request->fresh()->status, $request->fresh()->invoice_id]);
-        $this->get(route('portal.payment-request', $request->token))->assertSee('Paiement reçu')->assertSee(route('portal.invoice', $invoice->public_token));
-        $this->get(route('portal.payment-request.pay', $request->token))->assertRedirect(route('portal.payment-request', $request->token));
+        // Aucune facture : un encaissement « à rattacher », compté dans l'encaissé.
+        $this->assertSame(0, Invoice::query()->count());
+        $payment = Payment::query()->sole();
+        $this->assertSame([null, $this->client->id, 18050, 'mypos', 'Dépannage fuite'], [$payment->invoice_id, $payment->client_id, $payment->amount, $payment->method, $payment->label]);
+        $this->assertSame('paid', $request->fresh()->status);
+        $this->assertSame(18050, (int) Payment::query()->counted()->sum('amount'));
+        $this->get(route('portal.payment-request', $request->token))->assertSee('Paiement reçu')->assertSee('Votre facture vous sera adressée');
+
+        $this->actingAs($this->admin());
+        $this->get(route('payments.index'))->assertSee('À rattacher à une facture')->assertSee('Dépannage fuite')->assertSee('Aucune facture envoyée à régler');
+        $this->get(route('dashboard'))->assertSee('Encaissements à rattacher à une facture');
+
+        // La facture est faite ensuite : l'encaissement s'y rattache.
+        $invoice = $this->sentInvoice('180,50');
+        $this->get(route('invoices.show', $invoice))->assertSee('déjà encaissé')->assertSee('Rattacher à cette facture');
+        $this->post(route('payments.attach', $payment), ['invoice_id' => $invoice->id])->assertRedirect(route('invoices.show', $invoice).'#paiements');
+        $this->assertSame(['paid', 18050, $invoice->id], [$invoice->fresh()->status, $invoice->fresh()->amount_paid, $payment->fresh()->invoice_id]);
+        $this->get(route('payments.index'))->assertDontSee('À rattacher à une facture');
+        // Déjà rattaché : pas une seconde fois.
+        $this->post(route('payments.attach', $payment), ['invoice_id' => $invoice->id])->assertSessionHasErrors('attach_'.$payment->id);
     }
 
-    public function test_wrong_amount_or_cancelled_request_creates_no_invoice(): void
+    public function test_wrong_amount_or_cancelled_request_records_nothing(): void
     {
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'kind' => 'standard', 'label' => 'Petite réparation', 'amount' => '90', 'mode' => 'card']);
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Petite réparation', 'amount' => '90', 'mode' => 'card']);
         $request = PaymentRequest::query()->sole();
         $this->get(route('portal.payment-request.pay', $request->token));
         $this->notify(OnlinePayment::query()->sole(), '1.00')->assertOk();
-        $this->assertSame([0, 'pending'], [Invoice::query()->count(), $request->fresh()->status]);
+        $this->assertSame([0, 0, 'pending'], [Invoice::query()->count(), Payment::query()->count(), $request->fresh()->status]);
 
         $this->delete(route('payments.requests.cancel', $request));
         $this->assertSame('cancelled', $request->fresh()->status);
@@ -124,23 +140,66 @@ class FreeAmountPaymentTest extends TestCase
         $this->assertSame(1, OnlinePayment::query()->count());
     }
 
-    public function test_amount_already_received_becomes_a_paid_deposit_on_the_quote(): void
+    public function test_amount_already_received_goes_on_the_chosen_invoice_or_waits(): void
     {
-        $quote = $this->acceptedQuote();
-        $this->get(route('quotes.show', $quote))->assertSee(route('payments.requests.create', ['client' => $this->client->id, 'devis' => $quote->id]));
+        $invoice = $this->sentInvoice('350');
+        $this->get(route('payments.requests.create', ['client' => $this->client->id]))->assertSee($invoice->number.' — reste 350,00');
 
-        $this->post(route('payments.requests.store'), [
-            'client_id' => $this->client->id, 'quote_id' => $quote->id, 'kind' => 'deposit', 'label' => 'Acompte toiture', 'amount' => '1 000',
-            'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'cheque', 'reference' => 'Chèque 1234',
-        ])->assertSessionHasNoErrors();
+        // Sur une facture existante : paiement partiel, aucune nouvelle facture.
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '100',
+            'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'cheque', 'reference' => 'Chèque 1234'])
+            ->assertRedirect(route('invoices.show', $invoice).'#paiements');
+        $this->assertSame([1, 'partial', 25000], [Invoice::query()->count(), $invoice->fresh()->status, $invoice->fresh()->balance()]);
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '300',
+            'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'especes'])->assertSessionHasErrors('invoice_id');
 
-        $invoice = Invoice::query()->sole();
-        $this->assertSame(['deposit', 'paid', 100000, $quote->id], [$invoice->kind, $invoice->status, $invoice->total_ttc, $invoice->quote_id]);
-        $this->assertSame(['cheque', 'Chèque 1234'], [$invoice->payments()->first()->method, $invoice->payments()->first()->reference]);
-        $this->assertSame(0, PaymentRequest::query()->count());
+        // Sans facture : l'encaissement attend.
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Acompte toiture', 'amount' => '1 000',
+            'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'especes'])->assertRedirect(route('payments.index').'#a-rattacher');
+        $waiting = Payment::query()->unallocated()->sole();
+        $this->assertSame([100000, 'especes', 'Acompte toiture'], [$waiting->amount, $waiting->method, $waiting->label]);
+        $this->assertSame(1, Invoice::query()->count());
+        // La page Paiements propose la facture ouverte de ce client pour le rattachement.
+        $this->get(route('payments.index'))->assertSee('À rattacher à une facture')->assertSee('action="'.route('payments.attach', $waiting).'"', false)
+            ->assertSee($invoice->number.' — reste 250,00')->assertSee('(trop petit)')->assertDontSee('Aucune facture envoyée à régler');
 
-        $summary = $quote->fresh()->paymentSummary();
-        $this->assertSame([100000, 200000], [$summary['deposits_paid'], $summary['remaining']]);
+        // Trop gros pour le reste de la facture, facture d'un autre client, brouillon : refusés.
+        $this->post(route('payments.attach', $waiting), ['invoice_id' => $invoice->id])->assertSessionHasErrors('attach_'.$waiting->id);
+        $other = Client::factory()->create();
+        $this->post(route('invoices.store'), ['client_id' => $other->id, 'due_days' => 30, 'lines' => [['type' => 'item', 'title' => 'Autre', 'quantity' => '1', 'unit_price' => '5000']]]);
+        $foreign = Invoice::query()->latest('id')->first();
+        $this->post(route('payments.attach', $waiting), ['invoice_id' => $foreign->id])->assertSessionHasErrors('attach_'.$waiting->id);
+        $this->assertNull($waiting->fresh()->invoice_id);
+
+        // Encaissement saisi par erreur : supprimable.
+        $this->delete(route('payments.destroy', $waiting))->assertRedirect(route('payments.index').'#a-rattacher');
+        $this->assertSame(0, Payment::query()->unallocated()->count());
+        // Un client qui a des encaissements ne part pas à la corbeille.
+        $this->delete(route('clients.destroy', $this->client))->assertSessionHasErrors('client');
+    }
+
+    public function test_card_link_for_an_existing_invoice_pays_that_invoice(): void
+    {
+        $invoice = $this->sentInvoice('350');
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '400', 'mode' => 'card'])->assertSessionHasErrors('invoice_id');
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '150', 'mode' => 'card'])->assertSessionHasNoErrors();
+        $request = PaymentRequest::query()->sole();
+        $this->assertSame([$invoice->id, 'Facture '.$invoice->number], [$request->invoice_id, $request->label]);
+        auth()->logout();
+
+        $this->get(route('portal.payment-request.pay', $request->token))->assertOk();
+        $this->notify(OnlinePayment::query()->sole(), '150.00')->assertOk();
+        $this->assertSame(['partial', 15000, 1], [$invoice->fresh()->status, $invoice->fresh()->amount_paid, Invoice::query()->count()]);
+
+        // Facture soldée entre-temps : le paiement par carte est gardé « à rattacher », jamais perdu.
+        $this->actingAs($this->admin());
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'invoice_id' => $invoice->id, 'amount' => '200', 'mode' => 'card'])->assertSessionHasNoErrors();
+        $second = PaymentRequest::query()->latest('id')->first();
+        $this->post(route('payments.store', $invoice), ['amount' => '200', 'paid_at' => today()->toDateString(), 'method' => 'especes']);
+        auth()->logout();
+        $this->get(route('portal.payment-request.pay', $second->token))->assertOk();
+        $this->notify(OnlinePayment::query()->latest('id')->first(), '200.00', '778')->assertOk();
+        $this->assertSame(['paid', 20000], [$invoice->fresh()->status, (int) Payment::query()->unallocated()->sum('amount')]);
     }
 
     public function test_seven_day_legal_delay_is_respected(): void
@@ -148,15 +207,15 @@ class FreeAmountPaymentTest extends TestCase
         $quote = $this->acceptedQuote();
         $quote->forceFill(['signed_at' => now()->subDays(2), 'signed_on_site' => true])->save();
 
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'quote_id' => $quote->id, 'kind' => 'deposit', 'label' => 'Acompte', 'amount' => '500', 'mode' => 'card'])
-            ->assertSessionHasErrors(['quote_id' => "Le devis {$quote->number} a été signé à domicile il y a moins de 7 jours : aucun paiement ne peut être reçu avant le 12/11/2026 (délai légal), sauf intervention urgente confirmée par le client."]);
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'kind' => 'standard', 'label' => 'Autre', 'amount' => '500', 'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'especes'])
-            ->assertSessionHasErrors('quote_id');
-        $this->assertSame([0, 0], [Invoice::query()->count(), PaymentRequest::query()->count()]);
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Acompte', 'amount' => '500', 'mode' => 'card'])
+            ->assertSessionHasErrors(['invoice_id' => "Le devis {$quote->number} de ce client a été signé à domicile il y a moins de 7 jours : aucun paiement ne peut être reçu avant le 12/11/2026 (délai légal), sauf intervention urgente confirmée par le client."]);
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Autre', 'amount' => '500', 'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'especes'])
+            ->assertSessionHasErrors('invoice_id');
+        $this->assertSame([0, 0], [Payment::query()->count(), PaymentRequest::query()->count()]);
 
         // Lien créé avant la signature : le client ne peut pas payer pendant le délai.
         $quote->forceFill(['signed_at' => null])->save();
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'quote_id' => $quote->id, 'kind' => 'deposit', 'label' => 'Acompte', 'amount' => '500', 'mode' => 'card'])->assertSessionHasNoErrors();
+        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'label' => 'Acompte', 'amount' => '500', 'mode' => 'card'])->assertSessionHasNoErrors();
         $quote->forceFill(['signed_at' => now()->subDays(2)])->save();
         $token = PaymentRequest::query()->sole()->token;
         $this->get(route('portal.payment-request', $token))->assertSee('délai légal de 7 jours')->assertDontSee('par carte</a>', false);
@@ -185,37 +244,6 @@ class FreeAmountPaymentTest extends TestCase
         $invoice->refresh();
         $this->assertSame(['partial', 25000], [$invoice->status, $invoice->balance()]);
         $this->get(route('portal.invoice', $token))->assertSee('250,00');
-    }
-
-    public function test_invoice_total_is_exactly_the_amount_whatever_the_vat(): void
-    {
-        $service = app(InvoiceService::class);
-        $calculator = app(DocumentCalculator::class);
-        $line = ['type' => 'item', 'title' => 'Acompte', 'quantity' => 1000, 'unit' => 'forfait'];
-        foreach ([1000, 2000, 550] as $rate) {
-            foreach ([50000, 100, 1, 99999, 123456, 18050, 3] as $amount) {
-                $lines = $service->amountLines($line + ['vat_rate' => $rate], $amount, $rate, false);
-                $this->assertSame($amount, $calculator->calculate($lines)['total_ttc'], "$amount à $rate");
-                $this->assertLessThanOrEqual(2, count($lines));
-                if (count($lines) === 2) {
-                    $this->assertSame(['Arrondi', 1, 0], [$lines[1]['title'], $lines[1]['unit_price'], $lines[1]['vat_rate']]);
-                }
-            }
-        }
-    }
-
-    public function test_vat_registered_company_gets_an_invoice_of_exactly_the_amount(): void
-    {
-        app(Settings::class)->set(['vat.regime' => 'assujetti']);
-        $this->get(route('payments.requests.create'))->assertSee('Taux de TVA');
-
-        $this->post(route('payments.requests.store'), ['client_id' => $this->client->id, 'kind' => 'standard', 'label' => 'Dépannage', 'amount' => '500', 'vat_rate' => '1000',
-            'mode' => 'received', 'paid_at' => '2026-11-06', 'method' => 'cb'])->assertSessionHasNoErrors();
-
-        $invoice = Invoice::query()->with('lines')->sole();
-        $this->assertSame([50000, 'paid', 'assujetti'], [$invoice->total_ttc, $invoice->status, $invoice->vat_regime]);
-        $this->assertSame(['Dépannage', 'Arrondi'], $invoice->lines->pluck('title')->all());
-        $this->assertSame([45454, 1], $invoice->lines->pluck('unit_price')->all());
     }
 
     public function test_commercial_cannot_collect_money(): void

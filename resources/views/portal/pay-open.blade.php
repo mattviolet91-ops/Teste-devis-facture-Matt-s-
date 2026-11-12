@@ -6,7 +6,7 @@
 @section('content')
     <div class="card portal-pay">
         <h1>Régler par carte bancaire</h1>
-        <p>Paiement sécurisé sur la page de notre prestataire <strong>myPOS</strong> : vos données de carte ne nous sont jamais transmises. Une facture vous est envoyée par email après le paiement.</p>
+        <p>Paiement sécurisé sur la page de notre prestataire <strong>myPOS</strong> : vos données de carte ne nous sont jamais transmises. Un reçu vous est envoyé par email après le paiement ; votre facture suit séparément.</p>
         @include('portal.pages._cards')
     </div>
 
@@ -27,7 +27,7 @@
                 <x-field name="first_name" label="Prénom" required maxlength="80" autocomplete="given-name" />
                 <x-field name="last_name" label="Nom" required maxlength="80" autocomplete="family-name" />
             </div>
-            <x-field name="email" label="Adresse email" type="email" required maxlength="160" autocomplete="email" hint="Pour recevoir votre facture." />
+            <x-field name="email" label="Adresse email" type="email" required maxlength="160" autocomplete="email" hint="Pour recevoir votre reçu, puis votre facture." />
             <x-field name="phone" label="Téléphone (facultatif)" type="tel" maxlength="30" autocomplete="tel" />
             <x-field name="label" label="Motif du paiement" required maxlength="150" placeholder="ex. Acompte réfection de toiture, facture FAC-2026-0012…" />
             <x-field name="amount" label="Montant à payer (€)" required inputmode="decimal" autocomplete="off" placeholder="ex. 250"

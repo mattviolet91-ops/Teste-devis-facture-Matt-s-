@@ -6,6 +6,7 @@ use App\Mail\ClientMessage;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Models\Quote;
 use App\Services\MyposGateway;
@@ -85,16 +86,18 @@ class OpenAmountLinkTest extends TestCase
 
         $client = Client::query()->sole();
         $this->assertSame(['Julie', 'Morel', 'julie.morel@example.com', 'client'], [$client->first_name, $client->last_name, $client->email, $client->status]);
-        $invoice = Invoice::query()->sole();
-        $this->assertSame(['standard', 'paid', 25000, $client->id], [$invoice->kind, $invoice->status, $invoice->total_ttc, $invoice->client_id]);
+        // Aucune facture : un encaissement à rattacher, et un reçu pour le client.
+        $this->assertSame(0, Invoice::query()->count());
+        $payment = Payment::query()->sole();
+        $this->assertSame([null, $client->id, 25000, 'Acompte gouttières'], [$payment->invoice_id, $payment->client_id, $payment->amount, $payment->label]);
         $this->assertSame(['paid', $client->id], [PaymentRequest::query()->sole()->status, PaymentRequest::query()->sole()->client_id]);
-        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('julie.morel@example.com') && $m->pdfName !== null);
+        Mail::assertSent(ClientMessage::class, fn (ClientMessage $m) => $m->hasTo('julie.morel@example.com') && str_starts_with($m->mailSubject, 'Reçu de paiement'));
         $this->post(route('portal.pay-open.thanks', $this->code))->assertOk()->assertSee('Merci');
 
         // Même email une seconde fois : la fiche existante est reprise.
         $this->post(route('portal.pay-open.start', $this->code), $this->payer(['first_name' => 'J.', 'label' => 'Solde gouttières', 'amount' => '100,50']))->assertOk();
         $this->notify(OnlinePayment::query()->latest('id')->first(), '100.50');
-        $this->assertSame([1, 2], [Client::query()->count(), Invoice::query()->where('client_id', $client->id)->count()]);
+        $this->assertSame([1, 2, 35050], [Client::query()->count(), Payment::query()->unallocated()->where('client_id', $client->id)->count(), (int) Payment::query()->counted()->sum('amount')]);
     }
 
     public function test_link_needs_the_right_code_and_can_be_renewed_or_disabled(): void

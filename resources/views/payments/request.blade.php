@@ -14,7 +14,7 @@
     <div class="page-head">
         <div>
             <h1>{{ Money::format($request->amount) }}</h1>
-            <p>{{ $request->label }} — <a href="{{ route('clients.show', $client) }}">{{ $client?->displayName() }}</a>@if ($request->quote) · devis <a href="{{ route('quotes.show', $request->quote) }}">{{ $request->quote->number }}</a>@endif</p>
+            <p>{{ $request->label }} — <a href="{{ route('clients.show', $client) }}">{{ $client?->displayName() }}</a>@if ($request->invoice) · {{ mb_strtolower($request->invoice->kindLabel()) }} <a href="{{ route('invoices.show', $request->invoice) }}">{{ $request->invoice->number }}</a>@endif</p>
         </div>
         <span class="badge {{ $request->status === 'paid' ? 'badge-success' : ($request->isPending() ? 'badge-warning' : '') }}">{{ \App\Models\PaymentRequest::STATUSES[$request->status] }}</span>
     </div>
@@ -22,8 +22,10 @@
     @if ($request->status === 'paid')
         <div class="card portal-status portal-ok">
             <h2><x-icon name="check" /> Payé par carte le {{ $request->paid_at->format('d/m/Y à H:i') }}</h2>
-            @if ($request->invoice)
-                <p>{{ $request->invoice->kindLabel() }} <a href="{{ route('invoices.show', $request->invoice) }}">{{ $request->invoice->number }}</a> créée et réglée.</p>
+            @if ($payment?->invoice)
+                <p>Paiement enregistré sur la {{ mb_strtolower($payment->invoice->kindLabel()) }} <a href="{{ route('invoices.show', $payment->invoice) }}#paiements">{{ $payment->invoice->number }}</a>.</p>
+            @elseif ($payment)
+                <p>Aucune facture n'est créée : <a href="{{ route('payments.index') }}#a-rattacher">rattachez cet encaissement à une facture</a> quand elle est prête.</p>
             @endif
         </div>
     @elseif ($request->status === 'cancelled')
@@ -32,7 +34,7 @@
         @if (! $myposReady)
             <div class="alert alert-warning">Le paiement par carte myPOS n'est pas encore activé : le client verra un message lui demandant de vous contacter. <a href="{{ route('settings.payments') }}">Réglages du paiement</a></div>
         @elseif ($myposTest)
-            <div class="alert alert-warning">myPOS est en mode test : le lien ci-dessous est un lien d'essai, aucun argent réel ne sera débité et aucune facture ne sera créée.</div>
+            <div class="alert alert-warning">myPOS est en mode test : le lien ci-dessous est un lien d'essai, aucun argent réel ne sera débité et rien ne sera enregistré.</div>
         @endif
 
         <div class="card" data-share>
@@ -40,7 +42,7 @@
                 <h2>Faire payer le client</h2>
                 @if ($request->viewed_at)<span class="badge badge-info">Ouvert le {{ $request->viewed_at->format('d/m/Y à H:i') }}</span>@endif
             </div>
-            <p class="small muted">Envoyez le lien, ou ouvrez-le sur votre téléphone pour que le client paie sur place. La {{ mb_strtolower($request->kindLabel()) }} est créée, numérotée et réglée dès que myPOS confirme le paiement.</p>
+            <p class="small muted">Envoyez le lien, ou ouvrez-le sur votre téléphone pour que le client paie sur place. {{ $request->invoice ? 'Le paiement est enregistré sur la facture '.$request->invoice->number.' dès que myPOS le confirme.' : 'Dès que myPOS confirme le paiement, il est enregistré « à rattacher » : vous le raccordez ensuite à une facture.' }}</p>
             <div class="chips chips-wrap">
                 <a class="btn btn-sm" href="{{ $url }}" target="_blank" rel="noopener"><x-icon name="wallet" /> Payer sur ce téléphone</a>
                 <a class="chip" href="#" data-share-to="whatsapp" data-phone="{{ $whatsappPhone }}"><x-icon name="message" /> WhatsApp</a>

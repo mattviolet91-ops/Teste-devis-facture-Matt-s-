@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attachment;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Models\SentEmail;
 use App\Support\Money;
@@ -28,8 +29,8 @@ class LinkMailer
     public function paymentMessage(PaymentRequest $request, bool $reminder = false): string
     {
         return ($reminder ? "Bonjour,\n\nSauf erreur de notre part, le règlement ci-dessous est toujours en attente.\n\n" : "Bonjour,\n\n")
-            ."Vous pouvez régler « {$request->label} » (".Money::plain($request->amount).') par carte bancaire, en toute sécurité, avec le bouton ci-dessous. '
-            ."Une facture vous est remise après le paiement.\n\nMerci,\n".$this->settings->get('company.trade_name');
+             ."Vous pouvez régler « {$request->label} » (".Money::plain($request->amount).') par carte bancaire, en toute sécurité, avec le bouton ci-dessous. '
+            ."Un reçu vous est envoyé par email après le paiement.\n\nMerci,\n".$this->settings->get('company.trade_name');
     }
 
     public function signatureMessage(Attachment $attachment, bool $reminder = false): string
@@ -60,6 +61,24 @@ class LinkMailer
             false, false,
             $attachment->publicUrl(),
             'Lire et signer le document',
+        );
+    }
+
+    /** Encaissement sans facture payé par carte : simple reçu par email (la facture suivra). */
+    public function sendPaymentReceipt(Payment $payment): ?SentEmail
+    {
+        $client = $payment->client;
+        if (! $client?->email || ! $this->canSend() || ! $this->settings->get('mypos.email_receipt', true)) {
+            return null;
+        }
+
+        return $this->emails->send(
+            $client, null, [$client->email], [],
+            'Reçu de paiement — '.$this->settings->get('company.trade_name'),
+            "Bonjour,\n\nNous avons bien reçu votre paiement par carte de ".Money::plain($payment->amount).' le '.$payment->paid_at->format('d/m/Y')
+            .($payment->label ? " pour « {$payment->label} »" : '').". Merci !\n\nCe message vaut reçu ; la facture correspondante vous sera adressée séparément.\n\nCordialement,\n"
+            .$this->settings->get('company.trade_name'),
+            false,
         );
     }
 

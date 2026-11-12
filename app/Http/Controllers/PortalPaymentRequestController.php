@@ -71,7 +71,7 @@ class PortalPaymentRequestController extends Controller
     /** Délai légal de 7 jours encore en cours : message pour le client. */
     private function waitDate(PaymentRequest $paymentRequest, PaymentRequestService $requests): ?string
     {
-        return $paymentRequest->client && $requests->legalProblem($paymentRequest->client, $paymentRequest->quote)
+        return $paymentRequest->client && $requests->legalProblem($paymentRequest->client, $paymentRequest->invoice)
             ? 'Le paiement sera possible à l\'issue du délai légal de 7 jours après la signature du devis à votre domicile.'
             : null;
     }

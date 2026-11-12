@@ -29,9 +29,11 @@ User::query()->updateOrCreate(['email' => 'essai@local.test'], ['name' => 'Essai
 app(Settings::class)->set(['mypos.enabled' => true, 'mypos.test' => true]);
 $client = Client::factory()->create(['last_name' => 'Essai', 'email' => null]);
 
-$request = app(PaymentRequestService::class)->createRequest($client, null, 'standard', 'Dépannage d\'essai', 12000, 1000);
+$request = app(PaymentRequestService::class)->createRequest($client, null, 'Dépannage d\'essai', 12000);
 $invoices = app(InvoiceService::class);
-$invoice = $invoices->send($invoices->createForAmount($client, null, 'standard', 'Réparation d\'essai', 35000, 1000));
+$invoice = $invoices->send($invoices->saveDraft($invoices->blank($client->id), [], [
+    ['type' => 'item', 'title' => 'Réparation d\'essai', 'quantity' => 1000, 'unit' => 'forfait', 'unit_price' => 35000, 'vat_rate' => 1000],
+]));
 
 // Document à signer : une image d'une page.
 $image = imagecreatetruecolor(600, 800);

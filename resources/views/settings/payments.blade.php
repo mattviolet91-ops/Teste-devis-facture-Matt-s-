@@ -17,7 +17,7 @@
             Décochez quand myPOS a validé votre boutique : votre pack sera alors utilisé.</span></label>
 
     <label class="check"><input type="checkbox" name="email_receipt" value="1" @checked(old('email_receipt', $emailReceipt))>
-        <span><strong>Envoyer la facture par email au client</strong> après son paiement par carte (s'il a une adresse email).</span></label>
+        <span><strong>Envoyer un email au client</strong> après son paiement par carte (s'il a une adresse email) : la facture s'il a payé une facture, sinon un simple reçu.</span></label>
 
     <div class="field" style="margin-top:1rem">
         <label for="package">Pack de configuration myPOS</label>

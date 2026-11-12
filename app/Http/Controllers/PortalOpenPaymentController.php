@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\OnlinePayment;
-use App\Models\VatRate;
 use App\Services\MyposGateway;
 use App\Services\PaymentRequestService;
 use App\Support\Money;
@@ -69,7 +68,7 @@ class PortalOpenPaymentController extends Controller
             $paymentRequest = $requests->createOpenRequest([
                 'first_name' => trim($data['first_name']), 'last_name' => trim($data['last_name']), 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null, 'label' => trim($data['label']), 'amount' => $amount,
-            ], (int) (VatRate::query()->where('is_default', true)->value('rate') ?? 0));
+            ]);
         } catch (InvalidArgumentException $e) {
             throw ValidationException::withMessages(['amount' => $e->getMessage()]);
         }

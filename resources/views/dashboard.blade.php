@@ -178,7 +178,7 @@
             <div class="card">
                 <div class="card-head"><h2>À faire</h2></div>
                 @php if (! auth()->user()->isAdmin()) { $overdue = collect(); } @endphp
-                @if ($overdue->isEmpty() && $toFollowUp->isEmpty() && $toSign->isEmpty() && $toCollect->isEmpty())
+                @if ($overdue->isEmpty() && $toFollowUp->isEmpty() && $toSign->isEmpty() && $toCollect->isEmpty() && $toAttach->isEmpty())
                     <p class="muted" style="margin:0">Rien d'urgent. 👍</p>
                 @endif
                 @if ($overdue->isNotEmpty())
@@ -200,6 +200,17 @@
                             <li>
                                 <a href="{{ route($routeName, $routeId) }}#documents">{{ $attachment->name }} · {{ $attachment->client?->displayName() }}</a>
                                 <span class="small">{{ $attachment->viewed_at ? 'ouvert' : 'pas ouvert' }} · depuis le {{ $attachment->signature_requested_at->format('d/m') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($toAttach->isNotEmpty())
+                    <h3 class="small muted">Encaissements à rattacher à une facture</h3>
+                    <ul class="stat-list">
+                        @foreach ($toAttach as $waiting)
+                            <li>
+                                <a href="{{ route('payments.index') }}#a-rattacher">{{ $waiting->label ?: 'Encaissement' }} · {{ $waiting->client?->displayName() }}</a>
+                                <span><strong>{{ Money::format($waiting->amount) }}</strong> <span class="small">le {{ $waiting->paid_at->format('d/m') }}</span></span>
                             </li>
                         @endforeach
                     </ul>

@@ -1,11 +1,11 @@
 @extends('layouts.app', ['title' => 'Encaisser un montant'])
 
-{{-- Montant libre : déjà reçu (facture créée et réglée tout de suite) ou par carte (lien pour le client). --}}
+{{-- Montant libre : enregistré sur une facture existante, sinon gardé « à rattacher ». Aucune facture n'est créée. --}}
 @section('content')
     <div class="page-head">
         <div>
             <h1>Encaisser un montant</h1>
-            <p>Un acompte, un règlement sans facture préparée… La facture est créée automatiquement, numérotée et marquée réglée.</p>
+            <p>Un acompte, un règlement partiel… Choisissez la facture concernée, ou encaissez d'abord et rattachez à une facture plus tard. Aucune facture n'est créée automatiquement.</p>
         </div>
     </div>
 
@@ -25,41 +25,24 @@
             </select>
         </div>
         <div class="field">
-            <label for="quote_id">Devis concerné</label>
-            <select id="quote_id" name="quote_id" data-collect-quote data-selected="{{ old('quote_id', $quoteId) }}">
-                <option value="">Aucun devis</option>
-                @foreach ($quotesByClient[old('client_id', $clientId)] ?? [] as $q)
-                    <option value="{{ $q['id'] }}" @selected((int) old('quote_id', $quoteId) === $q['id'])>{{ $q['label'] }}</option>
+            <label for="invoice_id">Facture concernée</label>
+            <select id="invoice_id" name="invoice_id" data-collect-invoice data-selected="{{ old('invoice_id', $invoiceId) }}">
+                <option value="">Aucune pour l'instant (à rattacher plus tard)</option>
+                @foreach ($invoicesByClient[old('client_id', $clientId)] ?? [] as $i)
+                    <option value="{{ $i['id'] }}" @selected((int) old('invoice_id', $invoiceId) === $i['id'])>{{ $i['label'] }}</option>
                 @endforeach
             </select>
-            <span class="hint">Rattaché à un devis accepté, le montant compte dans son « reste à payer » et dans son chantier.</span>
+            <span class="hint">Seules les factures envoyées et pas encore soldées de ce client sont proposées. Sans facture, l'encaissement attend dans Paiements → « À rattacher ».</span>
         </div>
 
-        <fieldset class="choice-list">
-            <legend>Facture créée *</legend>
-            @php $kind = old('kind', old('quote_id', $quoteId) ? 'deposit' : 'standard'); @endphp
-            <label class="check"><input type="radio" name="kind" value="deposit" @checked($kind === 'deposit') data-collect-kind> <span><strong>Facture d'acompte</strong><br><span class="small muted">Une avance sur des travaux : elle sera déduite de la facture de solde du devis.</span></span></label>
-            <label class="check"><input type="radio" name="kind" value="standard" @checked($kind === 'standard') data-collect-kind> <span><strong>Facture</strong><br><span class="small muted">Une prestation réglée en une fois (petite réparation, dépannage…).</span></span></label>
-        </fieldset>
-
-        <x-field name="label" label="Ce que le client règle" required maxlength="150" placeholder="ex. Acompte réfection de toiture" />
+        <x-field name="label" label="Ce que le client règle" maxlength="150" placeholder="ex. Acompte réfection de toiture" hint="Obligatoire s'il n'y a pas de facture." />
         <x-field name="amount" label="Montant TTC (€)" required inputmode="decimal" placeholder="ex. 500" autocomplete="off" />
-        @unless ($franchise)
-            <div class="field">
-                <label for="vat_rate">Taux de TVA *</label>
-                <select id="vat_rate" name="vat_rate" required>
-                    @foreach ($vatRates as $rate)
-                        <option value="{{ $rate->rate }}" @selected((int) old('vat_rate', $defaultRate) === $rate->rate)>{{ $rate->percentLabel() }} — {{ $rate->label }}</option>
-                    @endforeach
-                </select>
-            </div>
-        @endunless
 
         <fieldset class="choice-list">
             <legend>Comment le client paie-t-il ? *</legend>
             @php $mode = old('mode', 'card'); @endphp
-            <label class="check"><input type="radio" name="mode" value="card" @checked($mode === 'card') data-collect-mode> <span><strong>Par carte, en ligne</strong><br><span class="small muted">Un lien de paiement à envoyer, ou à ouvrir sur votre téléphone pour qu'il paie sur place. La facture est créée quand le paiement est confirmé.</span></span></label>
-            <label class="check"><input type="radio" name="mode" value="received" @checked($mode === 'received') data-collect-mode> <span><strong>Déjà reçu</strong><br><span class="small muted">Espèces, chèque, virement ou carte sur votre terminal : la facture est créée et réglée tout de suite.</span></span></label>
+            <label class="check"><input type="radio" name="mode" value="card" @checked($mode === 'card') data-collect-mode> <span><strong>Par carte, en ligne</strong><br><span class="small muted">Un lien de paiement à envoyer, ou à ouvrir sur votre téléphone pour qu'il paie sur place.</span></span></label>
+            <label class="check"><input type="radio" name="mode" value="received" @checked($mode === 'received') data-collect-mode> <span><strong>Déjà reçu</strong><br><span class="small muted">Espèces, chèque, virement ou carte sur votre terminal : l'encaissement est enregistré tout de suite.</span></span></label>
         </fieldset>
 
         @if (! $myposReady || $myposTest)
@@ -77,6 +60,6 @@
             <a class="btn btn-secondary" href="{{ route('payments.index') }}">Annuler</a></div>
     </form>
 
-    <script type="application/json" id="collect-quotes">@json($quotesByClient)</script>
+    <script type="application/json" id="collect-invoices">@json($invoicesByClient)</script>
     <script src="{{ asset('js/collect.js') }}?v={{ filemtime(public_path('js/collect.js')) }}" defer></script>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\OnlinePayment;
+use App\Models\Payment;
 use App\Models\PaymentRequest;
 use App\Support\Money;
 use Illuminate\Http\Request;
@@ -271,13 +272,16 @@ class MyposGateway
         };
     }
 
-    /** Facture envoyée par email au client après son paiement (un échec d'envoi ne remet pas le paiement en cause). */
-    private function sendReceipt(Invoice $invoice, int $amount): void
+    /**
+     * Après un paiement par carte : la facture (paiement sur une facture) ou un simple reçu (encaissement
+     * sans facture) est envoyé par email au client. Un échec d'envoi ne remet pas le paiement en cause.
+     */
+    private function sendReceipt(Invoice|Payment $paid, int $amount): void
     {
         try {
-            app(LinkMailer::class)->sendReceipt($invoice, $amount);
+            $paid instanceof Invoice ? app(LinkMailer::class)->sendReceipt($paid, $amount) : app(LinkMailer::class)->sendPaymentReceipt($paid);
         } catch (Throwable $e) {
-            Log::warning('Facture non envoyée après paiement', ['invoice' => $invoice->id, 'error' => $e->getMessage()]);
+            Log::warning('Reçu non envoyé après paiement', ['error' => $e->getMessage()]);
         }
     }
 
@@ -336,21 +340,22 @@ class MyposGateway
             $amount = (int) round(((float) ($post['Amount'] ?? 0)) * 100);
             $attempt->forceFill(['status' => 'paid', 'transaction_ref' => mb_substr((string) ($post['IPC_Trnref'] ?? ''), 0, 80) ?: null])->save();
 
-            // Montant libre : la facture est créée maintenant.
+            // Montant libre : enregistré sur la facture visée, sinon « à rattacher » (aucune facture créée).
             if ($attempt->payment_request_id) {
                 $request = $attempt->paymentRequest;
                 if ($attempt->test) {
-                    $message = 'Essai réussi : myPOS a bien confirmé un paiement de test de '.Money::plain($amount)." pour « {$request->label} ». Aucune facture n'a été créée.";
+                    $message = 'Essai réussi : myPOS a bien confirmé un paiement de test de '.Money::plain($amount)." pour « {$request->label} ». Rien n'a été enregistré.";
                 } else {
                     try {
-                        $message = app(PaymentRequestService::class)->settle($attempt, $amount);
-                        if ($paid = $attempt->fresh()->invoice) {
-                            $this->sendReceipt($paid, $amount);
+                        $settled = app(PaymentRequestService::class)->settle($attempt, $amount);
+                        $message = $settled['message'];
+                        if ($settled['payment']) {
+                            $this->sendReceipt($settled['payment']->invoice ?? $settled['payment'], $amount);
                         }
                     } catch (Throwable $e) {
                         Log::error('Montant libre payé mais non enregistré', ['order' => $attempt->order_id, 'error' => $e->getMessage()]);
                         $attempt->forceFill(['error' => mb_substr($e->getMessage(), 0, 255)])->save();
-                        $message = 'Paiement par carte de '.Money::plain($amount)." reçu pour « {$request->label} », mais la facture n'a pas pu être créée. Vérifiez dans myPOS et créez-la à la main.";
+                        $message = 'Paiement par carte de '.Money::plain($amount)." reçu pour « {$request->label} », mais il n'a pas pu être enregistré. Vérifiez dans myPOS et enregistrez-le à la main.";
                     }
                 }
                 app(ClientLinkService::class)->notifyText(

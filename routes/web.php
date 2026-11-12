@@ -269,6 +269,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/paiements/demandes/{paymentRequest}/email', [PaymentRequestController::class, 'email'])->whereNumber('paymentRequest')->middleware('throttle:10,1')->name('payments.requests.email');
     Route::post('/factures/{invoice}/paiements', [PaymentController::class, 'store'])->whereNumber('invoice')->name('payments.store');
     Route::delete('/paiements/{payment}', [PaymentController::class, 'destroy'])->whereNumber('payment')->name('payments.destroy');
+    Route::post('/paiements/{payment}/rattacher', [PaymentController::class, 'attach'])->whereNumber('payment')->name('payments.attach');
 
     Route::get('/photos', [PhotoController::class, 'index'])->name('photos.index');
     Route::get('/chantiers/{worksite}/photos', [PhotoController::class, 'worksite'])->whereNumber('worksite')->name('photos.worksite');

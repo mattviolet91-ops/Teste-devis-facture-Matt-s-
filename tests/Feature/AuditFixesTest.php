@@ -39,7 +39,7 @@ class AuditFixesTest extends TestCase
     public function test_client_with_a_pending_payment_link_cannot_be_trashed(): void
     {
         $client = Client::factory()->create();
-        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'kind' => 'standard', 'label' => 'Dépannage', 'amount' => '90', 'mode' => 'card'])->assertSessionHasNoErrors();
+        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'label' => 'Dépannage', 'amount' => '90', 'mode' => 'card'])->assertSessionHasNoErrors();
 
         $this->delete(route('clients.destroy', $client))->assertSessionHasErrors('client');
         $this->assertNotSoftDeleted($client);
@@ -55,7 +55,7 @@ class AuditFixesTest extends TestCase
         $worksite = Worksite::factory()->for($client)->create();
         $this->post(route('attachments.store', $client), ['files' => [UploadedFile::fake()->image('plan.jpg', 600, 400)]]);
         $this->post(route('photos.store', $worksite), ['photos' => [UploadedFile::fake()->image('toit.jpg', 800, 600)], 'category' => 'avant']);
-        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'kind' => 'standard', 'label' => 'Dépannage', 'amount' => '90', 'mode' => 'card']);
+        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'label' => 'Dépannage', 'amount' => '90', 'mode' => 'card']);
         $this->delete(route('payments.requests.cancel', PaymentRequest::query()->sole()));
         $files = [Attachment::query()->sole()->path, Photo::query()->sole()->path, Photo::query()->sole()->thumb_path];
         Storage::disk('local')->assertExists($files);
@@ -101,15 +101,12 @@ class AuditFixesTest extends TestCase
         $final = Invoice::query()->where('kind', 'final')->sole();
         $this->assertSame(189000, $final->total_ttc);
 
-        // Acompte libre encaissé après la préparation du solde : le brouillon de solde suit.
-        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'quote_id' => $quote->id, 'kind' => 'deposit', 'label' => 'Acompte', 'amount' => '100',
-            'mode' => 'received', 'paid_at' => today()->toDateString(), 'method' => 'especes'])->assertSessionHasNoErrors();
-        $this->assertSame(179000, $final->fresh()->total_ttc);
+        // Second acompte facturé après la préparation du solde : le brouillon de solde suit.
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'deposit', 'percent' => '10']);
+        $second = Invoice::query()->where('kind', 'deposit')->latest('id')->first();
+        $this->post(route('invoices.send', $second))->assertSessionHasNoErrors();
+        $this->assertSame(162000, $final->fresh()->total_ttc);
         $this->assertSame(2, $final->fresh()->lines()->where('title', 'like', 'Déduction %')->count());
-
-        // On ne peut pas encaisser plus que ce qu'il reste à facturer sur le devis.
-        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'quote_id' => $quote->id, 'kind' => 'deposit', 'label' => 'Trop', 'amount' => '2000', 'mode' => 'card'])
-            ->assertSessionHasErrors('quote_id');
 
         // Un brouillon modifié à la main qui dépasserait le devis ne peut pas être envoyé.
         $final->lines()->where('title', 'like', 'Déduction %')->delete();
@@ -121,7 +118,7 @@ class AuditFixesTest extends TestCase
         // Remis à jour, il part.
         app(InvoiceService::class)->refreshFinalDrafts($quote);
         $this->post(route('invoices.send', $final))->assertSessionHasNoErrors();
-        $this->assertSame(['sent', 179000], [$final->fresh()->status, $final->fresh()->total_ttc]);
+        $this->assertSame(['sent', 162000], [$final->fresh()->status, $final->fresh()->total_ttc]);
         $this->assertSame(270000, (int) $quote->invoices()->whereIn('status', Invoice::ISSUED)->sum('total_ttc'));
     }
 
@@ -135,7 +132,7 @@ class AuditFixesTest extends TestCase
         $this->get(route('quotes.show', $quote))->assertSee(route('settings.emails'));
 
         app(Settings::class)->set(['mypos.enabled' => true, 'mypos.test' => true]);
-        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'kind' => 'standard', 'label' => 'Petit dépannage', 'amount' => '90', 'mode' => 'card']);
+        $this->post(route('payments.requests.store'), ['client_id' => $client->id, 'label' => 'Petit dépannage', 'amount' => '90', 'mode' => 'card']);
         $this->get(route('portal.payment-request.pay', ['token' => PaymentRequest::query()->sole()->token, 'essai' => 1]))->assertOk();
         $this->get(route('settings.payments'))->assertSee('Petit dépannage · '.$client->displayName());
 

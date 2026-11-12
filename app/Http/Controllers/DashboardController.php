@@ -76,6 +76,9 @@ class DashboardController extends Controller
             'toSign' => Attachment::query()->whereNotNull('signature_requested_at')->whereNotNull('public_token')->whereNull('signed_at')
                 ->when(! $request->user()->isAdmin(), fn ($q) => $q->whereNull('invoice_id'))
                 ->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with('client')->oldest('signature_requested_at')->limit(5)->get(),
+            'toAttach' => $request->user()->isAdmin()
+                ? Payment::query()->unallocated()->whereHas('client')->with('client')->oldest('paid_at')->limit(5)->get()
+                : collect(),
             'toCollect' => $request->user()->isAdmin()
                 ? PaymentRequest::query()->where('status', 'pending')->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with('client')->oldest('id')->limit(5)->get()
                 : collect(),
