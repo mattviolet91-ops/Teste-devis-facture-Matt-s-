@@ -21,12 +21,13 @@
   function applyKind() {
     var k = kind();
     form.querySelectorAll('[data-kind-only]').forEach(function (el) {
-      el.hidden = el.getAttribute('data-kind-only') !== k;
+      // data-kind-only peut citer plusieurs types : « rdv rappel ».
+      el.hidden = el.getAttribute('data-kind-only').split(' ').indexOf(k) === -1;
       // Un champ caché n'est pas envoyé.
       el.querySelectorAll('input, select, textarea').forEach(function (f) { f.disabled = el.hidden; });
     });
-    client.required = k !== 'rdv';
-    client.options[0].textContent = k === 'rdv' ? 'Aucun client (fournisseur, comptable…)' : 'Choisir un client…';
+    client.required = k === 'chantier';
+    client.options[0].textContent = k === 'chantier' ? 'Choisir un client…' : 'Aucun client (fournisseur, comptable…)';
     // Les objets types ne sont proposés que pour les rendez-vous.
     if (k === 'rdv') { title.setAttribute('list', 'appointment-titles'); } else { title.removeAttribute('list'); }
   }

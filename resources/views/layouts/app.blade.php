@@ -127,7 +127,7 @@
         </div>
         <div class="sheet-grid">
             <a class="sheet-item" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
-            @if ($user->isAdmin())<a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
+            @if ($user->canOpen('invoices.create'))<a class="sheet-item" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
             <a class="sheet-item" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
             <a class="sheet-item" href="{{ route('photos.index') }}"><x-icon name="camera" /> Photo</a>
             @if ($user->isAdmin())<a class="sheet-item" href="{{ route('payments.index') }}"><x-icon name="wallet" /> Paiement</a>@endif

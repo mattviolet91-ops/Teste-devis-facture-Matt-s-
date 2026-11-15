@@ -1,4 +1,4 @@
-@extends('layouts.app', ['title' => $intervention->isAppointment() ? 'Rendez-vous' : 'Intervention'])
+@extends('layouts.app', ['title' => \App\Models\Intervention::KINDS[$intervention->kind] ?? 'Intervention'])
 
 @php
     $client = $intervention->client;
@@ -11,7 +11,8 @@
     <div class="page-head">
         <div>
             <h1>{{ $intervention->title }}</h1>
-            <p><span class="badge">{{ $intervention->isAppointment() ? 'Rendez-vous' : 'Chantier' }}</span>
+            <p><span class="badge">{{ \App\Models\Intervention::KINDS[$intervention->kind] ?? 'Chantier' }}</span>
+                @if (auth()->user()->isAdmin() && $intervention->user && $intervention->user_id !== auth()->id())<span class="badge badge-info">Pour {{ $intervention->user->name }}</span>@endif
                 @if ($client)<a href="{{ route('clients.show', $client) }}">{{ $client->displayName() }}</a>@endif
                 · <span class="badge">{{ $intervention->statusLabel() }}</span></p>
         </div>
@@ -26,7 +27,7 @@
             @if ($intervention->creator && $intervention->created_by !== auth()->id())<li><span>Ajouté par</span><strong>{{ $intervention->creator->name }}</strong></li>@endif
             @if ($intervention->project && auth()->user()->isAdmin())<li><span>Chantier</span><a href="{{ route('expenses.project', $intervention->project) }}">{{ $intervention->project->title }}</a></li>@elseif ($intervention->project)<li><span>Chantier</span><span>{{ $intervention->project->title }}</span></li>@endif
             @if ($intervention->quote)<li><span>Devis</span><a href="{{ route('quotes.show', $intervention->quote) }}">{{ $intervention->quote->number }}</a></li>@endif
-            @if ($intervention->invoice && auth()->user()->isAdmin())<li><span>Facture</span><a href="{{ route('invoices.show', $intervention->invoice) }}">{{ $intervention->invoice->number }}</a></li>@endif
+            @if ($intervention->invoice && auth()->user()->canSee($intervention->invoice))<li><span>Facture</span><a href="{{ route('invoices.show', $intervention->invoice) }}">{{ $intervention->invoice->number }}</a></li>@endif
         </ul>
         @if ($intervention->notes)<p class="pre-line">{{ $intervention->notes }}</p>@endif
         <div class="action-bar">
@@ -35,7 +36,7 @@
                 <form method="POST" action="{{ route('planning.update', $intervention) }}">
                     @csrf
                     @method('PUT')
-                    @foreach (['kind', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'start_time', 'end_time', 'notes'] as $f)<input type="hidden" name="{{ $f }}" value="{{ $intervention->$f }}">@endforeach
+                    @foreach (['kind', 'user_id', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'start_time', 'end_time', 'notes'] as $f)<input type="hidden" name="{{ $f }}" value="{{ $intervention->$f }}">@endforeach
                     <input type="hidden" name="starts_on" value="{{ $intervention->starts_on->toDateString() }}">
                     <input type="hidden" name="ends_on" value="{{ $intervention->ends_on->toDateString() }}">
                     <input type="hidden" name="status" value="done">

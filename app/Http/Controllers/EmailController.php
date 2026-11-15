@@ -139,11 +139,11 @@ class EmailController extends Controller
         if ($id = $request->integer('devis')) {
             $document = Quote::query()->findOrFail($id);
         } elseif ($id = $request->integer('facture')) {
-            abort_unless($request->user()->isAdmin(), 403, 'Les factures sont réservées au gérant.');
             $document = Invoice::query()->findOrFail($id);
         } else {
             $document = null;
         }
+        abort_unless($request->user()->canSee($document), 403, 'Ce document est réservé à la personne qui l\'a créé.');
 
         $client = $document?->client ?? Client::query()->findOrFail($request->integer('client'));
         abort_if($client->trashed(), 404);

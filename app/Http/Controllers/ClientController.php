@@ -78,7 +78,12 @@ class ClientController extends Controller
 
     public function show(Client $client): View
     {
-        $client->load(['worksites.photos', 'quotes', 'invoices', 'attachments.quote', 'attachments.invoice', 'wixArchives', 'maintenanceReminders', 'reports']);
+        $user = auth()->user();
+        $client->load([
+            'worksites.photos',
+            'quotes' => fn ($q) => $q->visibleTo($user),
+            'invoices' => fn ($q) => $q->visibleTo($user),
+            'attachments.quote', 'attachments.invoice', 'wixArchives', 'maintenanceReminders', 'reports']);
 
         $history = ActivityLog::query()
             ->with('user')

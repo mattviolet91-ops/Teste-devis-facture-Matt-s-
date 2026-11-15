@@ -28,16 +28,14 @@ class DocumentSignatureController extends Controller
     /** « Faire signer un document » : client, fichier (ou scan) et envoi, en un seul écran. */
     public function create(Request $request, LinkMailer $mailer): View
     {
-        $admin = $request->user()->isAdmin();
+        $user = $request->user();
         $clients = Client::query()->orderBy('last_name')->orderBy('company_name')->get();
         $targets = [];
-        foreach (Quote::query()->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'title']) as $quote) {
+        foreach (Quote::query()->visibleTo($user)->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'title']) as $quote) {
             $targets[$quote->client_id][] = ['id' => 'q:'.$quote->id, 'label' => 'Devis '.$quote->number.($quote->title ? ' — '.$quote->title : '')];
         }
-        if ($admin) {
-            foreach (Invoice::query()->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'kind', 'title']) as $invoice) {
-                $targets[$invoice->client_id][] = ['id' => 'i:'.$invoice->id, 'label' => $invoice->kindLabel().' '.$invoice->number.($invoice->title ? ' — '.$invoice->title : '')];
-            }
+        foreach (Invoice::query()->visibleTo($user)->whereNotNull('number')->latest('id')->get(['id', 'client_id', 'number', 'kind', 'title']) as $invoice) {
+            $targets[$invoice->client_id][] = ['id' => 'i:'.$invoice->id, 'label' => $invoice->kindLabel().' '.$invoice->number.($invoice->title ? ' — '.$invoice->title : '')];
         }
 
         return view('attachments.send', [
@@ -74,9 +72,9 @@ class DocumentSignatureController extends Controller
             if ($kind === 'q') {
                 $quote = Quote::query()->where('client_id', $client->id)->findOrFail((int) $id);
             } else {
-                abort_unless($request->user()->isAdmin(), 403);
                 $invoice = Invoice::query()->where('client_id', $client->id)->findOrFail((int) $id);
             }
+            abort_unless($request->user()->canSee($quote ?? $invoice), 403);
         }
 
         // Le fichier : scan (photos → un PDF) ou PDF / photo fourni.
@@ -232,7 +230,7 @@ class DocumentSignatureController extends Controller
     /** Documents d'une facture : réservés au gérant, comme les factures. */
     private function authorizeAccess(Request $request, Attachment $attachment): void
     {
-        abort_if($attachment->invoice_id && ! $request->user()?->isAdmin(), 403);
+        abort_unless($request->user()?->canSee($attachment->quote ?? $attachment->invoice), 403);
         abort_unless($attachment->client()->exists(), 404);
     }
 

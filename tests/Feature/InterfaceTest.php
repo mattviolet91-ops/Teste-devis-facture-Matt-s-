@@ -79,9 +79,13 @@ class InterfaceTest extends TestCase
             ->assertSee('https://maps.apple.com/?daddr=', false)
             ->assertSee('href="tel:0611223344"', false);
 
-        // Le commercial voit aussi son programme du jour.
-        $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('dashboard'))->assertOk()->assertSee('Visite toiture');
+        // Le commercial voit son propre programme du jour, pas celui du gérant.
+        $commercial = User::factory()->create(['role' => 'commercial']);
+        $this->actingAs($commercial);
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('Visite toiture');
+        Intervention::query()->create(['user_id' => $commercial->id, 'kind' => 'rdv', 'client_id' => $this->client->id,
+            'title' => 'Métré chez le client', 'starts_on' => today()->toDateString(), 'ends_on' => today()->toDateString(), 'start_time' => '16:00']);
+        $this->get(route('dashboard'))->assertOk()->assertSee('Métré chez le client');
     }
 
     public function test_empty_lists_offer_a_button_and_display_options_exist(): void

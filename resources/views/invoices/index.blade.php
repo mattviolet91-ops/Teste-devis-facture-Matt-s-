@@ -42,7 +42,7 @@
                     @endif
                     <a class="list-item swipe-content" href="{{ route('invoices.show', $invoice) }}">
                         <span class="list-main">
-                            <strong>{{ $invoice->displayNumber() }} · {{ $invoice->client?->displayName() }}</strong>
+                            <strong>{{ $invoice->displayNumber() }} · {{ $invoice->client?->displayName() }}</strong> @if (auth()->user()->isAdmin() && $invoice->creator && ! $invoice->creator->isAdmin())<span class="badge">{{ $invoice->creator->name }}</span>@endif
                             <span class="muted small">{{ $invoice->kindLabel() }}{{ $invoice->title ? ' · '.$invoice->title : '' }} · {{ ($invoice->issue_date ?? $invoice->updated_at)->format('d/m/Y') }}</span>
                         </span>
                         <span class="list-meta">

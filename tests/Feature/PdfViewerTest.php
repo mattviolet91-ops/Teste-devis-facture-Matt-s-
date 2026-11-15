@@ -51,8 +51,12 @@ class PdfViewerTest extends TestCase
 
     public function test_commercial_cannot_open_an_invoice_through_the_viewer(): void
     {
-        $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('pdf.view', ['src' => '/factures/1/pdf']))->assertForbidden();
+        $commercial = User::factory()->create(['role' => 'commercial']);
+        $this->actingAs($commercial);
+        // Devis du gérant : refusé ; le sien : ouvert. Les paiements restent fermés.
+        $this->get(route('pdf.view', ['src' => route('quotes.pdf', $this->quote, absolute: false)]))->assertForbidden();
+        $this->get(route('pdf.view', ['src' => '/paiements']))->assertForbidden();
+        $this->quote->forceFill(['created_by' => $commercial->id])->save();
         $this->get(route('pdf.view', ['src' => route('quotes.pdf', $this->quote, absolute: false)]))->assertOk();
 
         auth()->logout();

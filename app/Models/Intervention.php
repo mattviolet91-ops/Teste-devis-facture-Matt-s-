@@ -17,6 +17,7 @@ class Intervention extends Model
     public const KINDS = [
         'chantier' => 'Chantier',
         'rdv' => 'Rendez-vous',
+        'rappel' => 'Rappel',
     ];
 
     /** Objets de rendez-vous proposés. */
@@ -34,7 +35,7 @@ class Intervention extends Model
         'cancelled' => 'Annulée',
     ];
 
-    protected $fillable = ['kind', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes', 'remind_days', 'remind_client'];
+    protected $fillable = ['user_id', 'kind', 'client_id', 'worksite_id', 'quote_id', 'project_id', 'invoice_id', 'location', 'title', 'starts_on', 'ends_on', 'start_time', 'end_time', 'status', 'notes', 'remind_days', 'remind_client'];
 
     /** Rappel avant l'intervention ou le rendez-vous. */
     public const REMINDERS = [
@@ -46,6 +47,12 @@ class Intervention extends Model
     protected function casts(): array
     {
         return ['starts_on' => 'date', 'ends_on' => 'date', 'reminded_at' => 'datetime', 'reminder_sent_at' => 'datetime', 'remind_days' => 'integer', 'remind_client' => 'boolean'];
+    }
+
+    /** Ce que ce compte peut voir : tout pour le gérant, seulement les siens pour un commercial. */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        return $user && ! $user->isAdmin() ? $query->where($query->qualifyColumn('user_id'), $user->id) : $query;
     }
 
     public function client(): BelongsTo
@@ -100,6 +107,12 @@ class Intervention extends Model
     public function heading(): string
     {
         return $this->client?->displayName() ?? $this->title;
+    }
+
+    /** Personne à qui est ce rendez-vous, ce chantier ou ce rappel (son agenda). */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function scopeActive(Builder $query): Builder

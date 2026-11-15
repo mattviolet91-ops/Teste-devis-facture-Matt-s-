@@ -122,7 +122,7 @@
         @endif
     </div>
 
-    @if (auth()->user()->isAdmin())
+    @if (auth()->user()->canOpen('invoices.index'))
     <div class="card">
         <div class="card-head">
             <h2>Factures</h2>

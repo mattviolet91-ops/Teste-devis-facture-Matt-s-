@@ -79,25 +79,25 @@
         @if (! $invoice->isCredit() && auth()->user()->isAdmin())
             <a class="btn btn-secondary" href="#ajouter"><x-icon name="cart" /> Frais</a>
         @endif
-        @if ($invoice->acceptsPayments())
+        @if ($invoice->acceptsPayments() && auth()->user()->canOpen('reminders.show'))
             <a class="btn btn-secondary" href="{{ route('reminders.show', $invoice) }}"><x-icon name="send" /> Relancer{{ $invoice->reminder_count ? ' ('.$invoice->reminder_count.')' : '' }}</a>
         @endif
-        @if (session('thank') && $invoice->client?->email)
+        @if (session('thank') && $invoice->client?->email && auth()->user()->canOpen('payments.store'))
             <a class="btn btn-secondary" href="{{ route('emails.create', ['facture' => $invoice->id, 'modele' => 'merci']) }}"><x-icon name="mail" /> Envoyer un remerciement</a>
         @endif
-        @if ($invoice->status === 'paid' && $invoice->client && $settings->get('reviews.google_url'))
+        @if ($invoice->status === 'paid' && $invoice->client && $settings->get('reviews.google_url') && auth()->user()->canOpen('reviews.store'))
             <form method="POST" action="{{ route('reviews.store', $invoice) }}">
                 @csrf
                 <button class="btn btn-secondary" type="submit"><x-icon name="check" /> Demander un avis Google</button>
             </form>
         @endif
-        @if ($invoice->isCorrectable())
+        @if ($invoice->isCorrectable() && auth()->user()->canOpen('invoices.correct'))
             <form method="POST" action="{{ route('invoices.correct', $invoice) }}" data-confirm="Modifier cette facture ? Un avoir sera émis pour l'annuler (obligation légale) et une copie modifiable sera préparée ; elle recevra un nouveau numéro à l'envoi.">
                 @csrf
                 <button class="btn" type="submit"><x-icon name="file" /> Modifier</button>
             </form>
         @endif
-        @if ($invoice->isCancellable())
+        @if ($invoice->isCancellable() && auth()->user()->canOpen('invoices.cancel'))
             <button class="btn btn-secondary" type="button" data-open-sheet="cancel-dialog"><x-icon name="trash" /> Supprimer</button>
         @endif
     </div>
@@ -163,7 +163,7 @@
         </form>
     @endif
 
-    @if ($invoice->isCancellable())
+    @if ($invoice->isCancellable() && auth()->user()->canOpen('invoices.cancel'))
         <div class="form-actions"><button class="btn btn-danger-outline" type="button" data-open-sheet="cancel-dialog"><x-icon name="trash" /> Supprimer la facture</button></div>
 
         <dialog class="sheet" id="cancel-dialog" aria-labelledby="cancel-title">
@@ -196,9 +196,12 @@
                 ['Envoyer', 'mail', route('emails.create', ['facture' => $invoice->id]), null],
                 ['Modifier', 'file', route('invoices.edit', $invoice), null],
             ],
-            in_array($invoice->status, \App\Models\Invoice::OPEN, true) => [
+            in_array($invoice->status, \App\Models\Invoice::OPEN, true) && auth()->user()->canOpen('payments.store') => [
                 ['Encaisser', 'wallet', route('invoices.show', ['invoice' => $invoice, 'encaisser' => 1]).'#paiements', null],
                 ['Relancer', 'send', route('reminders.show', $invoice), null],
+            ],
+            in_array($invoice->status, \App\Models\Invoice::OPEN, true) => [
+                ['Envoyer', 'mail', route('emails.create', ['facture' => $invoice->id]), null],
             ],
             default => [
                 ['Envoyer', 'mail', route('emails.create', ['facture' => $invoice->id]), null],

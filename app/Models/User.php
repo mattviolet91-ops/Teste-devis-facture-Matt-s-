@@ -67,6 +67,21 @@ class User extends Authenticatable
         return $this->role === 'commercial';
     }
 
+    /**
+     * Le gérant voit tout ; un commercial ne voit que les devis et factures qu'il a créés,
+     * et que son propre agenda (rendez-vous, chantiers, rappels « pour » lui).
+     */
+    public function canSee(Quote|Invoice|Intervention|null $item): bool
+    {
+        if (! $item || $this->isAdmin()) {
+            return true;
+        }
+
+        return $item instanceof Intervention
+            ? (int) $item->user_id === (int) $this->id
+            : (int) $item->created_by === (int) $this->id;
+    }
+
     /** Le compte peut-il ouvrir cette page ? */
     public function canOpen(string $routeName): bool
     {

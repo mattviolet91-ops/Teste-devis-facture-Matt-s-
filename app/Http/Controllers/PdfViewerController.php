@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attachment;
+use App\Models\Invoice;
+use App\Models\Quote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -26,6 +29,16 @@ class PdfViewerController extends Controller
             abort(404);
         }
         abort_unless($request->user()->canOpen((string) $route->getName()), 403);
+        // Un commercial : seulement ses devis et ses factures (et leurs documents).
+        foreach ($route->parameters() as $name => $value) {
+            $item = match ($name) {
+                'quote' => Quote::withTrashed()->find($value),
+                'invoice' => Invoice::withTrashed()->find($value),
+                'attachment' => ($a = Attachment::query()->find($value)) ? ($a->quote ?? $a->invoice) : null,
+                default => null,
+            };
+            abort_unless($request->user()->canSee($item), 403);
+        }
 
         $back = $request->query('retour');
         $title = Str::limit(trim((string) $request->query('titre', 'Document')) ?: 'Document', 80, '');

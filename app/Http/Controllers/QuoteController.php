@@ -41,7 +41,7 @@ class QuoteController extends Controller
     public function documents(Request $request): RedirectResponse
     {
         return redirect()->route(match ($request->session()->get('documents_tab')) {
-            'invoices' => $request->user()->isAdmin() ? 'invoices.index' : 'quotes.index',
+            'invoices' => 'invoices.index',
             'requests' => 'requests.index',
             default => 'quotes.index',
         });
@@ -57,7 +57,8 @@ class QuoteController extends Controller
         $filters['status'] ??= 'all';
 
         $quotes = Quote::query()
-            ->with('client')
+            ->visibleTo($request->user())
+            ->with(['client', 'creator'])
             ->when($filters['q'] ?? null, fn ($query, $q) => $query->search($q))
             ->when($filters['status'] === 'closed', fn ($query) => $query->whereIn('status', ['refused', 'expired', 'replaced']))
             ->when(! in_array($filters['status'], ['all', 'closed'], true), fn ($query) => $query->where('status', $filters['status']))

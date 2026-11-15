@@ -102,10 +102,10 @@
         @if ($quote->status === 'accepted')
             <a class="btn btn-secondary" href="{{ route('planning.create', ['devis' => $quote->id]) }}"><x-icon name="calendar" /> Planifier</a>
         @endif
-        @if ($quote->isInvoiceable() && auth()->user()->isAdmin())
+        @if ($quote->isInvoiceable() && auth()->user()->canOpen('quotes.invoice'))
             <button class="btn" type="button" data-open-sheet="invoice-dialog"><x-icon name="receipt" /> Facturer</button>
         @endif
-        @if ($quote->status === 'accepted' && auth()->user()->isAdmin())
+        @if ($quote->status === 'accepted' && auth()->user()->canOpen('payments.requests.create'))
             <a class="btn btn-secondary" href="{{ route('payments.requests.create', ['client' => $quote->client_id]) }}"><x-icon name="wallet" /> Encaisser un montant</a>
         @endif
         <button class="btn btn-secondary" type="button" data-open-sheet="duplicate-dialog"><x-icon name="copy" /> Dupliquer</button>
@@ -139,7 +139,7 @@
 
     @error('percent')<div class="alert alert-error" role="alert">{{ $message }}</div>@enderror
 
-    @if (($quote->status === 'accepted' || $quote->invoices->isNotEmpty()) && auth()->user()->isAdmin())
+    @if (($quote->status === 'accepted' || $quote->invoices->isNotEmpty()) && auth()->user()->canOpen('invoices.index'))
         @php
             $pay = $quote->paymentSummary();
             $billed = $pay['invoiced'];
@@ -168,7 +168,7 @@
             <ul class="stat-list">
                 @foreach ($quote->invoices as $invoice)
                     <li>
-                        <a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a>
+                        @if (auth()->user()->canSee($invoice))<a href="{{ route('invoices.show', $invoice) }}">{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }}</a>@else<span>{{ $invoice->kindLabel() }} {{ $invoice->displayNumber() }} <span class="muted small">(faite par le gérant)</span></span>@endif
                         <span>@include('invoices._status') <strong>{{ Money::format($invoice->total_ttc) }}</strong></span>
                     </li>
                 @endforeach
@@ -243,7 +243,7 @@
         </form>
     </dialog>
 
-    @if ($quote->isInvoiceable() && auth()->user()->isAdmin())
+    @if ($quote->isInvoiceable() && auth()->user()->canOpen('quotes.invoice'))
         @php
             $hasPartial = $quote->invoices->whereIn('kind', ['deposit', 'progress'])->whereIn('status', \App\Models\Invoice::ISSUED)->isNotEmpty();
         @endphp
@@ -293,7 +293,6 @@
     </dialog>
 
     @php
-        $isAdmin = auth()->user()->isAdmin();
         $quick = match (true) {
             $quote->isDraft() => [
                 ['Envoyer', 'mail', route('emails.create', ['devis' => $quote->id]), null],
@@ -305,7 +304,7 @@
                 ['Accepté', 'check', null, 'data-quick-submit="accept-form"'],
             ])),
             $quote->status === 'accepted' => array_values(array_filter([
-                $isAdmin ? ['Facturer', 'receipt', null, 'data-open-sheet="invoice-dialog"'] : null,
+                auth()->user()->canOpen('quotes.invoice') ? ['Facturer', 'receipt', null, 'data-open-sheet="invoice-dialog"'] : null,
                 ['Planifier', 'calendar', route('planning.create', ['devis' => $quote->id]), null],
             ])),
             default => [],

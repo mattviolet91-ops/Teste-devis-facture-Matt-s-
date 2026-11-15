@@ -7,10 +7,21 @@
             <p>{{ $mode === 'mois' ? ucfirst($from->locale('fr')->isoFormat('MMMM YYYY')) : 'Semaine du '.$from->locale('fr')->isoFormat('D MMMM').' au '.$to->locale('fr')->isoFormat('D MMMM YYYY') }}</p>
         </div>
         <div class="action-bar" style="margin:0">
-            <a class="btn" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="plus" /> Rendez-vous</a>
-            <a class="btn btn-secondary" href="{{ route('planning.create') }}"><x-icon name="plus" /> Chantier</a>
+            <a class="btn" href="{{ route('planning.create', array_filter(['type' => 'rdv', 'pour' => $for])) }}"><x-icon name="plus" /> Rendez-vous</a>
+            <a class="btn btn-secondary" href="{{ route('planning.create', array_filter(['pour' => $for])) }}"><x-icon name="plus" /> Chantier</a>
+            <a class="btn btn-secondary" href="{{ route('planning.create', array_filter(['type' => 'rappel', 'pour' => $for])) }}"><x-icon name="plus" /> Rappel</a>
         </div>
     </div>
+
+    {{-- Gérant : l'agenda de tout le monde, ou celui d'une seule personne. --}}
+    @if ($people->count() > 1)
+        <div class="chips chips-wrap" role="group" aria-label="Agenda de" style="margin-bottom:.75rem">
+            <a class="chip {{ ! $for ? 'is-active' : '' }}" href="{{ route('planning.index', ['vue' => $mode, 'date' => $from->toDateString()]) }}">Tout</a>
+            @foreach ($people as $person)
+                <a class="chip {{ $for === $person->id ? 'is-active' : '' }}" href="{{ route('planning.index', ['vue' => $mode, 'date' => $from->toDateString(), 'pour' => $person->id]) }}">{{ $person->id === auth()->id() ? 'Moi' : $person->name }}</a>
+            @endforeach
+        </div>
+    @endif
 
     <div class="period-bar">
         <div class="chips" role="group" aria-label="Navigation">
@@ -27,7 +38,7 @@
             <section class="planning-day {{ $day['date']->isToday() ? 'is-today' : '' }} {{ $day['date']->isWeekend() && $day['items']->isEmpty() ? 'is-weekend' : '' }}">
                 <div class="planning-date">
                     <strong>{{ ucfirst($day['date']->locale('fr')->isoFormat('ddd D')) }}</strong>
-                    <a class="small" href="{{ route('planning.create', ['date' => $day['date']->toDateString(), 'type' => 'rdv']) }}" aria-label="Ajouter un rendez-vous ce jour">+</a>
+                    <a class="small" href="{{ route('planning.create', array_filter(['date' => $day['date']->toDateString(), 'type' => 'rdv', 'pour' => $for])) }}" aria-label="Ajouter un rendez-vous ce jour">+</a>
                 </div>
                 <div class="planning-items">
                     @foreach ($day['items'] as $item)
@@ -40,7 +51,7 @@
                         @endif
                         <a class="planning-item swipe-content kind-{{ $item->kind }} status-{{ $item->status }}" href="{{ route('planning.show', $item) }}">
                             <strong>{{ $item->start_time && $item->starts_on->isSameDay($day['date']) ? ($item->isAppointment() ? $item->timeRange() : $item->timeLabel()).' · ' : '' }}{{ $item->heading() }}</strong>
-                            <span class="small">{{ $item->isAppointment() ? 'RDV · ' : '' }}{{ $item->client ? $item->title : '' }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
+                            <span class="small">{{ $item->isAppointment() ? 'RDV · ' : ($item->kind === 'rappel' ? 'Rappel · ' : '') }}@if ($people->count() > 1 && $item->user)<span class="badge">{{ $item->user_id === auth()->id() ? 'Moi' : $item->user->name }}</span> @endif{{ $item->client ? $item->title : '' }}{{ $item->days() > 1 ? ' (jour '.((int) $item->starts_on->diffInDays($day['date']) + 1).'/'.$item->days().')' : '' }}</span>
                             @if ($item->address())<span class="small muted">{{ $item->location ?: ($item->worksite?->city ?? $item->client?->city) }}</span>@endif
                             @if ($meteo = $weather[$item->id][$day['date']->toDateString()] ?? null)
                                 @if ($meteo['alerts'])

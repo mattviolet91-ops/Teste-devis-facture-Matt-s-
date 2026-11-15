@@ -39,14 +39,12 @@ class OfflineController extends Controller
         foreach ($clients as $id) {
             $urls[] = route('clients.show', $id);
         }
-        foreach (Quote::query()->latest('updated_at')->limit(60)->pluck('id') as $id) {
+        // Devis et factures : ceux que ce compte peut voir (un commercial : les siens).
+        foreach (Quote::query()->visibleTo(auth()->user())->latest('updated_at')->limit(60)->pluck('id') as $id) {
             $urls[] = route('quotes.show', $id);
         }
-        // Factures : seulement pour le gérant (un commercial n'y a pas accès).
-        if (auth()->user()->isAdmin()) {
-            foreach (Invoice::query()->latest('updated_at')->limit(60)->pluck('id') as $id) {
-                $urls[] = route('invoices.show', $id);
-            }
+        foreach (Invoice::query()->visibleTo(auth()->user())->latest('updated_at')->limit(60)->pluck('id') as $id) {
+            $urls[] = route('invoices.show', $id);
         }
         for ($page = 2; $page <= (int) ceil($clients->count() / 25); $page++) {
             $urls[] = route('clients.index', ['page' => $page]);

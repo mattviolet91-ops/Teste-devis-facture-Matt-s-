@@ -18,10 +18,10 @@ class AuditSecurityTest extends TestCase
         $this->get('/page-qui-nexiste-pas')->assertNotFound()->assertSee('Page introuvable')->assertSee('Retour à l\'accueil', false);
 
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('invoices.index'))->assertForbidden()->assertSee('Accès refusé')->assertSee('Cette page est réservée au gérant.');
+        $this->get(route('payments.index'))->assertForbidden()->assertSee('Accès refusé')->assertSee('Cette page est réservée au gérant.');
     }
 
-    public function test_offline_list_never_offers_invoices_to_a_commercial(): void
+    public function test_offline_list_never_offers_the_manager_invoices_to_a_commercial(): void
     {
         $this->actingAs($this->admin());
         $client = Client::factory()->create();
@@ -37,7 +37,10 @@ class AuditSecurityTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
         $urls = $this->getJson(route('offline.pages'))->assertOk()->json('urls');
         $this->assertContains(route('clients.show', $client->id), $urls);
-        $this->assertEmpty(array_filter($urls, fn ($url) => str_contains($url, '/factures') || str_contains($url, '/paiements') || str_contains($url, '/relances')));
+        // Ni la facture du gérant, ni son devis, ni les paiements et relances.
+        $this->assertNotContains(route('invoices.show', $invoice->id), $urls);
+        $this->assertNotContains(route('quotes.show', $quote->id), $urls);
+        $this->assertEmpty(array_filter($urls, fn ($url) => str_contains($url, '/paiements') || str_contains($url, '/relances')));
     }
 
     public function test_security_check_command_reports_problems(): void

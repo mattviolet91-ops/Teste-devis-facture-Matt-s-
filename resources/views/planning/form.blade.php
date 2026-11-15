@@ -1,6 +1,6 @@
 @php
-    $appointment = old('kind', $intervention->kind) === 'rdv';
-    $noun = $appointment ? 'le rendez-vous' : 'l\'intervention';
+    $appointment = in_array(old('kind', $intervention->kind), ['rdv', 'rappel'], true);
+    $noun = match (old('kind', $intervention->kind)) { 'rdv' => 'le rendez-vous', 'rappel' => 'le rappel', default => 'l\'intervention' };
     $heading = $intervention->exists ? 'Modifier '.$noun : 'Ajouter au planning';
 @endphp
 @extends('layouts.app', ['title' => $heading])
@@ -21,13 +21,26 @@
             <div class="chips chips-wrap" role="radiogroup" aria-label="Type" style="margin-bottom:1rem">
                 @foreach (\App\Models\Intervention::KINDS as $key => $label)
                     <label class="chip chip-radio"><input type="radio" name="kind" value="{{ $key }}" @checked(old('kind', $intervention->kind) === $key) data-planning-kind>
-                        <x-icon :name="$key === 'rdv' ? 'users' : 'tool'" /> {{ $label }}</label>
+                        <x-icon :name="match ($key) { 'rdv' => 'users', 'rappel' => 'calendar', default => 'tool' }" /> {{ $label }}</label>
                 @endforeach
             </div>
+            <p class="small muted" data-kind-only="rappel" style="margin:-.5rem 0 1rem">Une tâche à une date et une heure (ex. « Rappeler M. Martin ») : une notification arrive sur le téléphone à l'heure prévue.</p>
+
+            @if ($assignees->count() > 1)
+                <div class="field" style="margin-bottom:1rem">
+                    <label for="user_id">Pour qui *</label>
+                    <select id="user_id" name="user_id" required>
+                        @foreach ($assignees as $person)
+                            <option value="{{ $person->id }}" @selected((int) old('user_id', $intervention->user_id ?? auth()->id()) === $person->id)>{{ $person->id === auth()->id() ? 'Moi' : $person->name }}{{ $person->isAdmin() ? '' : ' (commercial)' }}</option>
+                        @endforeach
+                    </select>
+                    <span class="hint">Il apparaît dans son agenda et il reçoit les notifications sur son téléphone. Vous les recevez aussi.</span>
+                </div>
+            @endif
 
             <div class="form-grid cols-2">
                 <div class="field span-2 @error('client_id') has-error @enderror">
-                    <label for="client_id">Client <span data-kind-only="chantier">*</span><span data-kind-only="rdv" class="muted small">(facultatif)</span></label>
+                    <label for="client_id">Client <span data-kind-only="chantier">*</span><span data-kind-only="rdv rappel" class="muted small">(facultatif)</span></label>
                     <div class="client-search">
                         <input type="search" placeholder="Rechercher : nom, téléphone, ville…" aria-label="Rechercher un client" autocomplete="off" data-client-search>
                         <div class="client-search-results" data-client-results hidden></div>
@@ -43,6 +56,7 @@
                     <span class="hint">Nouveau prospect ? <a href="{{ route('clients.create') }}">Créez d'abord sa fiche</a>.</span>
                 </div>
                 {{-- Listes remplies selon le client choisi (planning.js) : seulement ses adresses, chantiers, devis et factures. --}}
+                <div class="field span-2 form-grid cols-2" data-kind-only="chantier rdv" style="margin:0">
                 <div class="field @error('worksite_id') has-error @enderror">
                     <label for="worksite_id">Adresse du chantier</label>
                     <select id="worksite_id" name="worksite_id" data-planning-worksite data-selected="{{ old('worksite_id', $intervention->worksite_id) }}"><option value="">Adresse du client</option></select>
@@ -67,6 +81,7 @@
                     </div>
                 @endif
                 <x-field name="location" label="Lieu (si autre que le chantier)" :value="$intervention->location" class="span-2" placeholder="ex. Point P Massy, ou adresse d'un prospect" />
+                </div>
 
                 <div class="field span-2 @error('title') has-error @enderror">
                     <label for="title">Objet *</label>
@@ -88,12 +103,14 @@
                 @if ($intervention->exists)
                     <x-select name="status" label="Statut" :options="\App\Models\Intervention::STATUSES" :value="$intervention->status" :placeholder="false" />
                 @endif
+                <div class="field span-2 form-grid cols-2" data-kind-only="chantier rdv" style="margin:0">
                 <x-select name="remind_days" label="Me rappeler" :options="\App\Models\Intervention::REMINDERS" :value="$intervention->remind_days ?? 1" :placeholder="false"
                     hint="Notification sur votre téléphone le matin, à 9 h." />
                 <label class="check" style="align-self:end">
                     <input type="checkbox" name="remind_client" value="1" @checked(old('remind_client', $intervention->remind_client))>
                     <span>Envoyer aussi un rappel au client par email<br><span class="muted small">Si le client a une adresse email.</span></span>
                 </label>
+                </div>
                 <x-field name="notes" label="Notes (matériel, accès, code portail…)" type="textarea" rows="3" :value="$intervention->notes" class="span-2" />
             </div>
         </div>

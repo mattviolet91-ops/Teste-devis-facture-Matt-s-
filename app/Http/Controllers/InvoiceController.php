@@ -45,7 +45,8 @@ class InvoiceController extends Controller
         $filters['status'] ??= 'all';
 
         $invoices = Invoice::query()
-            ->with('client')
+            ->visibleTo($request->user())
+            ->with(['client', 'creator'])
             ->when($filters['q'] ?? null, fn ($query, $q) => $query->search($q))
             ->when($filters['status'], fn ($query, $status) => match ($status) {
                 'draft' => $query->where('status', 'draft'),

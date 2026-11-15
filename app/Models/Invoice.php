@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Searchable;
+use App\Models\Concerns\TracksCreator;
 use App\Services\MyposGateway;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  */
 class Invoice extends Model
 {
-    use Searchable, SoftDeletes;
+    use Searchable, SoftDeletes, TracksCreator;
 
     public const KINDS = [
         'standard' => 'Facture',
@@ -71,6 +72,12 @@ class Invoice extends Model
             'total_ttc' => 'integer',
             'amount_paid' => 'integer',
         ];
+    }
+
+    /** Ce que ce compte peut voir : tout pour le gérant, seulement les siens pour un commercial. */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        return $user && ! $user->isAdmin() ? $query->where($query->qualifyColumn('created_by'), $user->id) : $query;
     }
 
     public function client(): BelongsTo

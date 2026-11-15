@@ -34,18 +34,26 @@ class PlanningNotifications extends Command
     {
         $tomorrow = today()->addDay();
         $items = Intervention::query()->where('status', 'planned')->whereDate('starts_on', $tomorrow)
-            ->visible()->with(['client', 'worksite'])->orderBy('start_time')->get();
+            ->visible()->with(['client', 'worksite', 'user'])->orderBy('start_time')->get();
 
-        if ($items->isNotEmpty()) {
-            $rdv = $items->filter->isAppointment()->count();
-            $work = $items->count() - $rdv;
+        // Le gérant reçoit tout ; chaque commercial reçoit seulement son agenda.
+        $groups = $items->isNotEmpty() ? ['admins' => $items] : [];
+        foreach ($items->filter(fn (Intervention $i) => $i->user && ! $i->user->isAdmin() && ! $i->user->disabled_at)->groupBy('user_id') as $userId => $own) {
+            $groups[(int) $userId] = $own;
+        }
+        foreach ($groups as $recipient => $list) {
+            $rdv = $list->filter->isAppointment()->count();
+            $tasks = $list->where('kind', 'rappel')->count();
+            $work = $list->count() - $rdv - $tasks;
             $push->send(
                 'Demain : '.collect([
                     $rdv ? $rdv.' rendez-vous' : null,
                     $work ? $work.' chantier'.($work > 1 ? 's' : '') : null,
+                    $tasks ? $tasks.' rappel'.($tasks > 1 ? 's' : '') : null,
                 ])->filter()->implode(' et '),
-                $items->map(fn (Intervention $i) => $this->summary($i).$this->weatherAlert($i, $tomorrow))->implode(' · '),
+                $list->map(fn (Intervention $i) => $this->summary($i).$this->weatherAlert($i, $tomorrow))->implode(' · '),
                 route('planning.index', ['date' => $tomorrow->toDateString()]),
+                $recipient === 'admins' ? null : $recipient,
             );
         }
 
@@ -57,18 +65,23 @@ class PlanningNotifications extends Command
     private function soon(PushService $push): int
     {
         $now = now();
-        $items = Intervention::query()->where('kind', 'rdv')->where('status', 'planned')->whereNull('reminded_at')
-            ->whereDate('starts_on', today())->whereNotNull('start_time')->visible()->with(['client', 'worksite'])->get()
+        // Rendez-vous : 1 heure avant. Rappel : à l'heure prévue (ou dès que possible s'il vient de passer).
+        $items = Intervention::query()->whereIn('kind', ['rdv', 'rappel'])->where('status', 'planned')->whereNull('reminded_at')
+            ->whereDate('starts_on', today())->whereNotNull('start_time')->visible()->with(['client', 'worksite', 'user'])->get()
             ->filter(function (Intervention $i) use ($now) {
                 $start = Carbon::parse($i->starts_on->toDateString().' '.$i->start_time);
 
-                return $start->gt($now) && $start->lte($now->copy()->addHour());
+                return $i->kind === 'rappel'
+                    ? $start->lte($now) && $start->gt($now->copy()->subHour())
+                    : $start->gt($now) && $start->lte($now->copy()->addHour());
             });
 
         foreach ($items as $item) {
-            $push->send('Rendez-vous à '.$item->timeLabel().' : '.$item->heading(),
-                $item->title.($item->address() ? ' — '.$item->address() : ''),
-                route('planning.show', $item));
+            $this->notify($push, $item,
+                $item->kind === 'rappel' ? 'Rappel : '.$item->title : 'Rendez-vous à '.$item->timeLabel().' : '.$item->heading(),
+                $item->kind === 'rappel'
+                    ? (trim(($item->client ? $item->client->displayName() : '').($item->notes ? ' — '.mb_strimwidth($item->notes, 0, 120, '…') : '')) ?: 'Prévu à '.$item->timeLabel())
+                    : $item->title.($item->address() ? ' — '.$item->address() : ''));
             $item->forceFill(['reminded_at' => now()])->save();
         }
 
@@ -82,7 +95,7 @@ class PlanningNotifications extends Command
     {
         $items = Intervention::query()->where('status', 'planned')->whereNull('reminder_sent_at')
             ->whereIn('remind_days', [1, 2])->whereDate('starts_on', '>', today())->whereDate('starts_on', '<=', today()->addDays(2))
-            ->visible()->with(['client', 'worksite', 'quote'])->get()
+            ->visible()->with(['client', 'worksite', 'quote', 'user'])->get()
             ->filter(fn (Intervention $i) => $i->starts_on->isSameDay(today()->addDays($i->remind_days)));
 
         $messages = app(PlanningMessages::class);
@@ -96,12 +109,11 @@ class PlanningNotifications extends Command
                 $clientMail = $log->isSent();
             }
 
-            $push->send(
+            $this->notify($push, $item,
                 $when.' : '.($item->isAppointment() ? 'RDV ' : '').$item->heading(),
                 trim(($item->start_time ? $item->timeLabel().' · ' : '').$item->title
                     .($item->address() ? ' — '.$item->address() : '')
                     .($clientMail ? ' Rappel envoyé au client par email.' : ($item->client ? ' Appuyez pour prévenir le client.' : ''))),
-                route('planning.show', $item),
             );
             $item->forceFill(['reminder_sent_at' => now()])->save();
         }
@@ -109,6 +121,19 @@ class PlanningNotifications extends Command
         $this->info($items->count().' rappel(s).');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Notification d'un élément de l'agenda : au gérant (il voit tout) et, si l'élément est
+     * pour un commercial, aussi sur le téléphone de ce commercial.
+     */
+    private function notify(PushService $push, Intervention $item, string $title, string $body): void
+    {
+        $url = route('planning.show', $item);
+        $push->send($title, $body, $url);
+        if ($item->user && ! $item->user->isAdmin() && ! $item->user->disabled_at) {
+            $push->send($title, $body, $url, $item->user_id);
+        }
     }
 
     /** « ⚠ Pluie 5 mm » quand la météo du lendemain gêne le chantier. */

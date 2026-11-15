@@ -73,8 +73,8 @@ class QuotePaymentSummaryTest extends TestCase
         $this->get(route('quotes.show', $quote))->assertSee('Soldé');
         $this->get(route('portal.quote', $quote->fresh()->public_token))->assertSee('Tout est réglé, merci !');
 
-        // Le commercial ne voit pas les règlements.
+        // Le devis du gérant n'est pas ouvert au commercial.
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('quotes.show', $quote))->assertOk()->assertDontSee('Reste à payer');
+        $this->get(route('quotes.show', $quote))->assertForbidden();
     }
 }

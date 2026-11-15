@@ -60,6 +60,12 @@ class Quote extends Model
         ];
     }
 
+    /** Ce que ce compte peut voir : tout pour le gérant, seulement les siens pour un commercial. */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        return $user && ! $user->isAdmin() ? $query->where($query->qualifyColumn('created_by'), $user->id) : $query;
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class)->withTrashed();

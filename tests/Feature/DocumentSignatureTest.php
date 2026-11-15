@@ -247,9 +247,9 @@ class DocumentSignatureTest extends TestCase
         $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'action' => 'send', 'file' => $protected])->assertSessionHasErrors('file');
         $this->assertSame(2, Attachment::query()->count());
 
-        // Commercial : pas de rattachement à une facture.
+        // Commercial : pas de rattachement au devis du gérant.
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('attachments.sign.create'))->assertOk();
-        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'target' => 'i:1', 'action' => 'send', 'file' => $this->pdfFile('x.pdf')])->assertForbidden();
+        $this->get(route('attachments.sign.create', ['client' => $this->client->id]))->assertOk()->assertDontSee('q:'.$quote->id, false);
+        $this->post(route('attachments.sign.store'), ['client_id' => $this->client->id, 'target' => 'q:'.$quote->id, 'action' => 'send', 'file' => $this->pdfFile('x.pdf')])->assertForbidden();
     }
 }

@@ -13,7 +13,7 @@
         default => route('attachments.invoice.store', $document),
     };
     $attachments = $isClient
-        ? $document->attachments->reject(fn ($a) => $a->invoice_id && ! auth()->user()->isAdmin())
+        ? $document->attachments->filter(fn ($a) => auth()->user()->canSee($a->quote ?? $a->invoice))
         : $document->attachments;
     $phone = preg_replace('/\D/', '', (string) $client?->phone);
     $whatsappPhone = preg_match('/^0\d{9}$/', $phone) ? '33'.substr($phone, 1) : $phone;

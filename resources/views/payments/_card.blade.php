@@ -10,7 +10,7 @@
         <div class="progress" role="progressbar" aria-label="Part de la facture déjà réglée" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ $percent }}%"></span></div>
 
         {{-- Montants libres déjà encaissés auprès de ce client, sans facture : à rattacher ici. --}}
-        @if ($invoice->acceptsPayments())
+        @if ($invoice->acceptsPayments() && auth()->user()->canOpen('payments.attach'))
             @foreach (\App\Models\Payment::query()->unallocated()->where('client_id', $invoice->client_id)->oldest('paid_at')->get() as $waiting)
                 <div class="alert alert-info" style="margin-top:.75rem">
                     @error('attach_'.$waiting->id)<div class="alert alert-error">{{ $message }}</div>@enderror
@@ -37,11 +37,13 @@
                             <span class="muted small">le {{ $payment->paid_at->format('d/m/Y') }}{{ $payment->reference ? ' · réf. '.$payment->reference : '' }}</span>
                             @if ($payment->notes)<br><span class="small muted">{{ $payment->notes }}</span>@endif
                         </span>
+                        @if (auth()->user()->canOpen('payments.destroy'))
                         <form method="POST" action="{{ route('payments.destroy', $payment) }}" data-confirm="Supprimer ce paiement de {{ Money::format($payment->amount) }} ?">
                             @csrf
                             @method('DELETE')
                             <button class="link-danger" type="submit">Supprimer</button>
                         </form>
+                        @endif
                     </li>
                 @endforeach
             </ul>
@@ -52,6 +54,7 @@
             @if ($waitUntil = $invoice->paymentWaitUntil())
                 <div class="alert alert-info small">Devis signé chez le client le {{ $invoice->quote->signed_at->format('d/m/Y') }} : la facture peut être envoyée dès maintenant, mais la loi interdit de recevoir un paiement avant le <strong>{{ $waitUntil->format('d/m/Y') }}</strong> (art. L221-10 du Code de la consommation).{{ $invoice->legalPaymentFrom() ? ' L\'échéance de la facture est fixée à cette date.' : '' }} Le paiement par carte n'est proposé au client et les relances automatiques ne partent qu'à partir de là. Exception : intervention urgente demandée par le client (<a href="{{ route('quotes.show', $invoice->quote) }}#urgence">le client peut la confirmer depuis le devis</a>).</div>
             @endif
+            @if (auth()->user()->canOpen('payments.store'))
             <details @if ($errors->hasAny(['amount', 'paid_at', 'method', 'method_detail']) || request('encaisser')) open @endif>
                 <summary class="btn"><x-icon name="wallet" /> Encaisser un paiement</summary>
                 <form method="POST" action="{{ route('payments.store', $invoice) }}" style="margin-top:1rem" data-offline="Paiement">
@@ -74,6 +77,9 @@
                     <div class="form-actions"><button class="btn" type="submit">Enregistrer le paiement</button></div>
                 </form>
             </details>
+            @else
+                <p class="small muted" style="margin-top:.75rem">Les paiements de cette facture sont enregistrés par le gérant.</p>
+            @endif
             @if (app(\App\Services\MyposGateway::class)->isEnabled())
                 <p class="small muted" style="margin-top:.75rem">💳 Paiement par carte myPOS activé : le client {{ $waitUntil ? 'pourra payer' : 'peut payer' }} {{ Money::format($invoice->balance()) }} depuis sa facture en ligne{{ $waitUntil ? ' à partir du '.$waitUntil->format('d/m/Y') : '' }}, le paiement s'enregistre tout seul.</p>
             @elseif (auth()->user()->canOpen('settings.payments'))

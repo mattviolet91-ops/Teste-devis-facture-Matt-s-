@@ -136,7 +136,13 @@ class AuditFixesTest extends TestCase
         $this->get(route('portal.payment-request.pay', ['token' => PaymentRequest::query()->sole()->token, 'essai' => 1]))->assertOk();
         $this->get(route('settings.payments'))->assertSee('Petit dépannage · '.$client->displayName());
 
+        // Le commercial, sur son propre devis envoyé : pas de lien vers les réglages ; celui du gérant lui est fermé.
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('quotes.show', $quote))->assertOk()->assertDontSee(route('settings.emails'));
+        $this->post(route('quotes.store'), ['client_id' => $client->id, 'title' => 'Gouttières', 'validity_days' => 30,
+            'lines' => [['type' => 'item', 'title' => 'Gouttière', 'quantity' => '1', 'unit_price' => '300']]]);
+        $own = Quote::query()->latest('id')->first();
+        $this->post(route('quotes.send', $own));
+        $this->get(route('quotes.show', $own))->assertOk()->assertDontSee(route('settings.emails'));
+        $this->get(route('quotes.show', $quote))->assertForbidden();
     }
 }

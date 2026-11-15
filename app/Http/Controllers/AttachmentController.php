@@ -109,7 +109,7 @@ class AttachmentController extends Controller
     public function show(Request $request, Attachment $attachment): Response
     {
         // Documents d'une facture : réservés au gérant, comme les factures.
-        abort_if($attachment->invoice_id && ! $request->user()?->isAdmin(), 403);
+        abort_unless($request->user()?->canSee($attachment->quote ?? $attachment->invoice), 403);
         $original = $request->boolean('original') || ! $attachment->signed_path;
         [$path, $name, $mime] = $original
             ? [$attachment->path, $attachment->name, $attachment->mime]
@@ -127,7 +127,7 @@ class AttachmentController extends Controller
 
     public function destroy(Request $request, Attachment $attachment, DocumentSignatureService $signatures): RedirectResponse
     {
-        abort_if($attachment->invoice_id && ! $request->user()?->isAdmin(), 403);
+        abort_unless($request->user()?->canSee($attachment->quote ?? $attachment->invoice), 403);
         Storage::disk('local')->delete($attachment->path);
         $signatures->deleteFiles($attachment);
         $attachment->delete();

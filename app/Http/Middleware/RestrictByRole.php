@@ -2,6 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Attachment;
+use App\Models\Intervention;
+use App\Models\Invoice;
+use App\Models\Quote;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,8 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Droits selon le compte :
  * - gérant (admin) : tout ;
- * - commercial : prospects, clients, demandes, rendez-vous, devis, photos —
- *   jamais les factures, paiements, chiffre d'affaires ni réglages de l'entreprise ;
+ * - commercial : prospects, clients, demandes, son agenda, ses devis et ses factures, photos —
+ *   jamais les paiements, le chiffre d'affaires, les avoirs ni les réglages de l'entreprise ;
  * - compte désactivé (disabled_at) : déconnecté.
  */
 class RestrictByRole
@@ -20,13 +24,13 @@ class RestrictByRole
     /** Pages ouvertes au commercial (noms de routes). */
     public const COMMERCIAL_ALLOWED = [
         'dashboard', 'search', 'guide', 'logout', 'documents', 'pdf.view', 'branding.image',
-        'clients.*', 'worksites.*', 'quotes.*', 'planning.*', 'requests.*', 'photos.*', 'attachments.*',
+        'clients.*', 'worksites.*', 'quotes.*', 'invoices.*', 'planning.*', 'requests.*', 'photos.*', 'attachments.*',
         'maintenance.*', 'reports.*', 'emails.*', 'catalog.index', 'push.*', 'offline.*',
         'settings.account', 'settings.account.*',
     ];
 
     /** Exceptions à l'intérieur des pages ouvertes. */
-    public const COMMERCIAL_DENIED = ['quotes.invoice', 'attachments.invoice.store', 'emails.index', 'emails.show', 'clients.import', 'clients.import.preview', 'clients.import.store'];
+    public const COMMERCIAL_DENIED = ['invoices.cancel', 'invoices.correct', 'emails.index', 'emails.show', 'clients.import', 'clients.import.preview', 'clients.import.store'];
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -45,6 +49,20 @@ class RestrictByRole
 
         if ($user->role === 'commercial' && ! self::allows($user, (string) $request->route()?->getName())) {
             abort(403, 'Cette page est réservée au gérant.');
+        }
+
+        // Commercial : seulement ses devis, ses factures et son agenda (adresse ouverte directement comprise).
+        if ($user->role === 'commercial') {
+            foreach ((array) $request->route()?->parameters() as $value) {
+                $item = match (true) {
+                    $value instanceof Quote, $value instanceof Invoice, $value instanceof Intervention => $value,
+                    $value instanceof Attachment => $value->quote ?? $value->invoice,
+                    default => null,
+                };
+                if ($item && ! $user->canSee($item)) {
+                    abort(403, 'Ce document ou ce rendez-vous est réservé à la personne qui l\'a créé.');
+                }
+            }
         }
 
         return $next($request);

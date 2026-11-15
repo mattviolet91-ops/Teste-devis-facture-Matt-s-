@@ -49,37 +49,34 @@ class CommercialAccountTest extends TestCase
         $this->get(route('settings.users'))->assertDontSee('Mot de passe provisoire');
     }
 
-    public function test_commercial_sees_prospects_quotes_and_planning_but_never_invoices_or_money(): void
+    public function test_commercial_sees_prospects_quotes_and_planning_but_never_money(): void
     {
         $client = Client::factory()->create(['last_name' => 'Prospect']);
-        $invoice = Invoice::query()->forceCreate(['client_id' => $client->id, 'kind' => 'standard', 'status' => 'draft', 'due_days' => 30, 'vat_regime' => 'franchise']);
+        $managerInvoice = Invoice::query()->forceCreate(['client_id' => $client->id, 'kind' => 'standard', 'status' => 'draft', 'due_days' => 30, 'vat_regime' => 'franchise', 'created_by' => $this->admin()->id]);
         $this->actingAs($this->commercial());
 
-        foreach (['dashboard', 'clients.index', 'quotes.index', 'quotes.create', 'planning.index', 'requests.index', 'photos.index', 'settings.account'] as $route) {
+        foreach (['dashboard', 'clients.index', 'quotes.index', 'quotes.create', 'invoices.index', 'invoices.create', 'planning.index', 'requests.index', 'photos.index', 'settings.account'] as $route) {
             $this->get(route($route))->assertOk();
         }
-        $this->get(route('clients.show', $client))->assertOk()->assertDontSee('<h2>Factures</h2>', false);
-
-        foreach (['invoices.index', 'invoices.create', 'payments.index', 'statistics', 'reminders.index', 'settings.company', 'settings.users', 'settings.backups', 'trash.index', 'emails.index'] as $route) {
+        foreach (['payments.index', 'payments.requests.create', 'statistics', 'reminders.index', 'expenses.index', 'settings.company', 'settings.users', 'settings.backups', 'trash.index', 'emails.index'] as $route) {
             $this->get(route($route))->assertForbidden();
         }
-        $this->get(route('invoices.show', $invoice))->assertForbidden();
-        $this->get(route('emails.create', ['facture' => $invoice->id]))->assertForbidden();
+        // La facture du gérant : ni visible, ni ouvrable.
+        $this->get(route('invoices.index'))->assertDontSee(route('invoices.show', $managerInvoice));
+        $this->get(route('invoices.show', $managerInvoice))->assertForbidden();
+        $this->get(route('emails.create', ['facture' => $managerInvoice->id]))->assertForbidden();
 
         $home = $this->get(route('dashboard'))->getContent();
         $this->assertStringNotContainsString('Montant à encaisser', $home);
         $this->assertStringNotContainsString('CA facturé', $home);
-        $this->assertStringNotContainsString(route('invoices.index'), $home);
         $this->assertStringNotContainsString(route('settings.company'), $home);
-
-        $this->get(route('quotes.index'))->assertDontSee(route('invoices.index'), false);
-        $this->get(route('documents'))->assertRedirect(route('quotes.index'));
     }
 
-    public function test_commercial_can_create_and_send_a_quote_but_not_invoice_it(): void
+    public function test_commercial_can_invoice_his_quote_but_never_record_payments_or_cancel(): void
     {
         $client = Client::factory()->create();
-        $this->actingAs($this->commercial());
+        $me = $this->commercial();
+        $this->actingAs($me);
         $this->post(route('quotes.store'), [
             'client_id' => $client->id, 'title' => 'Démoussage', 'validity_days' => 30,
             'lines' => [['type' => 'item', 'title' => 'Démoussage', 'quantity' => '1', 'unit_price' => '900']],
@@ -87,8 +84,20 @@ class CommercialAccountTest extends TestCase
         $quote = Quote::query()->sole();
         $this->post(route('quotes.send', $quote))->assertRedirect();
         $this->post(route('quotes.accept', $quote))->assertRedirect();
-        $this->get(route('quotes.show', $quote))->assertOk()->assertDontSee('data-open-sheet="invoice-dialog"', false);
-        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard'])->assertForbidden();
+        $this->get(route('quotes.show', $quote))->assertOk()->assertSee('data-open-sheet="invoice-dialog"', false)->assertDontSee(route('payments.requests.create'));
+
+        $this->post(route('quotes.invoice', $quote), ['kind' => 'standard'])->assertRedirect();
+        $invoice = Invoice::query()->sole();
+        $this->assertSame($me->id, $invoice->created_by);
+        $this->post(route('invoices.send', $invoice))->assertRedirect();
+        $page = $this->get(route('invoices.show', $invoice))->assertOk();
+        $page->assertSee('Les paiements de cette facture sont enregistrés par le gérant.')
+            ->assertDontSee(route('payments.store', $invoice))->assertDontSee('cancel-dialog')->assertDontSee(route('invoices.correct', $invoice));
+
+        $this->post(route('payments.store', $invoice), ['amount' => '900', 'paid_at' => today()->toDateString(), 'method' => 'especes'])->assertForbidden();
+        $this->post(route('invoices.cancel', $invoice), ['reason' => 'Erreur'])->assertForbidden();
+        $this->post(route('invoices.correct', $invoice))->assertForbidden();
+        $this->assertSame(['sent', 0], [$invoice->fresh()->status, $invoice->fresh()->amount_paid]);
     }
 
     public function test_disabled_account_is_logged_out_and_cannot_log_in(): void

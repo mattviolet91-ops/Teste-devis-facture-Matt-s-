@@ -40,7 +40,7 @@
                     @endif
                     <a class="list-item swipe-content" href="{{ route('quotes.show', $quote) }}">
                         <span class="list-main">
-                            <strong>{{ $quote->displayNumber() }} · {{ $quote->client?->displayName() }}</strong>
+                            <strong>{{ $quote->displayNumber() }} · {{ $quote->client?->displayName() }}</strong> @if (auth()->user()->isAdmin() && $quote->creator && ! $quote->creator->isAdmin())<span class="badge">{{ $quote->creator->name }}</span>@endif
                             <span class="muted small">{{ $quote->title ?: 'Sans objet' }} · {{ ($quote->issue_date ?? $quote->updated_at)->format('d/m/Y') }}</span>
                         </span>
                         <span class="list-meta">

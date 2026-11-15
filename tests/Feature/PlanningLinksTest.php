@@ -56,10 +56,11 @@ class PlanningLinksTest extends TestCase
         // Devis d'un autre client : refusé.
         $this->post(route('planning.store'), $form + ['quote_id' => $foreign->id])->assertSessionHasErrors('quote_id');
 
-        // Commercial : pas de facture.
+        // Commercial : ni le devis ni la facture du gérant.
         $this->actingAs(User::factory()->create(['role' => 'commercial']));
-        $this->get(route('planning.create', ['type' => 'rdv']))->assertOk()->assertDontSee('data-planning-invoice', false);
-        $this->post(route('planning.store'), $form + ['invoice_id' => $invoice->id])->assertSessionHasNoErrors();
-        $this->assertNull(Intervention::query()->latest('id')->first()->invoice_id);
+        $page = $this->get(route('planning.create', ['type' => 'rdv']))->assertOk();
+        $this->assertStringNotContainsString('"id":'.$quote->id.',"project"', $page->getContent());
+        $this->post(route('planning.store'), $form + ['invoice_id' => $invoice->id])->assertSessionHasErrors('invoice_id');
+        $this->post(route('planning.store'), $form + ['quote_id' => $quote->id])->assertSessionHasErrors('quote_id');
     }
 }

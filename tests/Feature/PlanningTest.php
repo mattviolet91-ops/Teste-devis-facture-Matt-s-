@@ -209,8 +209,11 @@ class PlanningTest extends TestCase
         $this->put(route('planning.source', $rdv), ['source' => 'nimporte'])->assertSessionHasErrors('source');
         $this->assertSame('google', $this->client->fresh()->source);
 
-        // Un commercial peut aussi la corriger.
-        $this->actingAs(User::factory()->create(['role' => 'commercial']));
+        // Un commercial peut aussi la corriger, depuis un rendez-vous de son agenda.
+        $commercial = User::factory()->create(['role' => 'commercial']);
+        $this->actingAs($commercial);
+        $this->put(route('planning.source', $rdv), ['source' => 'recommandation'])->assertForbidden();
+        $rdv->forceFill(['user_id' => $commercial->id])->save();
         $this->put(route('planning.source', $rdv), ['source' => 'recommandation'])->assertSessionHasNoErrors();
         $this->assertSame('recommandation', $this->client->fresh()->source);
     }

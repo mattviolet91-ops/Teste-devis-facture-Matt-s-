@@ -71,11 +71,11 @@ class DashboardController extends Controller
             ],
             'overdue' => Invoice::query()->overdue()->with('client', 'quote.client')->orderBy('due_date')->limit(8)->get()
                 ->reject(fn (Invoice $invoice) => $invoice->paymentWaitUntil())->take(5)->values(),
-            'toFollowUp' => Quote::query()->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
+            'toFollowUp' => Quote::query()->visibleTo($request->user())->where('status', 'sent')->where('sent_at', '<=', now()->subDays(7))->with('client')->orderBy('sent_at')->limit(5)->get(),
             // Documents en attente de signature (ceux d'une facture : gérant seulement) et liens de paiement en attente.
             'toSign' => Attachment::query()->whereNotNull('signature_requested_at')->whereNotNull('public_token')->whereNull('signed_at')
-                ->when(! $request->user()->isAdmin(), fn ($q) => $q->whereNull('invoice_id'))
-                ->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with('client')->oldest('signature_requested_at')->limit(5)->get(),
+                ->whereHas('client', fn ($q) => $q->whereNull('deleted_at'))->with(['client', 'quote', 'invoice'])->oldest('signature_requested_at')->limit(30)->get()
+                ->filter(fn (Attachment $a) => $request->user()->canSee($a->quote ?? $a->invoice))->take(5)->values(),
             'toAttach' => $request->user()->isAdmin()
                 ? Payment::query()->unallocated()->whereHas('client')->with('client')->oldest('paid_at')->limit(5)->get()
                 : collect(),
@@ -85,11 +85,11 @@ class DashboardController extends Controller
             'newRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->count(),
             'latestRequests' => QuoteRequest::query()->where('status', 'new')->whereHas('client')->with(['client', 'worksite'])->latest('id')->limit(5)->get(),
             'nextInterventions' => Intervention::query()->active()->where('status', 'planned')
-                ->whereDate('ends_on', '>=', today())->visible()->with(['client', 'worksite'])
+                ->whereDate('ends_on', '>=', today())->visible()->visibleTo($request->user())->with(['client', 'worksite', 'user'])
                 ->orderBy('starts_on')->orderBy('start_time')->limit(5)->get(),
             // Bloc « Aujourd'hui » : rendez-vous et chantiers du jour, avec météo (cache) et itinéraire.
-            'today' => $today = Intervention::query()->active()->where('status', 'planned')->between(today(), today())->visible()
-                ->with(['client', 'worksite'])->orderBy('start_time')->get(),
+            'today' => $today = Intervention::query()->active()->where('status', 'planned')->between(today(), today())->visible()->visibleTo($request->user())
+                ->with(['client', 'worksite', 'user'])->orderBy('start_time')->get(),
             'todayWeather' => $today->mapWithKeys(fn (Intervention $i) => [$i->id => app(WeatherService::class)->forDay($i, today())])->filter(),
             'lastPayments' => Payment::query()->counted()->with(['client', 'invoice'])->latest('paid_at')->latest('id')->limit(5)->get(),
         ]);

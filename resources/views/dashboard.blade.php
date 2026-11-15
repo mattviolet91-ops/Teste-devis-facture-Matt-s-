@@ -280,7 +280,7 @@
                     <a class="quick-action" href="{{ route('quotes.create') }}"><x-icon name="file" /> Devis</a>
                     <a class="quick-action" href="{{ route('planning.create', ['type' => 'rdv']) }}"><x-icon name="calendar" /> Rendez-vous</a>
                     <a class="quick-action" href="{{ route('clients.create') }}"><x-icon name="users" /> Client</a>
-                    @if (auth()->user()->isAdmin())<a class="quick-action" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
+                    @if (auth()->user()->canOpen('invoices.create'))<a class="quick-action" href="{{ route('invoices.create') }}"><x-icon name="receipt" /> Facture</a>@endif
                 </div>
             </div>
                 @break
